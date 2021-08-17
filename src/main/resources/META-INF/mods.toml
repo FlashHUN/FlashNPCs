@@ -1,0 +1,23 @@
+modLoader = "javafml"
+loaderVersion = "[36,)"
+license = "All rights reserved"
+[[mods]]
+modId = "flashnpcs"
+version = "1.0"
+displayName = "Flash's NPCs"
+authors = "FlashHUN"
+description = '''
+Flash's NPC Mod
+'''
+[[dependencies.flashnpcs]]
+modId = "forge"
+mandatory = true
+versionRange = "[36,)"
+ordering = "NONE"
+side = "BOTH"
+[[dependencies.flashnpcs]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.16.3,1.17)"
+ordering = "NONE"
+side = "BOTH"
