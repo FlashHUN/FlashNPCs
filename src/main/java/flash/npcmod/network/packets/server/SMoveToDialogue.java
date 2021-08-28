@@ -9,22 +9,25 @@ import java.util.function.Supplier;
 public class SMoveToDialogue {
 
   String name;
+  int entityid;
 
-  public SMoveToDialogue(String name) {
+  public SMoveToDialogue(String name, int entityid) {
     this.name = name;
+    this.entityid = entityid;
   }
 
   public static void encode(SMoveToDialogue msg, PacketBuffer buf) {
     buf.writeString(msg.name);
+    buf.writeInt(msg.entityid);
   }
 
   public static SMoveToDialogue decode(PacketBuffer buf) {
-    return new SMoveToDialogue(buf.readString(51));
+    return new SMoveToDialogue(buf.readString(51), buf.readInt());
   }
 
   public static void handle(SMoveToDialogue msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      Main.PROXY.moveToDialogue(msg.name);
+      Main.PROXY.moveToDialogue(msg.name, msg.entityid);
     });
     ctx.get().setPacketHandled(true);
   }

@@ -17,12 +17,13 @@ public class CEditNpc {
 
   int entityid;
   String name, texture, dialogue;
-  boolean isSlim;
+  boolean isSlim, isNameVisible;
   int textColor;
   ItemStack[] items;
 
-  public CEditNpc(int entityid, String name, String texture, boolean isSlim, String dialogue, int textColor, ItemStack[] items) {
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue, int textColor, ItemStack[] items) {
     this.entityid = entityid;
+    this.isNameVisible = isNameVisible;
     this.name = name;
     this.texture = texture;
     this.isSlim = isSlim;
@@ -35,6 +36,7 @@ public class CEditNpc {
 
   public static void encode(CEditNpc msg, PacketBuffer buf) {
     buf.writeInt(msg.entityid);
+    buf.writeBoolean(msg.isNameVisible);
     buf.writeString(msg.name);
     buf.writeString(msg.texture);
     buf.writeBoolean(msg.isSlim);
@@ -53,6 +55,7 @@ public class CEditNpc {
 
   public static CEditNpc decode(PacketBuffer buf) {
     int entityid = buf.readInt();
+    boolean isNameVisible = buf.readBoolean();
     String name = buf.readString(201);
     String texture = buf.readString(201);
     boolean isSlim = buf.readBoolean();
@@ -62,7 +65,7 @@ public class CEditNpc {
     for (int i = 0; i < 6; i++) {
       items.add(buf.readItemStack());
     }
-    return new CEditNpc(entityid, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]));
+    return new CEditNpc(entityid, isNameVisible, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]));
   }
 
   public static void handle(CEditNpc msg, Supplier<NetworkEvent.Context> ctx) {
@@ -72,6 +75,7 @@ public class CEditNpc {
         Entity entity = sender.world.getEntityByID(msg.entityid);
         if (entity instanceof NpcEntity) {
           NpcEntity npcEntity = (NpcEntity) entity;
+          npcEntity.setCustomNameVisible(msg.isNameVisible);
           npcEntity.setCustomName(new StringTextComponent(msg.name));
           npcEntity.setTexture(msg.texture);
           npcEntity.setSlim(msg.isSlim);

@@ -19,7 +19,7 @@ public class SSendFunctionName {
   }
 
   public static SSendFunctionName decode(PacketBuffer buf) {
-    return new SSendFunctionName(buf.readString(51));
+    return new SSendFunctionName(buf.readString(250));
   }
 
   public static void handle(SSendFunctionName msg, Supplier<NetworkEvent.Context> ctx) {

@@ -2,7 +2,7 @@ package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import flash.npcmod.client.gui.screen.DialogueScreen;
+import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.widget.Widget;

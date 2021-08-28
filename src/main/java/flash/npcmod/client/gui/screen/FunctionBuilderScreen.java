@@ -31,9 +31,12 @@ public class FunctionBuilderScreen extends Screen {
   private TextFieldWidget callableField;
   private Button addCallableButton;
   private Button confirmButton;
+  private Button[] removeCallableButtons;
 
   private static int maxCallables;
   private static final int lineHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT+2;
+
+  private static final String NAME = "Name: ", PARAMNAMES = "Parameter Names: ", RUNNABLES = "Runnables: ";
 
   private int scrollY;
 
@@ -53,25 +56,27 @@ public class FunctionBuilderScreen extends Screen {
 
   @Override
   protected void init() {
-    this.nameField = this.addButton(new TextFieldWidget(font, 5, 5, 100, 20, StringTextComponent.EMPTY));
+    this.nameField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(NAME), 5, 100, 20, StringTextComponent.EMPTY));
     this.nameField.setResponder(this::setName);
     this.nameField.setValidator(paramFilter);
     this.nameField.setMaxStringLength(50);
     this.nameField.setText(this.name);
 
-    this.parametersField = this.addButton(new TextFieldWidget(font, 5, 30, 100, 20, StringTextComponent.EMPTY));
+    this.parametersField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(PARAMNAMES), 30, 100, 20, StringTextComponent.EMPTY));
     this.parametersField.setResponder(this::setParameterNames);
     this.parametersField.setValidator(paramFilter);
     this.parametersField.setMaxStringLength(100);
     this.parametersField.setText(this.parameterNames);
 
-    this.callableField = this.addButton(new TextFieldWidget(font, 5, 55, 100, 20, StringTextComponent.EMPTY));
+    this.callableField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(RUNNABLES), 55, 100, 20, StringTextComponent.EMPTY));
     this.callableField.setResponder(this::setCallable);
     this.callableField.setMaxStringLength(250);
     this.callableField.setText("");
 
-    this.addCallableButton = this.addButton(new Button(125, 55, 20, 20, new StringTextComponent("+"), btn -> {
-      this.addCallable();
+    this.addCallableButton = this.addButton(new Button(115+font.getStringWidth(RUNNABLES), 55, 20, 20, new StringTextComponent("+"), btn -> {
+      if (canAddCallable())
+        this.callables.add(callable);
+      this.callableField.setText("");
     }));
     this.addCallableButton.active = this.canAddCallable();
 
@@ -82,12 +87,13 @@ public class FunctionBuilderScreen extends Screen {
     this.confirmButton.active = this.name.length() > 0 && this.callables.size() > 0;
 
     maxCallables = (height-110)/lineHeight;
-    int size = this.callables.size();
-    for (int i = 0; i < (size > maxCallables ? maxCallables : size); i++) {
+    removeCallableButtons = new Button[maxCallables];
+    for (int i = 0; i < maxCallables; i++) {
       int j = i;
-      this.addButton(new Button(5, 78+i*lineHeight, 11, 11, new StringTextComponent("-"), btn -> {
-        this.removeCallable(j+scrollY);
+      removeCallableButtons[i] = this.addButton(new Button(5, 78+i*lineHeight, 11, 11, new StringTextComponent("-"), btn -> {
+        this.removeCallable(j);
       }));
+      removeCallableButtons[i].visible = false;
     }
   }
 
@@ -95,18 +101,10 @@ public class FunctionBuilderScreen extends Screen {
     return this.callable.startsWith("function:") || this.callable.startsWith("/");
   }
 
-  private void addCallable() {
-    if (canAddCallable()) {
-      this.callables.add(callable);
-      super.init(minecraft, width, height);
-    }
-  }
-
   private void removeCallable(int i) {
-    if (i >= 0 && i < this.callables.size()) {
-      scrollY = MathHelper.clamp(scrollY-1, 0, this.callables.size());
-      this.callables.remove(i);
-      super.init(minecraft, width, height);
+    if (i+scrollY < this.callables.size()) {
+      this.callables.remove(i+scrollY);
+      scrollY = clampScroll(scrollY-1);
     }
   }
 
@@ -131,6 +129,10 @@ public class FunctionBuilderScreen extends Screen {
     this.addCallableButton.active = canAddCallable();
 
     this.confirmButton.active = this.name.length() > 0 && this.callables.size() > 0;
+
+    for (int i = 0; i < removeCallableButtons.length; i++) {
+      removeCallableButtons[i].visible = callables.size() > i+scrollY;
+    }
   }
 
   @Override
@@ -138,13 +140,14 @@ public class FunctionBuilderScreen extends Screen {
     this.renderBackground(matrixStack);
 
     int center = (20-font.FONT_HEIGHT)/2;
-    drawString(matrixStack, font, "name", 110, 6+center, 0xFFFFFF);
-    drawString(matrixStack, font, "parameter names", 110, 31+center, 0xFFFFFF);
+    drawString(matrixStack, font, NAME, 5, 5+center, 0xFFFFFF);
+    drawString(matrixStack, font, PARAMNAMES, 5, 30+center, 0xFFFFFF);
+    drawString(matrixStack, font, RUNNABLES, 5, 55+center, 0xFFFFFF);
 
     int size = this.callables.size();
-    for (int i = 0; i < (size > maxCallables ? maxCallables : size); i++) {
-      String text = callables.get(i+scrollY);
-      drawString(matrixStack, font, text, 20, 80+i*lineHeight, 0xFFFFFF);
+    for (int i = 0; i < Math.min(size, maxCallables); i++) {
+      if (callables.size() > i+scrollY)
+        drawString(matrixStack, font, callables.get(i+scrollY), 20, 80 + i * lineHeight, 0xFFFFFF);
     }
 
     super.render(matrixStack, mouseX, mouseY, partialTicks);
@@ -162,12 +165,10 @@ public class FunctionBuilderScreen extends Screen {
 
   public int clampScroll(int newScroll) {
     int max = this.callables.size()-maxCallables;
-    if (max > 0) {
+    if (max > 0)
       return MathHelper.clamp(newScroll, 0, max);
-    }
-    else {
-      return scrollY;
-    }
+    else
+      return 0;
   }
 
   private String build() {

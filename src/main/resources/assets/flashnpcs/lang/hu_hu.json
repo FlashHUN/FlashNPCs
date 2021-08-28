@@ -1,0 +1,23 @@
+﻿{
+  "key.categories.flashnpcs": "Flash's NPCs",
+  "key.quest_log": "Küldetések",
+  "key.untrack": "Küldetés követésének befejezése",
+
+  "itemGroup.flashnpcs": "Flash's NPCs",
+
+  "item.flashnpcs.npc_editor": "Npc Szerkesztő",
+  "item.flashnpcs.quest_editor": "Küldetés Szerkesztő",
+
+  "entity.flashnpcs.npc": "NPC",
+
+  "msg.flashnpcs.objectivecomplete": "Cél Teljesítve!",
+
+  "screen.trades.title": "%s Cseréi",
+  "screen.quest_log.title": "Küldetések",
+  "screen.quest_log.objectives": "Célok:",
+  "screen.quest_log.reward": "Jutalom:",
+  "screen.quest_log.reward.xp": "TP: %s",
+  "screen.quest_log.reward.items": "Tárgyak:",
+  "screen.quest_log.track": "Követés",
+  "screen.quest_log.abandon": "Feladás"
+}

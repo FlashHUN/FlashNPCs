@@ -16,11 +16,14 @@ import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@OnlyIn(Dist.CLIENT)
 public class NpcBuilderScreen extends Screen {
 
   private NpcEntity npcEntity;
@@ -28,13 +31,13 @@ public class NpcBuilderScreen extends Screen {
   private String dialogue;
   private int textColor;
   private String texture;
-  private boolean isSlim;
+  private boolean isSlim, isNameVisible;
   private ItemStack[] items;
 
   private TextFieldWidget nameField, dialogueField, textureField;
   public TextFieldWidget redField, greenField, blueField;
-  private CheckboxButton slimCheckBox;
-  private Button confirmButton, inventoryButton;
+  private CheckboxButton slimCheckBox, nameVisibleCheckbox;
+  private Button confirmButton, inventoryButton, tradesButton;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
 
   private int r, g, b;
@@ -70,13 +73,14 @@ public class NpcBuilderScreen extends Screen {
     this.npcEntity = npcEntity;
 
     this.name = npcEntity.getName().getString();
+    this.isNameVisible = npcEntity.isCustomNameVisible();
     this.texture = npcEntity.getTexture();
     this.isSlim = npcEntity.isSlim();
     this.dialogue = npcEntity.getDialogue();
     this.textColor = npcEntity.getTextColor();
-    this.items = new ItemStack[]{ npcEntity.getHeldItemMainhand(), npcEntity.getHeldItemOffhand(),
+    this.items = new ItemStack[]{npcEntity.getHeldItemMainhand(), npcEntity.getHeldItemOffhand(),
         npcEntity.getItemStackFromSlot(EquipmentSlotType.HEAD), npcEntity.getItemStackFromSlot(EquipmentSlotType.CHEST),
-        npcEntity.getItemStackFromSlot(EquipmentSlotType.LEGS), npcEntity.getItemStackFromSlot(EquipmentSlotType.FEET) };
+        npcEntity.getItemStackFromSlot(EquipmentSlotType.LEGS), npcEntity.getItemStackFromSlot(EquipmentSlotType.FEET)};
 
     this.r = ColorUtil.hexToR(textColor);
     this.g = ColorUtil.hexToG(textColor);
@@ -90,6 +94,8 @@ public class NpcBuilderScreen extends Screen {
     this.nameField.setResponder(this::setName);
     this.nameField.setMaxStringLength(200);
     this.nameField.setText(this.name);
+
+    this.nameVisibleCheckbox = this.addButton(new CheckboxButton(minX + 130 + font.getStringWidth("Visible? "), 5, 20, 20, StringTextComponent.EMPTY, isNameVisible));
 
     this.textureField = this.addButton(new TextFieldWidget(font, minX, 30, 120, 20, StringTextComponent.EMPTY));
     this.textureField.setResponder(this::setTexture);
@@ -106,35 +112,40 @@ public class NpcBuilderScreen extends Screen {
     this.slimCheckBox = this.addButton(new CheckboxButton(minX + 130 + font.getStringWidth("Slim? "), 30, 20, 20, StringTextComponent.EMPTY, isSlim));
 
     this.redSlider = this.addButton(new ColorSliderWidget(this, minX, 85, 20, 100, ColorSliderWidget.Color.RED));
-    this.greenSlider = this.addButton(new ColorSliderWidget(this, minX+30, 85, 20, 100, ColorSliderWidget.Color.GREEN));
-    this.blueSlider = this.addButton(new ColorSliderWidget(this, minX+60, 85, 20, 100, ColorSliderWidget.Color.BLUE));
+    this.greenSlider = this.addButton(new ColorSliderWidget(this, minX + 30, 85, 20, 100, ColorSliderWidget.Color.GREEN));
+    this.blueSlider = this.addButton(new ColorSliderWidget(this, minX + 60, 85, 20, 100, ColorSliderWidget.Color.BLUE));
 
-    this.redField = this.addButton(new TextFieldWidget(font, minX-5, 190, 30, 20, StringTextComponent.EMPTY));
+    this.redField = this.addButton(new TextFieldWidget(font, minX - 5, 190, 30, 20, StringTextComponent.EMPTY));
     this.redField.setResponder(this::setRFromString);
     this.redField.setValidator(colorFilter);
     this.redField.setMaxStringLength(3);
     this.redField.setText(String.valueOf(r));
 
-    this.greenField = this.addButton(new TextFieldWidget(font, minX+25, 190, 30, 20, StringTextComponent.EMPTY));
+    this.greenField = this.addButton(new TextFieldWidget(font, minX + 25, 190, 30, 20, StringTextComponent.EMPTY));
     this.greenField.setResponder(this::setGFromString);
     this.greenField.setValidator(colorFilter);
     this.greenField.setMaxStringLength(3);
     this.greenField.setText(String.valueOf(g));
 
-    this.blueField = this.addButton(new TextFieldWidget(font, minX+55, 190, 30, 20, StringTextComponent.EMPTY));
+    this.blueField = this.addButton(new TextFieldWidget(font, minX + 55, 190, 30, 20, StringTextComponent.EMPTY));
     this.blueField.setResponder(this::setBFromString);
     this.blueField.setValidator(colorFilter);
     this.blueField.setMaxStringLength(3);
     this.blueField.setText(String.valueOf(b));
 
-    this.confirmButton = this.addButton(new Button(width-60, height-20, 60, 20, new StringTextComponent("Confirm"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
-      closeScreen();
+    this.confirmButton = this.addButton(new Button(width - 60, height - 20, 60, 20, new StringTextComponent("Confirm"), btn -> {
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      minecraft.displayGuiScreen(null);
     }));
 
-    this.inventoryButton = this.addButton(new Button(width-60, height-40, 60, 20, new StringTextComponent("Inventory"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
-      PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getEntityId()));
+    this.inventoryButton = this.addButton(new Button(width - 60, height - 40, 60, 20, new StringTextComponent("Inventory"), btn -> {
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getEntityId(), CRequestContainer.ContainerType.NPCINVENTORY));
+    }));
+
+    this.tradesButton = this.addButton(new Button(width - 60, height - 60, 60, 20, new StringTextComponent("Trades"), btn -> {
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getEntityId(), CRequestContainer.ContainerType.TRADE_EDITOR));
     }));
   }
 
@@ -166,7 +177,8 @@ public class NpcBuilderScreen extends Screen {
     } else {
       try {
         r = MathHelper.clamp(Integer.parseInt(s), 0, 255);
-      } catch (NumberFormatException e) {}
+      } catch (NumberFormatException e) {
+      }
     }
     redSlider.updateColorY();
     this.textColor = ColorUtil.rgbToHex(r, g, b);
@@ -187,7 +199,8 @@ public class NpcBuilderScreen extends Screen {
     } else {
       try {
         g = MathHelper.clamp(Integer.parseInt(s), 0, 255);
-      } catch (NumberFormatException e) {}
+      } catch (NumberFormatException e) {
+      }
     }
     greenSlider.updateColorY();
     this.textColor = ColorUtil.rgbToHex(r, g, b);
@@ -208,7 +221,8 @@ public class NpcBuilderScreen extends Screen {
     } else {
       try {
         b = MathHelper.clamp(Integer.parseInt(s), 0, 255);
-      } catch (NumberFormatException e) {}
+      } catch (NumberFormatException e) {
+      }
     }
     blueSlider.updateColorY();
     this.textColor = ColorUtil.rgbToHex(r, g, b);
@@ -218,6 +232,8 @@ public class NpcBuilderScreen extends Screen {
   public void tick() {
     this.isSlim = slimCheckBox.isChecked();
     npcEntity.setSlim(isSlim);
+    this.isNameVisible = nameVisibleCheckbox.isChecked();
+    npcEntity.setCustomNameVisible(isNameVisible);
   }
 
   @Override
@@ -226,20 +242,21 @@ public class NpcBuilderScreen extends Screen {
 
     // Render the NPC on screen
     {
-      int x = width-60;
-      int y = height/4*3;
-      int scale = height/3;
+      int x = width - 60;
+      int y = height / 4 * 3;
+      int scale = height / 3;
       InventoryScreen.drawEntityOnScreen(x, y, scale, 40, -20, npcEntity);
     }
 
-    int center = (20-font.FONT_HEIGHT)/2;
-    drawString(matrixStack, font, "Name: ", 5, 5+center, 0xFFFFFF);
-    drawString(matrixStack, font, "Texture: ", 5, 30+center, 0xFFFFFF);
-    drawString(matrixStack, font, "Slim? ", minX + 130, 30+center, 0xFFFFFF);
+    int center = (20 - font.FONT_HEIGHT) / 2;
+    drawString(matrixStack, font, "Name: ", 5, 5 + center, 0xFFFFFF);
+    drawString(matrixStack, font, "Visible? ", minX + 130, 5 + center, 0xFFFFFF);
+    drawString(matrixStack, font, "Texture: ", 5, 30 + center, 0xFFFFFF);
+    drawString(matrixStack, font, "Slim? ", minX + 130, 30 + center, 0xFFFFFF);
 
-    drawString(matrixStack, font, "Dialogue: ", 5, 55+center, 0xFFFFFF);
+    drawString(matrixStack, font, "Dialogue: ", 5, 55 + center, 0xFFFFFF);
 
-    drawString(matrixStack, font, "Text Color: ", 5, 85+(100-font.FONT_HEIGHT)/2, 0xFFFFFF);
+    drawString(matrixStack, font, "Text Color: ", 5, 85 + (100 - font.FONT_HEIGHT) / 2, 0xFFFFFF);
 
     fill(matrixStack, minX + 99, 121, minX + 126, 147, 0xFF000000);
     fill(matrixStack, minX + 100, 122, minX + 125, 146, ColorUtil.hexToHexA(textColor));

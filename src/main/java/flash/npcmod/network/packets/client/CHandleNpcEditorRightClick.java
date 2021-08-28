@@ -8,6 +8,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.shapes.VoxelShape;
 import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -69,8 +70,9 @@ public class CHandleNpcEditorRightClick {
           // If we right click on a block, create a new NPC and start editing it
           NpcEntity newNpc = EntityInit.NPC_ENTITY.get().create(sender.world);
           BlockPos pos = msg.pos;
-          newNpc.setPosition(pos.getX()+0.5, pos.getY()+1.5, pos.getZ()+0.5);
-          // TODO entity property for default position, so the npc can teleport back every X ticks, in case it was moved
+          VoxelShape collisionShape = sender.world.getBlockState(pos).getCollisionShape(sender.world, pos);
+          double blockHeight = collisionShape.isEmpty() ? 0 : collisionShape.getBoundingBox().maxY;
+          newNpc.setPosition(pos.getX()+0.5, pos.getY()+blockHeight, pos.getZ()+0.5);
           sender.world.addEntity(newNpc);
           PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.EDITNPC, "", newNpc.getEntityId()), sender);
         }

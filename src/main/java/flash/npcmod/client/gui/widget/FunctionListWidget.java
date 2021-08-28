@@ -2,7 +2,7 @@ package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import flash.npcmod.client.gui.dialogue.DialogueNode;
-import flash.npcmod.client.gui.screen.DialogueBuilderScreen;
+import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.math.MathHelper;
@@ -52,7 +52,7 @@ public class FunctionListWidget {
       width = Math.max(width, minecraft.fontRenderer.getStringWidth(name)+4);
     }
     x = screen.width/2-width/2;
-    height = ClientDialogueUtil.FUNCTION_NAMES.size()*(minecraft.fontRenderer.FONT_HEIGHT+2);
+    height = Math.min(ClientDialogueUtil.FUNCTION_NAMES.size(), maxSize)*(minecraft.fontRenderer.FONT_HEIGHT+2);
     y = screen.height/2-height/2;
   }
 
@@ -111,7 +111,7 @@ public class FunctionListWidget {
     int minY = lineHeight;
     int size = ClientDialogueUtil.FUNCTION_NAMES.size();
     for (int i = 0; i < (size > maxSize ? maxSize : size); i++) {
-      boolean isSelected = ClientDialogueUtil.FUNCTION_NAMES.get(MathHelper.clamp(i-scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1)).equals(this.selectedFunction);
+      boolean isSelected = ClientDialogueUtil.FUNCTION_NAMES.get(MathHelper.clamp(i+scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1)).equals(this.selectedFunction);
       fill(matrixStack, 1, minY-(i==0 ? 0 : 1*i), width-1, minY+1-(i==0 ? 0 : 1*i), black);
       if (isSelected)
         fill(matrixStack, 1, minY-lineHeight+(i == 0 ? 1 : (i-1)*-1), width-1, minY-i, green);
@@ -123,7 +123,7 @@ public class FunctionListWidget {
   private void drawText(MatrixStack matrixStack) {
     int size = ClientDialogueUtil.FUNCTION_NAMES.size();
     for (int i = 0; i < (size > maxSize ? maxSize : size); i++) {
-      String name = ClientDialogueUtil.FUNCTION_NAMES.get(i);
+      String name = ClientDialogueUtil.FUNCTION_NAMES.get(i+scrollY);
       int y = 2+i*lineHeight;
       minecraft.fontRenderer.drawString(matrixStack, name, width/2-minecraft.fontRenderer.getStringWidth(name)/2, y, 0x000000);
     }
@@ -147,9 +147,9 @@ public class FunctionListWidget {
   }
 
   public void clickedOnFunction(int i) {
-    int index = MathHelper.clamp(i-scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1);
+    int index = MathHelper.clamp(i+scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1);
     String newSelection = ClientDialogueUtil.FUNCTION_NAMES.get(index);
-    if (this.selectedFunction.equals(newSelection)) {
+    if (this.selectedFunction.equals(newSelection) || i == -1) {
       this.selectedFunction = "";
     } else {
       this.selectedFunction = newSelection;
@@ -165,12 +165,16 @@ public class FunctionListWidget {
     this.selectedFunction = "";
   }
 
+  public String getSelectedFunction() {
+    return selectedFunction;
+  }
+
   public void onScrolled(double delta) {
     if (this.isVisible()) {
       if (delta > 0) {
-        this.scrollY = clampScroll(scrollY + 1);
-      } else {
         this.scrollY = clampScroll(scrollY - 1);
+      } else {
+        this.scrollY = clampScroll(scrollY + 1);
       }
     }
   }

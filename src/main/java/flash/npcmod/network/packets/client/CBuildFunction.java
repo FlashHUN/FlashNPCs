@@ -22,7 +22,7 @@ public class CBuildFunction {
   }
 
   public static CBuildFunction decode(PacketBuffer buf) {
-    return new CBuildFunction(buf.readString(51),
+    return new CBuildFunction(buf.readString(250),
         buf.readString(100000));
   }
 

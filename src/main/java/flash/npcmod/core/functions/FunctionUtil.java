@@ -2,7 +2,8 @@ package flash.npcmod.core.functions;
 
 import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
-import flash.npcmod.core.functions.defaultfunctions.MoveToDialogueFunction;
+import flash.npcmod.core.functions.defaultfunctions.*;
+import flash.npcmod.entity.NpcEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import org.apache.commons.io.FilenameUtils;
 
@@ -12,12 +13,28 @@ import java.util.List;
 
 public class FunctionUtil {
 
-  public static final List<Function> FUNCTIONS = new ArrayList<>();
+  public static final List<AbstractFunction> FUNCTIONS = new ArrayList<>();
 
-  private static final MoveToDialogueFunction MOVE_TO_DIALOGUE_FUNCTION = new MoveToDialogueFunction();
+  private static final AcceptQuestFunction ACCEPT_QUEST = new AcceptQuestFunction();
+  private static final CloseDialogueFunction CLOSE_DIALOGUE = new CloseDialogueFunction();
+  private static final MoveOnAcceptedQuestFunction MOVE_ON_ACCEPTED_QUEST = new MoveOnAcceptedQuestFunction();
+  private static final MoveOnCompleteQuestFunction MOVE_ON_COMPLETE_QUEST = new MoveOnCompleteQuestFunction();
+  private static final MoveOnScoreboardFunction MOVE_ON_SCOREBOARD = new MoveOnScoreboardFunction();
+  private static final MoveToDialogueFunction MOVE_TO_DIALOGUE = new MoveToDialogueFunction();
+  private static final OpenTradesFunction OPEN_TRADES = new OpenTradesFunction();
+  private static final PlaySoundFunction PLAY_SOUND = new PlaySoundFunction();
+  private static final RandomOptionFunction RANDOM_OPTION = new RandomOptionFunction();
 
   private static void addDefaultFunctions() {
-    FUNCTIONS.add(MOVE_TO_DIALOGUE_FUNCTION);
+    FUNCTIONS.add(ACCEPT_QUEST);
+    FUNCTIONS.add(CLOSE_DIALOGUE);
+    FUNCTIONS.add(MOVE_ON_ACCEPTED_QUEST);
+    FUNCTIONS.add(MOVE_ON_COMPLETE_QUEST);
+    FUNCTIONS.add(MOVE_ON_SCOREBOARD);
+    FUNCTIONS.add(MOVE_TO_DIALOGUE);
+    FUNCTIONS.add(OPEN_TRADES);
+    FUNCTIONS.add(PLAY_SOUND);
+    FUNCTIONS.add(RANDOM_OPTION);
   }
 
   public static void build(String name, String function) {
@@ -49,7 +66,7 @@ public class FunctionUtil {
       fileWriter.flush();
       fileWriter.close();
 
-      Function newFunction = new Function(name, paramNames, callables.toArray(new String[0]));
+      AbstractFunction newFunction = new Function(name, paramNames, callables.toArray(new String[0]));
       if (FUNCTIONS.contains(newFunction)) {
         FUNCTIONS.remove(newFunction);
       }
@@ -88,7 +105,7 @@ public class FunctionUtil {
         lines.add(line);
       }
 
-      Function function = new Function(name, paramNames, lines.toArray(new String[0]));
+      AbstractFunction function = new Function(name, paramNames, lines.toArray(new String[0]));
       if (FUNCTIONS.contains(function)) {
         FUNCTIONS.remove(function);
       }
@@ -105,7 +122,7 @@ public class FunctionUtil {
     return false;
   }
 
-  public static void callFromName(String name, ServerPlayerEntity sender) {
+  public static void callFromName(String name, ServerPlayerEntity sender, NpcEntity npcEntity) {
     name = name.replaceFirst("function:", "");
     String[] params = new String[0];
     if (name.contains("::")) {
@@ -116,9 +133,9 @@ public class FunctionUtil {
     }
 
     boolean found = false;
-    for (Function function : FUNCTIONS) {
+    for (AbstractFunction function : FUNCTIONS) {
       if (function.getName().equals(name)) {
-        function.call(params, sender);
+        function.call(params, sender, npcEntity);
         found = true;
         break;
       }
@@ -126,7 +143,7 @@ public class FunctionUtil {
 
     if (!found) {
       if (loadFunctionFile(name)) {
-        callFromName(name, sender);
+        callFromName(name, sender, npcEntity);
       }
     }
   }

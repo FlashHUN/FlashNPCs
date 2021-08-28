@@ -1,7 +1,23 @@
 {
+  "key.categories.flashnpcs": "Flash's NPCs",
+  "key.quest_log": "Quest Log",
+  "key.untrack": "Stop Tracking Quest",
+
   "itemGroup.flashnpcs": "Flash's NPCs",
 
   "item.flashnpcs.npc_editor": "Npc Editor",
+  "item.flashnpcs.quest_editor": "Quest Editor",
 
-  "entity.flashnpcs.npc": "NPC"
+  "entity.flashnpcs.npc": "NPC",
+
+  "msg.flashnpcs.objectivecomplete": "Objective Complete!",
+
+  "screen.trades.title": "%s's Trades",
+  "screen.quest_log.title": "Quest Log",
+  "screen.quest_log.objectives": "Objectives:",
+  "screen.quest_log.reward": "Reward:",
+  "screen.quest_log.reward.xp": "XP: %s",
+  "screen.quest_log.reward.items": "Items:",
+  "screen.quest_log.track": "Track",
+  "screen.quest_log.abandon": "Abandon"
 }

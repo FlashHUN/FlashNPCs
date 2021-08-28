@@ -1,4 +1,4 @@
-package flash.npcmod.client.gui.screen;
+package flash.npcmod.client.gui.screen.dialogue;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -132,7 +132,9 @@ public class DialogueBuilderScreen extends Screen {
         }
         editingNode.getDialogue().setText(this.newText);
         editingNode.getDialogue().setResponse(this.newResponse);
-        functionListWidget.setFunction();
+        if (functionListWidget.isVisible()) {
+          functionListWidget.setFunction();
+        }
         editingNode.calculateDimensions();
       }
       this.setNodeBeingEdited(null, EditType.NONE);
@@ -149,16 +151,19 @@ public class DialogueBuilderScreen extends Screen {
     this.nameField.setValidator(this.nameFilter);
     this.nameField.setMaxStringLength(50);
     this.nameField.setVisible(false);
+    this.nameField.setCanLoseFocus(true);
 
     this.textField = this.addButton(new TextFieldWidget(this.font, this.width/2-60, this.height/2-10, 120, 20, StringTextComponent.EMPTY));
     this.textField.setResponder(this::setNewText);
     this.textField.setMaxStringLength(500);
     this.textField.setVisible(false);
+    this.textField.setCanLoseFocus(true);
 
     this.responseField = this.addButton(new TextFieldWidget(this.font, this.width/2-60, this.height/2-10, 120, 20, StringTextComponent.EMPTY));
     this.responseField.setResponder(this::setNewResponse);
     this.responseField.setMaxStringLength(500);
     this.responseField.setVisible(false);
+    this.responseField.setCanLoseFocus(true);
 
     this.functionListWidget.calculatePositionAndDimensions();
     this.functionParamsField = this.addButton(new TextFieldWidget(this.font, width/2-60, height-44, 120, 20, StringTextComponent.EMPTY));
@@ -166,6 +171,7 @@ public class DialogueBuilderScreen extends Screen {
     this.functionParamsField.setValidator(this.nameFilter);
     this.functionParamsField.setMaxStringLength(100);
     this.functionParamsField.setVisible(false);
+    this.functionParamsField.setCanLoseFocus(true);
     this.functionListWidget.setVisible(false);
   }
 
@@ -200,6 +206,21 @@ public class DialogueBuilderScreen extends Screen {
       this.nameField.setText(node.getName());
       this.textField.setText(node.getText());
       this.responseField.setText(node.getResponse());
+      int i = -1;
+      if (!node.getFunction().isEmpty()) {
+        String[] splitFunction = node.getFunction().split("::");
+        String currentFunctionName = splitFunction[0];
+        for (int j = 0; j < ClientDialogueUtil.FUNCTION_NAMES.size(); j++) {
+          String function = ClientDialogueUtil.FUNCTION_NAMES.get(j);
+          if (function.startsWith(currentFunctionName)) {
+            i = j;
+            break;
+          }
+        }
+        this.functionListWidget.clickedOnFunction(i);
+        if (splitFunction.length == 2)
+          this.functionParamsField.setText(splitFunction[1]);
+      }
     } else {
       this.nameField.setText("");
       this.textField.setText("");
@@ -210,7 +231,6 @@ public class DialogueBuilderScreen extends Screen {
     this.nameField.setVisible(editType == EditType.NAME);
     this.textField.setVisible(editType == EditType.TEXT);
     this.responseField.setVisible(editType == EditType.RESPONSE);
-    this.functionParamsField.setVisible(editType == EditType.FUNCTION);
 
     this.functionListWidget.calculatePositionAndDimensions();
     this.functionListWidget.setEditingNode(node);
@@ -303,6 +323,8 @@ public class DialogueBuilderScreen extends Screen {
         node.hasConflictingName = false;
       }
     }
+
+    functionParamsField.visible = functionListWidget.isVisible() && functionListWidget.getSelectedFunction().contains("::");
   }
 
   @Override

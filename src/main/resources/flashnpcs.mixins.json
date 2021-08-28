@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "flashnpcs.refmap.json",
   "mixins": [
+    "NameTagMixin"
   ],
   "client": [
   ],

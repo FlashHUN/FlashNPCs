@@ -1,10 +1,17 @@
 package flash.npcmod.entity;
 
+import flash.npcmod.capability.quests.IQuestCapability;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.core.quests.QuestInstance;
+import flash.npcmod.core.trades.TradeOffer;
+import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.item.NpcEditorItem;
 import flash.npcmod.network.PacketDispatcher;
+import flash.npcmod.network.packets.client.CRequestContainer;
 import flash.npcmod.network.packets.client.CRequestDialogue;
 import flash.npcmod.network.packets.client.CRequestDialogueEditor;
+import flash.npcmod.network.packets.server.SCompleteQuest;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.attributes.AttributeModifierMap;
 import net.minecraft.entity.ai.attributes.Attributes;
@@ -22,8 +29,12 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.IServerWorld;
 import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NpcEntity extends AmbientEntity {
 
@@ -33,15 +44,20 @@ public class NpcEntity extends AmbientEntity {
   private static final DataParameter<Boolean> SLIM = EntityDataManager.createKey(NpcEntity.class, DataSerializers.BOOLEAN);
   private static final DataParameter<BlockPos> ORIGIN = EntityDataManager.createKey(NpcEntity.class, DataSerializers.BLOCK_POS);
 
+  @Nullable
+  private TradeOffers tradeOffers;
+  public static final int MAX_OFFERS = 12;
+
   private int teleportCounter;
   private static final int MAX_TELEPORT_COUNTER = 20*20; // 20 ticks (1 second) * amount of seconds
 
   public NpcEntity(EntityType<? extends AmbientEntity> type, World world) {
     super(type, world);
     teleportCounter = 0;
+    this.enablePersistence();
   }
 
-  private NpcEntity(World world) {
+  protected NpcEntity(World world) {
     this(EntityInit.NPC_ENTITY.get(), world);
   }
 
@@ -57,7 +73,7 @@ public class NpcEntity extends AmbientEntity {
     this.dataManager.register(DIALOGUE, "");
     this.dataManager.register(TEXTCOLOR, 0xFFFFFF);
     this.dataManager.register(TEXTURE, "");
-    this.dataManager.register(SLIM, Boolean.FALSE);
+    this.dataManager.register(SLIM, false);
     this.dataManager.register(ORIGIN, BlockPos.ZERO);
   }
 
@@ -65,20 +81,49 @@ public class NpcEntity extends AmbientEntity {
   public void writeAdditional(CompoundNBT compound) {
     super.writeAdditional(compound);
     compound.putString("dialogue", getDialogue());
+    compound.putBoolean("nameVisibility", isCustomNameVisible());
     compound.putInt("textColor", getTextColor());
     compound.putString("texture", getTexture());
     compound.putBoolean("slim", isSlim());
     compound.put("origin", NBTUtil.writeBlockPos(getOrigin()));
+
+    TradeOffers tradeOffers = this.getOffers();
+    if (!tradeOffers.isEmpty()) {
+      compound.put("Offers", tradeOffers.write());
+    }
   }
 
   @Override
   public void readAdditional(CompoundNBT compound) {
     super.readAdditional(compound);
     setDialogue(compound.getString("dialogue"));
+    setCustomNameVisible(compound.getBoolean("nameVisibility"));
     setTextColor(compound.getInt("textColor"));
     setTexture(compound.getString("texture"));
     setSlim(compound.getBoolean("slim"));
     setOrigin(NBTUtil.readBlockPos(compound.getCompound("origin")));
+
+    if (compound.contains("Offers", 10)) {
+      this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
+    }
+  }
+
+  public TradeOffers getOffers() {
+    if (this.tradeOffers == null) {
+      this.tradeOffers = new TradeOffers();
+    }
+    if (this.tradeOffers.size() < MAX_OFFERS) {
+      for (int i = this.tradeOffers.size(); i < MAX_OFFERS; i++) {
+        this.tradeOffers.add(new TradeOffer());
+      }
+    }
+
+    return this.tradeOffers;
+  }
+
+  @OnlyIn(Dist.CLIENT)
+  public void setTradeOffers(TradeOffers tradeOffers) {
+    this.tradeOffers = tradeOffers;
   }
 
   public String getDialogue() {
@@ -180,20 +225,49 @@ public class NpcEntity extends AmbientEntity {
   @Override
   public ActionResultType applyPlayerInteraction(PlayerEntity player, Vector3d vec, Hand hand) {
     if (hand.equals(Hand.MAIN_HAND)) {
-      String name = getDialogue();
-      // If we have a dialogue bound to the npc
-      if (!name.isEmpty()) {
-        if (!(player.getHeldItem(hand).getItem() instanceof NpcEditorItem)) {
-          // If the player doesn't have an NpcEditorItem in their hand, send them the dialogue and open the screen for it
-          if (player.world.isRemote) {
-            PacketDispatcher.sendToServer(new CRequestDialogue(name, this.getEntityId()));
+      if (player != null && player.isAlive()) {
+        IQuestCapability questCapability = QuestCapabilityProvider.getCapability(player);
+
+        List<QuestInstance> markedForCompletion = new ArrayList<>();
+
+        for (QuestInstance questInstance : questCapability.getAcceptedQuests()) {
+          if (questInstance.getPickedUpFrom().equals(this.getUniqueID()) && questInstance.getQuest().canComplete()) {
+            markedForCompletion.add(questInstance);
           }
-        } else {
-          // Otherwise if they're opped, in creative mode, and sneaking, send them the dialogue editor and open the screen for it
-          if (player.hasPermissionLevel(4) && player.isCreative() && player.isSneaking()) {
-            if (player.world.isRemote) {
-              PacketDispatcher.sendToServer(new CRequestDialogue(name, this.getEntityId()));
-              PacketDispatcher.sendToServer(new CRequestDialogueEditor(name, this.getEntityId()));
+        }
+
+        for (QuestInstance questInstance : markedForCompletion) {
+          questCapability.completeQuest(questInstance);
+          if (!world.isRemote) {
+            PacketDispatcher.sendTo(new SCompleteQuest(questInstance.getQuest().getName(), questInstance.getPickedUpFrom()), player);
+          }
+        }
+
+        if (markedForCompletion.isEmpty()) {
+          String name = getDialogue();
+          // If we have a dialogue bound to the npc
+          if (!name.isEmpty()) {
+            if (!(player.getHeldItem(hand).getItem() instanceof NpcEditorItem)) {
+              // If the player doesn't have an NpcEditorItem in their hand, send them the dialogue and open the screen for it
+              if (player.world.isRemote) {
+                PacketDispatcher.sendToServer(new CRequestDialogue(name, this.getEntityId()));
+              }
+            } else {
+              // Otherwise if they're opped, in creative mode, and sneaking, send them the dialogue editor and open the screen for it
+              if (player.hasPermissionLevel(4) && player.isCreative() && player.isSneaking()) {
+                if (player.world.isRemote) {
+                  PacketDispatcher.sendToServer(new CRequestDialogue(name, this.getEntityId()));
+                  PacketDispatcher.sendToServer(new CRequestDialogueEditor(name, this.getEntityId()));
+                }
+              }
+            }
+          } else if (!this.getOffers().isEmpty()) {
+            // If the NPC has trades, they don't have any dialogue, and we don't have the requirements to edit the npc in any way,
+            // open the trades gui for this npc
+            if (!(player.getHeldItem(hand).getItem() instanceof NpcEditorItem && player.hasPermissionLevel(4) && player.isCreative())) {
+              if (player.world.isRemote) {
+                PacketDispatcher.sendToServer(new CRequestContainer(this.getEntityId(), CRequestContainer.ContainerType.TRADES));
+              }
             }
           }
         }

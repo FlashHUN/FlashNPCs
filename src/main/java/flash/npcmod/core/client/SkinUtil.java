@@ -30,7 +30,8 @@ public class SkinUtil {
     if (texture == null) {
       File file1 = new File(skinCacheDir, s.length() > 2 ? s.substring(0, 2) : "xx");
       File file2 = new File(file1, s);
-      DownloadingTexture downloadingtexture = new DownloadingTexture(file2, url, DefaultPlayerSkin.getDefaultSkinLegacy(), true, () -> { });
+      DownloadingTexture downloadingtexture = new DownloadingTexture(file2, url, DefaultPlayerSkin.getDefaultSkinLegacy(), true, () -> {
+      });
       minecraft.getTextureManager().loadTexture(resourcelocation, downloadingtexture);
     }
 

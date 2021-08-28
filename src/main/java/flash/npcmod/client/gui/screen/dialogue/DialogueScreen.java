@@ -1,4 +1,4 @@
-package flash.npcmod.client.gui.screen;
+package flash.npcmod.client.gui.screen.dialogue;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import flash.npcmod.client.gui.widget.DialogueDisplayWidget;
@@ -7,6 +7,7 @@ import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CCallFunction;
+import flash.npcmod.network.packets.client.CRequestQuestCapabilitySync;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.inventory.InventoryScreen;
@@ -17,9 +18,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueScreen extends Screen {
+
+  private static final Random RND = new Random();
 
   public List<String> displayedText;
   private String[] currentOptions, currentOptionNames;
@@ -45,7 +49,17 @@ public class DialogueScreen extends Screen {
 
     playerName = Minecraft.getInstance().player.getName().getString();
 
-    addDisplayedNPCText(ClientDialogueUtil.getCurrentText());
+    if (!ClientDialogueUtil.getCurrentText().isEmpty())
+      addDisplayedNPCText(ClientDialogueUtil.getCurrentText());
+
+    if (!ClientDialogueUtil.getCurrentFunction().isEmpty())
+      PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction(), npcEntity.getEntityId()));
+
+    PacketDispatcher.sendToServer(new CRequestQuestCapabilitySync());
+  }
+
+  public String getNpcName() {
+    return npcEntity.getName().getString();
   }
 
   public int getNpcTextColor() {
@@ -84,7 +98,7 @@ public class DialogueScreen extends Screen {
       for (int i = 0; i < currentOptionNames.length; i++) {
         String name = currentOptionNames[i];
         String text = currentOptions[i];
-        this.addButton(new TextButton(x, y, width, new StringTextComponent(text.replaceAll("@p", playerName).replaceAll("@npc", npcEntity.getName().getString())), btn -> {
+        this.addButton(new TextButton(x, y, width, new StringTextComponent(text.replaceAll("@p", playerName).replaceAll("@npc", getNpcName())), btn -> {
           if (!text.isEmpty()) {
             addDisplayedPlayerText(text);
           }
@@ -94,7 +108,7 @@ public class DialogueScreen extends Screen {
           }
           this.dialogueDisplayWidget.clampScroll(0);
           if (!ClientDialogueUtil.getCurrentFunction().isEmpty()) {
-            PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction()));
+            PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction(), this.npcEntity.getEntityId()));
           }
           resetOptionButtons();
         }));
@@ -103,16 +117,25 @@ public class DialogueScreen extends Screen {
     }
   }
 
+  public void chooseRandomOption() {
+    List<TextButton> options = new ArrayList<>();
+    this.buttons.forEach(btn -> {
+      if (btn instanceof TextButton) options.add((TextButton) btn);
+    });
+
+    options.get(RND.nextInt(options.size())).onPress();
+  }
+
   public void addDisplayedPlayerText(String text) {
     addDisplayedText(playerName, text);
   }
 
   public void addDisplayedNPCText(String text) {
-    addDisplayedText(this.npcEntity.getName().getString(), text);
+    addDisplayedText(getNpcName(), text);
   }
 
   private void addDisplayedText(String name, String text) {
-    String newText = name + ": " + text.replaceAll("@p", playerName).replaceAll("@npc", npcEntity.getName().getString());
+    String newText = name + ": " + text.replaceAll("@p", playerName).replaceAll("@npc", getNpcName());
     displayedText.add(newText);
   }
 

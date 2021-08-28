@@ -22,7 +22,7 @@ public class SSendDialogueEditor {
   }
 
   public static SSendDialogueEditor decode(PacketBuffer buf) {
-    return new SSendDialogueEditor(buf.readString(51), buf.readString(32767));
+    return new SSendDialogueEditor(buf.readString(51), buf.readString(CommonDialogueUtil.MAX_DIALOGUE_LENGTH));
   }
 
   public static void handle(SSendDialogueEditor msg, Supplier<NetworkEvent.Context> ctx) {

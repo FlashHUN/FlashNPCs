@@ -1,7 +1,6 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
-import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
@@ -41,8 +40,6 @@ public class CRequestDialogue {
     ctx.get().enqueueWork(() -> {
       ServerPlayerEntity sender = ctx.get().getSender();
 
-      FunctionUtil.loadAllFunctions();
-
       JSONObject dialogue = CommonDialogueUtil.loadDialogueFile(msg.name);
 
       if (dialogue != null) {
@@ -58,6 +55,9 @@ public class CRequestDialogue {
                 dialogueJson = CommonDialogueUtil.DEFAULT_DIALOGUE_JSON_HELLO_THERE;
                 break;
               }
+            }
+            if (npcEntity.getName().getString().equalsIgnoreCase(CommonDialogueUtil.KICK_GUM_NAME)) {
+              dialogueJson = CommonDialogueUtil.DEFAULT_DIALOGUE_JSON_KICK_GUM;
             }
           }
         }

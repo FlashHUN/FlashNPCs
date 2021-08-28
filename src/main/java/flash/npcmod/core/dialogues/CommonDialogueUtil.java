@@ -14,7 +14,10 @@ public class CommonDialogueUtil {
   public static final String DEFAULT_DIALOGUE_EDITOR_JSON = "{\"entries\":[{\"name\":\"init\",\"x\":10,\"y\":10},{\"name\":\"hello\",\"x\":150,\"y\":10}]}";
   public static final String DEFAULT_DIALOGUE_JSON_HELLO_THERE = "{\"name\":\"init\",\"text\":\"Hello there!\",\"children\":[{\"name\":\"generalKenobi\",\"text\":\"General Kenobi! You are a bold one. I'll deal with you Jedi slime myself.\",\"response\":\"Your move.\",\"children\":[{\"name\":\"youFool\",\"text\":\"You fool. I've been trained in your Jedi arts by Count Dooku.\",\"response\":\"[draws lightsaber]\"}]}]}";
   public static final String DEFAULT_DIALOGUE_EDITOR_JSON_HELLO_THERE = "{\"entries\":[{\"name\":\"init\",\"x\":10,\"y\":10},{\"name\":\"generalKenobi\",\"x\":150,\"y\":10},{\"name\":\"youFool\",\"x\":300,\"y\":10}]}";
+  public static final String DEFAULT_DIALOGUE_JSON_KICK_GUM = "{\"name\":\"init\",\"text\":\"It's Time To Kick Gum and Chew Ass. And I'm All Out Of Ass.\",\"children\":[]}";
+  public static final String DEFAULT_DIALOGUE_EDITOR_JSON_KICK_GUM = "{\"entries\":[{\"name\":\"init\",\"x\":10,\"y\":10}]}";
   public static final String[] HELLO_THERE_NAMES = new String[] { "Obi-Wan Kenobi", "Obi Wan Kenobi", "Obi-Wan", "Obi Wan", "Kenobi", "General Kenobi" };
+  public static final String KICK_GUM_NAME = "Dick Kickem";
 
   public static final int MAX_DIALOGUE_LENGTH = 100000;
 

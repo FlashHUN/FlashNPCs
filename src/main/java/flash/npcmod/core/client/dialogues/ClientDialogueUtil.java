@@ -1,10 +1,18 @@
 package flash.npcmod.core.client.dialogues;
 
 import flash.npcmod.Main;
+import flash.npcmod.capability.quests.IQuestCapability;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.core.FileUtil;
+import flash.npcmod.core.quests.QuestInstance;
+import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CRequestDialogue;
 import flash.npcmod.network.packets.client.CRequestDialogueEditor;
+import flash.npcmod.network.packets.client.CTalkObjectiveComplete;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.json.JSONArray;
@@ -129,6 +137,27 @@ public class ClientDialogueUtil {
       currentChildren = object.getJSONArray("children");
     } else {
       currentChildren = new JSONArray();
+    }
+
+    // Quest Talk Objective Check
+    if (Minecraft.getInstance().currentScreen instanceof DialogueScreen) {
+      DialogueScreen dialogueScreen = (DialogueScreen) Minecraft.getInstance().currentScreen;
+      PlayerEntity player = Minecraft.getInstance().player;
+      if (player != null && player.isAlive()) {
+        IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+        List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
+        acceptedQuests.forEach(questInstance -> {
+          questInstance.getQuest().getObjectives().forEach(objective -> {
+            if (objective.getType().equals(QuestObjective.ObjectiveType.Talk)) {
+              if (objective.getObjective().equals(dialogueScreen.getNpcName())
+                  && objective.getSecondaryObjective().equals(object.getString("name"))) {
+                String objectiveName = questInstance.getQuest().getName() + ":::" + objective.getName();
+                PacketDispatcher.sendToServer(new CTalkObjectiveComplete(objectiveName));
+              }
+            }
+          });
+        });
+      }
     }
   }
 

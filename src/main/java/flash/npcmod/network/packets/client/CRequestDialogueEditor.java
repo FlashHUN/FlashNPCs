@@ -1,7 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
-import flash.npcmod.core.functions.Function;
+import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -49,7 +49,7 @@ public class CRequestDialogueEditor {
       if (sender.hasPermissionLevel(4)) {
         // Send function names to player
         List<String> functionNames = new ArrayList<>();
-        for (Function function : FunctionUtil.FUNCTIONS) {
+        for (AbstractFunction function : FunctionUtil.FUNCTIONS) {
           String name = function.getName();
           String[] paramNames = function.getParamNames();
           if (paramNames.length > 0 && !paramNames[0].isEmpty()) {
@@ -81,6 +81,9 @@ public class CRequestDialogueEditor {
                   dialogueEditorJson = CommonDialogueUtil.DEFAULT_DIALOGUE_EDITOR_JSON_HELLO_THERE;
                   break;
                 }
+              }
+              if (npcEntity.getName().getString().equalsIgnoreCase(CommonDialogueUtil.KICK_GUM_NAME)) {
+                dialogueEditorJson = CommonDialogueUtil.DEFAULT_DIALOGUE_EDITOR_JSON_KICK_GUM;
               }
             }
           }

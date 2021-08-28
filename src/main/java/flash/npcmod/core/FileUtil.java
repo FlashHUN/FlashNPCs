@@ -50,7 +50,7 @@ public class FileUtil {
   }
 
   public static boolean shouldReadFromWorld() {
-    return Main.PROXY.isOnClient();
+    return Main.PROXY.shouldSaveInWorld();
   }
 
 }

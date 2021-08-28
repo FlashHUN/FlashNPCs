@@ -2,7 +2,7 @@ package flash.npcmod.client.gui.dialogue;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import flash.npcmod.Main;
-import flash.npcmod.client.gui.screen.DialogueBuilderScreen;
+import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.IReorderingProcessor;

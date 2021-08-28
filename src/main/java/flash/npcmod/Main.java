@@ -1,6 +1,12 @@
 package flash.npcmod;
 
+import flash.npcmod.capability.quests.IQuestCapability;
+import flash.npcmod.capability.quests.QuestCapability;
+import flash.npcmod.capability.quests.QuestCapabilityStorage;
+import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.entity.NpcEntity;
+import flash.npcmod.events.QuestEvents;
+import flash.npcmod.init.CommandInit;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.init.ItemInit;
 import flash.npcmod.network.PacketDispatcher;
@@ -8,9 +14,14 @@ import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
@@ -41,11 +52,15 @@ public class Main {
     // Register the setup method for modloading
     modEventBus.addListener(this::setup);
 
+    // Register the config
+    ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHolder.COMMON_SPEC);
+
     // Register all the DeferredRegisters
     ItemInit.ITEMS.register(modEventBus);
     EntityInit.ENTITIES.register(modEventBus);
 
     MinecraftForge.EVENT_BUS.register(this);
+    MinecraftForge.EVENT_BUS.register(new QuestEvents());
   }
 
   private void setup(final FMLCommonSetupEvent event) {
@@ -56,5 +71,12 @@ public class Main {
 
     // Register packets
     PacketDispatcher.registerMessages();
+
+    CapabilityManager.INSTANCE.register(IQuestCapability.class, new QuestCapabilityStorage(), QuestCapability::new);
+  }
+
+  @SubscribeEvent
+  public void registerCommands(RegisterCommandsEvent event) {
+    CommandInit.registerCommands(event.getDispatcher(), event.getEnvironment());
   }
 }

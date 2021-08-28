@@ -61,5 +61,7 @@ public class NpcEntityRenderer extends LivingRenderer<NpcEntity, PlayerModel<Npc
 
   @Override
   protected void renderName(NpcEntity entityIn, ITextComponent displayNameIn, MatrixStack matrixStackIn,
-                            IRenderTypeBuffer bufferIn, int packedLightIn) {}
+                            IRenderTypeBuffer bufferIn, int packedLightIn) {
+    if (entityIn.isCustomNameVisible()) super.renderName(entityIn, displayNameIn, matrixStackIn, bufferIn, packedLightIn);
+  }
 }

@@ -15,7 +15,7 @@ public class EntityInit {
 
   public static final RegistryObject<EntityType<NpcEntity>> NPC_ENTITY = ENTITIES.register("npc",
       () -> EntityType.Builder.create(NpcEntity::new, EntityClassification.MISC)
-          .size(0.6f, 1.8f).setShouldReceiveVelocityUpdates(true).setTrackingRange(52).disableSummoning()
+          .size(0.6f, 1.8f).setShouldReceiveVelocityUpdates(true).setTrackingRange(52)
           .build(new ResourceLocation(Main.MODID, "npc").toString()));
 
 }
