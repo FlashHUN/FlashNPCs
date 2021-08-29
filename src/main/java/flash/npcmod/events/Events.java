@@ -3,7 +3,11 @@ package flash.npcmod.events;
 import flash.npcmod.core.EntityUtil;
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.core.quests.CommonQuestUtil;
+import flash.npcmod.entity.NpcEntity;
+import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -23,6 +27,20 @@ public class Events {
     if (!hasLoadedEntities) {
       EntityUtil.loadAllEntitiesIntoEnum((World) event.getWorld());
       hasLoadedEntities = true;
+    }
+  }
+
+  @SubscribeEvent
+  public static void onNpcDamage(LivingDamageEvent event) {
+    if (event.getEntity() instanceof NpcEntity && event.getSource() != DamageSource.OUT_OF_WORLD) {
+      event.setCanceled(true);
+    }
+  }
+
+  @SubscribeEvent
+  public static void onNpcKnockback(LivingKnockBackEvent event) {
+    if (event.getEntity() instanceof NpcEntity) {
+      event.setCanceled(true);
     }
   }
 
