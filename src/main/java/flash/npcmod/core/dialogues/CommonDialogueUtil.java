@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 
 public class CommonDialogueUtil {
@@ -21,13 +22,13 @@ public class CommonDialogueUtil {
 
   public static final int MAX_DIALOGUE_LENGTH = 100000;
 
-  private static FileWriter fw;
+  private static Writer fw;
 
   public static void buildDialogue(String name, String jsonText) {
     try {
       File jsonFile = FileUtil.getJsonFile("dialogues", name);
       JSONObject jsonObject = new JSONObject(jsonText);
-      fw = new FileWriter(jsonFile);
+      fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
       Main.LOGGER.warn("Could not build dialogue file " + name + ".json");
@@ -45,7 +46,7 @@ public class CommonDialogueUtil {
     try {
       File jsonFile = FileUtil.getJsonFile("dialogue_editor", name);
       JSONObject jsonObject = new JSONObject(jsonText);
-      fw = new FileWriter(jsonFile);
+      fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
       Main.LOGGER.warn("Could not build dialogue editor file " + name + ".json");
@@ -61,7 +62,7 @@ public class CommonDialogueUtil {
 
   public static JSONObject loadDialogueFile(String name) {
     try {
-      InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json"));
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
 
@@ -74,7 +75,7 @@ public class CommonDialogueUtil {
 
   public static JSONObject loadDialogueEditorFile(String name) {
     try {
-      InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json"));
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
 

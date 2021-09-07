@@ -13,6 +13,7 @@ import org.json.JSONTokener;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class CommonQuestUtil {
   public static final List<Quest> QUESTS = new ArrayList<>();
   public static final List<QuestInstance> QUEST_INSTANCE_LIST = new ArrayList<>();
 
-  private static FileWriter fw;
+  private static Writer fw;
 
   public static void loadAllQuests() {
     QUESTS.clear();
@@ -60,7 +61,7 @@ public class CommonQuestUtil {
     try {
       File jsonFile = FileUtil.getJsonFile("quests", name);
       JSONObject jsonObject = new JSONObject(jsonText);
-      fw = new FileWriter(jsonFile);
+      fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
       Main.LOGGER.warn("Could not build quest file " + name + ".json");
@@ -95,7 +96,7 @@ public class CommonQuestUtil {
   @Nullable
   public static Quest loadQuestFile(String name) {
     try {
-      InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json"));
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
 

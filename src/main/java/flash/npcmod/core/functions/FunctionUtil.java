@@ -8,6 +8,7 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,20 +52,20 @@ public class FunctionUtil {
         newFunctionFile.delete();
       }
 
-      FileWriter fileWriter = new FileWriter(newFunctionFile, true);
+      Writer writer = new OutputStreamWriter(new FileOutputStream(newFunctionFile), StandardCharsets.UTF_8);
 
       for (int i = 0; i < lines.length; i++) {
         String line = lines[i];
         if (i > 0) {
           callables.add(line);
         }
-        fileWriter.write(line);
+        writer.write(line);
         if (i < lines.length-1)
-          fileWriter.write(System.lineSeparator());
+          writer.write(System.lineSeparator());
       }
 
-      fileWriter.flush();
-      fileWriter.close();
+      writer.flush();
+      writer.close();
 
       AbstractFunction newFunction = new Function(name, paramNames, callables.toArray(new String[0]));
       if (FUNCTIONS.contains(newFunction)) {
@@ -92,7 +93,7 @@ public class FunctionUtil {
   public static boolean loadFunctionFile(String name) {
     try {
       InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/functions", name + ".npcfunction"));
-      BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 
       List<String> lines = new ArrayList<>();
 

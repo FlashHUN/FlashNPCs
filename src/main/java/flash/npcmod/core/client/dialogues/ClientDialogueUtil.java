@@ -23,6 +23,8 @@ import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +47,7 @@ public class ClientDialogueUtil {
 
   public static void loadDialogue(String name) {
     try {
-      InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json"));
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
 
@@ -57,7 +59,7 @@ public class ClientDialogueUtil {
 
   public static void loadDialogueEditor(String name) {
     try {
-      InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json"));
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
 

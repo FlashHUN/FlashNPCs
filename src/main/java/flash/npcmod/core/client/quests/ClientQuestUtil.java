@@ -14,6 +14,8 @@ import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +38,7 @@ public class ClientQuestUtil {
   public static Quest loadQuest(String name) {
     PacketDispatcher.sendToServer(new CRequestQuestInfo(name));
     try {
-      InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json"));
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
 

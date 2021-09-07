@@ -288,4 +288,8 @@ public class QuestLogScreen extends Screen {
       }
     }
   }
+
+  public boolean isPauseScreen() {
+    return false;
+  }
 }
