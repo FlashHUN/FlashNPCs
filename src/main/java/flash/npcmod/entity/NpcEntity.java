@@ -1,5 +1,6 @@
 package flash.npcmod.entity;
 
+import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
@@ -11,6 +12,7 @@ import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CRequestContainer;
 import flash.npcmod.network.packets.client.CRequestDialogue;
 import flash.npcmod.network.packets.client.CRequestDialogueEditor;
+import flash.npcmod.network.packets.client.CRequestTrades;
 import flash.npcmod.network.packets.server.SCompleteQuest;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.attributes.AttributeModifierMap;
@@ -244,6 +246,7 @@ public class NpcEntity extends AmbientEntity {
         }
 
         if (markedForCompletion.isEmpty()) {
+
           String name = getDialogue();
           // If we have a dialogue bound to the npc
           if (!name.isEmpty()) {
@@ -261,12 +264,12 @@ public class NpcEntity extends AmbientEntity {
                 }
               }
             }
-          } else if (!this.getOffers().isEmpty()) {
+          } else {
             // If the NPC has trades, they don't have any dialogue, and we don't have the requirements to edit the npc in any way,
             // open the trades gui for this npc
             if (!(player.getHeldItem(hand).getItem() instanceof NpcEditorItem && player.hasPermissionLevel(4) && player.isCreative())) {
               if (player.world.isRemote) {
-                PacketDispatcher.sendToServer(new CRequestContainer(this.getEntityId(), CRequestContainer.ContainerType.TRADES));
+                PacketDispatcher.sendToServer(new CRequestTrades(this.getEntityId()));
               }
             }
           }

@@ -44,6 +44,7 @@ public class PacketDispatcher {
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestQuestCapabilitySync.class, CRequestQuestCapabilitySync::encode, CRequestQuestCapabilitySync::decode, CRequestQuestCapabilitySync::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestQuestEditor.class, CRequestQuestEditor::encode, CRequestQuestEditor::decode, CRequestQuestEditor::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestQuestInfo.class, CRequestQuestInfo::encode, CRequestQuestInfo::decode, CRequestQuestInfo::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestTrades.class, CRequestTrades::encode, CRequestTrades::decode, CRequestTrades::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CTalkObjectiveComplete.class, CTalkObjectiveComplete::encode, CTalkObjectiveComplete::decode, CTalkObjectiveComplete::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CTrackQuest.class, CTrackQuest::encode, CTrackQuest::decode, CTrackQuest::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CTradeWithNpc.class, CTradeWithNpc::encode, CTradeWithNpc::decode, CTradeWithNpc::handle);
