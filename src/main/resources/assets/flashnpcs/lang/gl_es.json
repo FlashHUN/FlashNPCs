@@ -1,0 +1,23 @@
+{
+  "key.categories.flashnpcs": "Flash's NPCs",
+  "key.quest_log": "Diario de misións",
+  "key.untrack": "Deixar de seguir misión",
+
+  "itemGroup.flashnpcs": "Flash's NPCs",
+
+  "item.flashnpcs.npc_editor": "Editor de NPCs",
+  "item.flashnpcs.quest_editor": "Editor de misións",
+
+  "entity.flashnpcs.npc": "NPC",
+
+  "msg.flashnpcs.objectivecomplete": "Obxectivo completado!",
+
+  "screen.trades.title": "Intercambios de %s",
+  "screen.quest_log.title": "Diario de misións",
+  "screen.quest_log.objectives": "Obxectivos:",
+  "screen.quest_log.reward": "Recompensas:",
+  "screen.quest_log.reward.xp": "XP: %s",
+  "screen.quest_log.reward.items": "Elementos:",
+  "screen.quest_log.track": "Seguir",
+  "screen.quest_log.abandon": "Abandonar"
+}
