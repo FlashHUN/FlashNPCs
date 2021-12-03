@@ -182,11 +182,12 @@ public class QuestLogScreen extends Screen {
         }
       }
 
-      drawString(matrixStack, font, REWARD, guiX + 123, guiY + 107, 0xFFFFFF);
       if (xpReward > 0)
         drawString(matrixStack, font, new TranslationTextComponent("screen.quest_log.reward.xp", xpReward), guiX + 126, guiY + 107 + LINEHEIGHT, 0xFFFFFF);
 
       if (itemRewards.size() > 0) {
+        drawString(matrixStack, font, REWARD, guiX + 123, guiY + 107, 0xFFFFFF);
+
         int itemRewardY = guiY + 107 + LINEHEIGHT * 2;
         drawString(matrixStack, font, ITEMREWARD, guiX + 126, itemRewardY, 0xFFFFFF);
 

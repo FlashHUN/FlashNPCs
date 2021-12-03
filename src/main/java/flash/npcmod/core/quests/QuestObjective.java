@@ -120,7 +120,7 @@ public abstract class QuestObjective {
               if (objective != null)
                 objective.forceComplete();
             }
-          } else if (s.startsWith("/")) {
+          } else if (s.length() > 0) {
             if (!playerEntity.world.isRemote && !onCompleteRan) {
               if (ConfigHolder.COMMON.isInvalidCommand(s)) continue;
 

@@ -245,7 +245,7 @@ public class NpcEntity extends AmbientEntity {
           }
         }
 
-        if (markedForCompletion.isEmpty()) {
+//        if (markedForCompletion.isEmpty()) {
 
           String name = getDialogue();
           // If we have a dialogue bound to the npc
@@ -273,7 +273,7 @@ public class NpcEntity extends AmbientEntity {
               }
             }
           }
-        }
+//        }
       }
     }
     return ActionResultType.PASS;

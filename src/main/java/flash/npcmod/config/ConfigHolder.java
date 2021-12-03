@@ -16,7 +16,7 @@ public class ConfigHolder {
         "/setidletimeout", "/setworldspawn", "/stop", "/whitelist", "/"+Main.MODID
     );
 
-    Predicate<Object> commandValidator = (text) -> text.getClass().isAssignableFrom(String.class) && String.valueOf(text).startsWith("/");
+    Predicate<Object> commandValidator = (text) -> text.getClass().isAssignableFrom(String.class) && String.valueOf(text).length() > 0;
 
     public final ForgeConfigSpec.ConfigValue<List<? extends String>> invalidCommands;
 

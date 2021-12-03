@@ -111,7 +111,7 @@ public class Quest {
     }
 
     for (String command : runOnComplete) {
-      if (command.startsWith("/")) {
+      if (command.length() > 0) {
         if (!player.world.isRemote) {
           if (ConfigHolder.COMMON.isInvalidCommand(command)) continue;
 

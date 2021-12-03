@@ -135,7 +135,10 @@ public class DialogueScreen extends Screen {
   }
 
   private void addDisplayedText(String name, String text) {
-    String newText = name + ": " + text.replaceAll("@p", playerName).replaceAll("@npc", getNpcName());
+    String newText = name + ": " + text.replaceAll("@p", playerName)
+            .replaceAll("@npc", getNpcName())
+            .replaceAll("@nl", "\n");
+
     displayedText.add(newText);
   }
 

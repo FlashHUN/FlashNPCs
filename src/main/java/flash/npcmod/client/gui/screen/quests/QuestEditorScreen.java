@@ -202,7 +202,7 @@ public class QuestEditorScreen extends Screen {
   }
 
   private boolean canAddRunOnComplete() {
-    return this.currentRunOnComplete.startsWith("/") || this.currentRunOnComplete.startsWith("acceptQuest:");
+    return this.currentRunOnComplete.length() > 0;
   }
 
   private void editObjective(int i) {

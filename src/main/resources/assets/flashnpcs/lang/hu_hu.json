@@ -19,5 +19,9 @@
   "screen.quest_log.reward.xp": "TP: %s",
   "screen.quest_log.reward.items": "Tárgyak:",
   "screen.quest_log.track": "Követés",
-  "screen.quest_log.abandon": "Feladás"
+  "screen.quest_log.abandon": "Feladás",
+
+  "screen.npc_editor.confirm": "Confirm",
+  "screen.npc_editor.inventory": "Inventory",
+  "screen.npc_editor.trades": "Trades"
 }
