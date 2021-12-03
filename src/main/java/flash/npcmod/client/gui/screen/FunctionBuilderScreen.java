@@ -98,7 +98,7 @@ public class FunctionBuilderScreen extends Screen {
   }
 
   private boolean canAddCallable() {
-    return this.callable.startsWith("function:") || this.callable.startsWith("/");
+    return this.callable.startsWith("function:") || this.callable.length() > 0;
   }
 
   private void removeCallable(int i) {

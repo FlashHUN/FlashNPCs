@@ -16,6 +16,7 @@ import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -133,17 +134,17 @@ public class NpcBuilderScreen extends Screen {
     this.blueField.setMaxStringLength(3);
     this.blueField.setText(String.valueOf(b));
 
-    this.confirmButton = this.addButton(new Button(width - 60, height - 20, 60, 20, new StringTextComponent("Confirm"), btn -> {
+    this.confirmButton = this.addButton(new Button(width - 60, height - 20, 60, 20, new TranslationTextComponent("screen.npc_editor.confirm"), btn -> {
       PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
       minecraft.displayGuiScreen(null);
     }));
 
-    this.inventoryButton = this.addButton(new Button(width - 60, height - 40, 60, 20, new StringTextComponent("Inventory"), btn -> {
+    this.inventoryButton = this.addButton(new Button(width - 60, height - 40, 60, 20, new TranslationTextComponent("screen.npc_editor.inventory"), btn -> {
       PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getEntityId(), CRequestContainer.ContainerType.NPCINVENTORY));
     }));
 
-    this.tradesButton = this.addButton(new Button(width - 60, height - 60, 60, 20, new StringTextComponent("Trades"), btn -> {
+    this.tradesButton = this.addButton(new Button(width - 60, height - 60, 60, 20, new TranslationTextComponent("screen.npc_editor.trades"), btn -> {
       PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getEntityId(), CRequestContainer.ContainerType.TRADE_EDITOR));
     }));

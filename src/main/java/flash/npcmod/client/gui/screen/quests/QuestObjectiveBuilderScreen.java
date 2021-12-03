@@ -198,7 +198,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
   }
 
   private boolean canAddRunOnComplete() {
-    return currentRunOnComplete.startsWith("/") || currentRunOnComplete.startsWith("hide:") || currentRunOnComplete.startsWith("unhide:") || currentRunOnComplete.startsWith("forceComplete");
+    return currentRunOnComplete.length() > 0 || currentRunOnComplete.startsWith("hide:") || currentRunOnComplete.startsWith("unhide:") || currentRunOnComplete.startsWith("forceComplete");
   }
 
   public void setName(String name) {

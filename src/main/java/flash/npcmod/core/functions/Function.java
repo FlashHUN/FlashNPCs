@@ -24,7 +24,7 @@ public class Function extends AbstractFunction {
             }
           }
           FunctionUtil.callFromName(function, sender, npcEntity);
-        } else if (callable.startsWith("/")) {
+        } else if (callable.length() > 0) {
           if (ConfigHolder.COMMON.isInvalidCommand(callable)) continue;
 
           String command = callable;
