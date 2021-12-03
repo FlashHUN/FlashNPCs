@@ -19,5 +19,9 @@
   "screen.quest_log.reward.xp": "XP: %s",
   "screen.quest_log.reward.items": "Elements:",
   "screen.quest_log.track": "Seguir",
-  "screen.quest_log.abandon": "Abandonar"
+  "screen.quest_log.abandon": "Abandonar",
+
+  "screen.npc_editor.confirm": "Confirm",
+  "screen.npc_editor.inventory": "Inventory",
+  "screen.npc_editor.trades": "Trades"
 }
