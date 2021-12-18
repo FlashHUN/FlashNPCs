@@ -1,0 +1,23 @@
+{
+  "key.categories.flashnpcs": "Flash's NPCs",
+  "key.quest_log": "Лог квеста",
+  "key.untrack": "Перестать отслеживать квест",
+
+  "itemGroup.flashnpcs": "Flash's NPCs",
+
+  "item.flashnpcs.npc_editor": "Редактор НИП",
+  "item.flashnpcs.quest_editor": "Редактор заданий",
+
+  "entity.flashnpcs.npc": "НИП",
+
+  "msg.flashnpcs.objectivecomplete": "Цель выполнена!",
+
+  "screen.trades.title": "Магазин %s",
+  "screen.quest_log.title": "Текущие задания",
+  "screen.quest_log.objectives": "Цели:",
+  "screen.quest_log.reward": "Награда:",
+  "screen.quest_log.reward.xp": "Опыт: %s",
+  "screen.quest_log.reward.items": "Предметы:",
+  "screen.quest_log.track": "Отслеживать",
+  "screen.quest_log.abandon": "Отказаться"
+}
