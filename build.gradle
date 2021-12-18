@@ -69,16 +69,16 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.16.5-36.2.2'
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.22'
 
     annotationProcessor 'org.spongepowered:mixin:0.8.2:processor'
 
-    compile 'org.json:json:20200518'
+    implementation 'org.json:json:20211205'
 }
 
 shadowJar {
     dependencies {
-        include(dependency("org.json:json:20200518"))
+        include(dependency("org.json:json:20211205"))
     }
 
     classifier = ""
@@ -97,6 +97,10 @@ jar {
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
+}
+
+repositories {
+    mavenCentral()
 }
 
 jar.dependsOn shadowJar
