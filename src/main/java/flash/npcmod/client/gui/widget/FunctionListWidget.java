@@ -1,20 +1,20 @@
 package flash.npcmod.client.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.client.gui.dialogue.DialogueNode;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
 
-import static net.minecraft.client.gui.AbstractGui.fill;
+import static net.minecraft.client.gui.GuiComponent.fill;
 
 @OnlyIn(Dist.CLIENT)
-public class FunctionListWidget {
+public class FunctionListWidget{
 
   private DialogueBuilderScreen screen;
   private Minecraft minecraft;
@@ -29,7 +29,7 @@ public class FunctionListWidget {
 
   private String selectedFunction;
 
-  private static final int lineHeight = 2+Minecraft.getInstance().fontRenderer.FONT_HEIGHT;
+  private static final int lineHeight = 2+Minecraft.getInstance().font.lineHeight;
 
   public FunctionListWidget(DialogueBuilderScreen screen, Minecraft minecraft) {
     this.screen = screen;
@@ -49,10 +49,10 @@ public class FunctionListWidget {
   public void calculatePositionAndDimensions() {
     width = 0;
     for (String name : ClientDialogueUtil.FUNCTION_NAMES) {
-      width = Math.max(width, minecraft.fontRenderer.getStringWidth(name)+4);
+      width = Math.max(width, minecraft.font.width(name)+4);
     }
     x = screen.width/2-width/2;
-    height = Math.min(ClientDialogueUtil.FUNCTION_NAMES.size(), maxSize)*(minecraft.fontRenderer.FONT_HEIGHT+2);
+    height = Math.min(ClientDialogueUtil.FUNCTION_NAMES.size(), maxSize)*(minecraft.font.lineHeight+2);
     y = screen.height/2-height/2;
   }
 
@@ -82,19 +82,19 @@ public class FunctionListWidget {
     calculatePositionAndDimensions();
   }
 
-  public void draw(MatrixStack matrixStack) {
+  public void draw(PoseStack matrixStack) {
     if (isVisible()) {
-      matrixStack.push();
+      matrixStack.pushPose();
       matrixStack.translate(x, y, 0);
 
       drawRectangles(matrixStack);
       drawText(matrixStack);
 
-      matrixStack.pop();
+      matrixStack.popPose();
     }
   }
 
-  private void drawRectangles(MatrixStack matrixStack) {
+  private void drawRectangles(PoseStack matrixStack) {
     int black = 0xFF000000;
     int white = 0xFFFFFFFF;
     int green = 0xFF00FF00;
@@ -111,7 +111,7 @@ public class FunctionListWidget {
     int minY = lineHeight;
     int size = ClientDialogueUtil.FUNCTION_NAMES.size();
     for (int i = 0; i < (size > maxSize ? maxSize : size); i++) {
-      boolean isSelected = ClientDialogueUtil.FUNCTION_NAMES.get(MathHelper.clamp(i+scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1)).equals(this.selectedFunction);
+      boolean isSelected = ClientDialogueUtil.FUNCTION_NAMES.get(Mth.clamp(i+scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1)).equals(this.selectedFunction);
       fill(matrixStack, 1, minY-(i==0 ? 0 : 1*i), width-1, minY+1-(i==0 ? 0 : 1*i), black);
       if (isSelected)
         fill(matrixStack, 1, minY-lineHeight+(i == 0 ? 1 : (i-1)*-1), width-1, minY-i, green);
@@ -120,12 +120,12 @@ public class FunctionListWidget {
     }
   }
 
-  private void drawText(MatrixStack matrixStack) {
+  private void drawText(PoseStack matrixStack) {
     int size = ClientDialogueUtil.FUNCTION_NAMES.size();
     for (int i = 0; i < (size > maxSize ? maxSize : size); i++) {
       String name = ClientDialogueUtil.FUNCTION_NAMES.get(i+scrollY);
       int y = 2+i*lineHeight;
-      minecraft.fontRenderer.drawString(matrixStack, name, width/2-minecraft.fontRenderer.getStringWidth(name)/2, y, 0x000000);
+      minecraft.font.draw(matrixStack, name, width/2-minecraft.font.width(name)/2, y, 0x000000);
     }
   }
 
@@ -147,7 +147,7 @@ public class FunctionListWidget {
   }
 
   public void clickedOnFunction(int i) {
-    int index = MathHelper.clamp(i+scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1);
+    int index = Mth.clamp(i+scrollY, 0, ClientDialogueUtil.FUNCTION_NAMES.size()-1);
     String newSelection = ClientDialogueUtil.FUNCTION_NAMES.get(index);
     if (this.selectedFunction.equals(newSelection) || i == -1) {
       this.selectedFunction = "";
@@ -182,7 +182,7 @@ public class FunctionListWidget {
   public int clampScroll(int newScroll) {
     int max = ClientDialogueUtil.FUNCTION_NAMES.size()-maxSize;
     if (max > 0) {
-      return MathHelper.clamp(newScroll, 0, max);
+      return Mth.clamp(newScroll, 0, max);
     }
     else {
       return scrollY;

@@ -4,9 +4,9 @@ import flash.npcmod.Main;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SSendQuestInfo;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 import org.json.JSONObject;
 
 import java.util.function.Supplier;
@@ -19,17 +19,17 @@ public class CRequestQuestInfo {
     this.name = name;
   }
 
-  public static void encode(CRequestQuestInfo msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
+  public static void encode(CRequestQuestInfo msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
   }
 
-  public static CRequestQuestInfo decode(PacketBuffer buf) {
-    return new CRequestQuestInfo(buf.readString(51));
+  public static CRequestQuestInfo decode(FriendlyByteBuf buf) {
+    return new CRequestQuestInfo(buf.readUtf(51));
   }
 
   public static void handle(CRequestQuestInfo msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
+      ServerPlayer sender = ctx.get().getSender();
 
       JSONObject quest = CommonQuestUtil.loadQuest(msg.name);
 

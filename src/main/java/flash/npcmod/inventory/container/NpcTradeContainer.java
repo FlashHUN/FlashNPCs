@@ -2,20 +2,20 @@ package flash.npcmod.inventory.container;
 
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.ContainerInit;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
-public class NpcTradeContainer extends Container {
+public class NpcTradeContainer extends AbstractContainerMenu {
   private NpcEntity npcEntity;
 
-  public NpcTradeContainer(int id, PlayerInventory inventory, int entityId) {
+  public NpcTradeContainer(int id, Inventory inventory, int entityId) {
     super(ContainerInit.NPC_TRADE_CONTAINER, id);
 
-    Entity entity = inventory.player.world.getEntityByID(entityId);
+    Entity entity = inventory.player.level.getEntity(entityId);
     if (!(entity instanceof NpcEntity)) return;
     NpcEntity npcEntity = (NpcEntity) entity;
     this.npcEntity = npcEntity;
@@ -32,15 +32,15 @@ public class NpcTradeContainer extends Container {
   }
 
   @Override
-  public boolean canInteractWith(PlayerEntity playerIn) {
+  public boolean stillValid(Player playerIn) {
     return true;
   }
 
-  public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
+  public ItemStack quickMoveStack(Player playerIn, int index) {
     ItemStack itemstack = ItemStack.EMPTY;
-    Slot slot = this.inventorySlots.get(index);
-    if (slot != null && slot.getHasStack()) {
-      ItemStack stackInSlot = slot.getStack();
+    Slot slot = this.slots.get(index);
+    if (slot != null && slot.hasItem()) {
+      ItemStack stackInSlot = slot.getItem();
       return stackInSlot;
     }
     return itemstack;

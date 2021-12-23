@@ -1,6 +1,6 @@
 package flash.npcmod.client.gui.screen.inventory;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.widget.TradeWidget;
@@ -8,13 +8,14 @@ import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.inventory.container.NpcTradeContainer;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -23,10 +24,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static net.minecraft.client.gui.screen.inventory.InventoryScreen.drawEntityOnScreen;
+import static net.minecraft.client.gui.screens.inventory.InventoryScreen.renderEntityInInventory;
 
 @OnlyIn(Dist.CLIENT)
-public class NpcTradeScreen extends ContainerScreen<NpcTradeContainer> {
+public class NpcTradeScreen extends AbstractContainerScreen<NpcTradeContainer> {
 
   public static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/npc_trades.png");
 
@@ -41,18 +42,18 @@ public class NpcTradeScreen extends ContainerScreen<NpcTradeContainer> {
 
   private TradeWidget[] tradeWidgets;
 
-  public NpcTradeScreen(NpcTradeContainer screenContainer, PlayerInventory inv, ITextComponent titleIn) {
+  public NpcTradeScreen(NpcTradeContainer screenContainer, Inventory inv, Component titleIn) {
     super(screenContainer, inv, titleIn);
     this.passEvents = true;
-    this.titleX = 0;
-    this.titleY = -12;
+    this.titleLabelX = 0;
+    this.titleLabelY = -12;
 
     this.scrollY = 0.0;
     this.isScrolling = false;
     this.scrollOffset = 0;
     this.tradeWidgets = new TradeWidget[3];
 
-    this.npcEntity = this.container.getNpcEntity();
+    this.npcEntity = this.menu.getNpcEntity();
     notEmptyTradeOffers = new TradeOffers();
     offerToIndexMap = new HashMap<>();
     for (int i = 0; i < npcEntity.getOffers().size(); i++) {
@@ -75,10 +76,10 @@ public class NpcTradeScreen extends ContainerScreen<NpcTradeContainer> {
   }
 
   public int getNpcId() {
-    return npcEntity.getEntityId();
+    return npcEntity.getId();
   }
 
-  public void renderItemTooltip(MatrixStack matrixStack, ItemStack itemStack, int mouseX, int mouseY) {
+  public void renderItemTooltip(PoseStack matrixStack, ItemStack itemStack, int mouseX, int mouseY) {
     super.renderTooltip(matrixStack, itemStack, mouseX, mouseY);
   }
 
@@ -91,14 +92,13 @@ public class NpcTradeScreen extends ContainerScreen<NpcTradeContainer> {
     super.init();
     int i = getMaxTradeWidgets();
     for (int j = 0; j < i; j++) {
-      this.tradeWidgets[j] = this.addButton(new TradeWidget(this, this.guiLeft+8, this.guiTop+8+j*20, 153, 20, notEmptyTradeOffers.get(j+scrollOffset)));
+      this.tradeWidgets[j] = this.addRenderableWidget(new TradeWidget(this, this.leftPos+8, this.topPos+8+j*20, 153, 20, notEmptyTradeOffers.get(j+scrollOffset)));
     }
     updateTradeOffers();
   }
 
   @Override
-  public void tick() {
-    super.tick();
+  protected void containerTick() {
     int i = getMaxTradeWidgets();
     for (int j = 0; j < i; j++) {
       this.tradeWidgets[j].activeCheck();
@@ -121,35 +121,36 @@ public class NpcTradeScreen extends ContainerScreen<NpcTradeContainer> {
   }
 
   @Override
-  protected void drawGuiContainerBackgroundLayer(MatrixStack matrixStack, float partialTicks, int x, int y) {
-    RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-    this.minecraft.getTextureManager().bindTexture(TEXTURE);
-    int i = this.guiLeft;
-    int j = this.guiTop;
-    this.blit(matrixStack, i, j, 0, 0, this.xSize, this.ySize);
+  protected void renderBg(PoseStack matrixStack, float partialTicks, int x, int y) {
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    RenderSystem.setShaderTexture(0, TEXTURE);
+    int i = this.leftPos;
+    int j = this.topPos;
+    this.blit(matrixStack, i, j, 0, 0, this.imageWidth, this.imageHeight);
     if (canScroll()) {
-      matrixStack.push();
+      matrixStack.pushPose();
       int v = isMouseOverScrollBar(x, y) ? 7 : 0;
       matrixStack.translate(0, scrollY, 0);
-      this.blit(matrixStack, i + 164, j + 8, xSize, v, 4, 7);
-      matrixStack.pop();
+      this.blit(matrixStack, i + 164, j + 8, imageWidth, v, 4, 7);
+      matrixStack.popPose();
 
       if (this.scrollOffset < maxScrollOffset)
         this.blit(matrixStack, i+8, j+68, 0, 166, 153, 10);
     }
-    drawEntityOnScreen(i + xSize + 45, j + 140, 60, 40, -5, npcEntity);
+    renderEntityInInventory(i + imageWidth + 45, j + 140, 60, 40, -5, npcEntity);
   }
 
   @Override
-  public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
     this.renderBackground(matrixStack);
     super.render(matrixStack, mouseX, mouseY, partialTicks);
-    this.renderHoveredTooltip(matrixStack, mouseX, mouseY);
+    this.renderTooltip(matrixStack, mouseX, mouseY);
   }
 
   @Override
-  protected void drawGuiContainerForegroundLayer(MatrixStack matrixStack, int x, int y) {
-    this.font.drawText(matrixStack, new TranslationTextComponent("screen.trades.title", this.title.getString()), (float)this.titleX, (float)this.titleY, 0xFFFFFF);
+  protected void renderLabels(PoseStack matrixStack, int x, int y) {
+    this.font.draw(matrixStack, new TranslatableComponent("screen.trades.title", this.title.getString()), (float)this.titleLabelX, (float)this.titleLabelY, 0xFFFFFF);
   }
 
   private boolean canScroll() {
@@ -157,8 +158,8 @@ public class NpcTradeScreen extends ContainerScreen<NpcTradeContainer> {
   }
 
   private boolean isMouseOverScrollBar(double mouseX, double mouseY) {
-    int i = this.guiLeft+164;
-    int j = this.guiTop+8;
+    int i = this.leftPos+164;
+    int j = this.topPos+8;
     return mouseX >= i && mouseX <= i+4 && mouseY >= j && mouseY <= j+70;
   }
 
@@ -189,7 +190,7 @@ public class NpcTradeScreen extends ContainerScreen<NpcTradeContainer> {
 
   private void updateScrollY(double delta) {
     if (canScroll()) {
-      this.scrollY = MathHelper.clamp(scrollY + delta, 0, 63);
+      this.scrollY = Mth.clamp(scrollY + delta, 0, 63);
       this.scrollOffset = (int) (scrollY * maxScrollOffset / 63);
     } else {
       this.scrollY = 0.0;

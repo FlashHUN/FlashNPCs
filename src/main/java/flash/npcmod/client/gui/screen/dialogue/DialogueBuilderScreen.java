@@ -1,6 +1,7 @@
 package flash.npcmod.client.gui.screen.dialogue;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.dialogue.Dialogue;
@@ -10,12 +11,13 @@ import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CEditDialogue;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.json.JSONArray;
@@ -52,7 +54,7 @@ public class DialogueBuilderScreen extends Screen {
   private DialogueNode editingNode;
   private FunctionListWidget functionListWidget;
 
-  private TextFieldWidget nameField, textField, responseField, functionParamsField;
+  private EditBox nameField, textField, responseField, functionParamsField;
   private Button saveButton, confirmButton, cancelButton;
   private String newName = "", newText = "", newResponse = "", newFunctionParams = "";
 
@@ -63,7 +65,7 @@ public class DialogueBuilderScreen extends Screen {
   };
 
   public DialogueBuilderScreen(String name) {
-    super(StringTextComponent.EMPTY);
+    super(TextComponent.EMPTY);
     this.dialogueName = name;
 
     ClientDialogueUtil.loadDialogue(name);
@@ -115,7 +117,7 @@ public class DialogueBuilderScreen extends Screen {
     this.editingNode = null;
 
     // Initialize our button widgets
-    this.saveButton = this.addButton(new Button(width/2-50, height-25, 100, 20, new StringTextComponent("Save"), btn -> {
+    this.saveButton = this.addRenderableWidget(new Button(width/2-50, height-25, 100, 20, new TextComponent("Save"), btn -> {
       if (this.editingNode == null) {
         if (conflictingDialogueNames.size() == 0) {
           JSONObject dialogue = buildDialogueJSON();
@@ -125,7 +127,7 @@ public class DialogueBuilderScreen extends Screen {
       }
     }));
     this.saveButton.active = conflictingDialogueNames.size() == 0;
-    this.confirmButton = this.addButton(new Button(width/2-60, height/2+15, 50, 20, new StringTextComponent("Confirm"), btn -> {
+    this.confirmButton = this.addRenderableWidget(new Button(width/2-60, height/2+15, 50, 20, new TextComponent("Confirm"), btn -> {
       if (this.editingNode != null) {
         if (!this.newName.equals(ClientDialogueUtil.INIT_DIALOGUE_NAME)) {
           editingNode.getDialogue().setName(this.newName);
@@ -140,43 +142,43 @@ public class DialogueBuilderScreen extends Screen {
       this.setNodeBeingEdited(null, EditType.NONE);
     }));
     this.confirmButton.visible = false;
-    this.cancelButton = this.addButton(new Button(width/2+10, height/2+15, 50, 20, new StringTextComponent("Cancel"), btn -> {
+    this.cancelButton = this.addRenderableWidget(new Button(width/2+10, height/2+15, 50, 20, new TextComponent("Cancel"), btn -> {
       this.setNodeBeingEdited(null, EditType.NONE);
     }));
     this.cancelButton.visible = false;
 
     // Initialize our text field widgets
-    this.nameField = this.addButton(new TextFieldWidget(this.font, this.width/2-60, this.height/2-10, 120, 20, StringTextComponent.EMPTY));
+    this.nameField = this.addRenderableWidget(new EditBox(this.font, this.width/2-60, this.height/2-10, 120, 20, TextComponent.EMPTY));
     this.nameField.setResponder(this::setNewName);
-    this.nameField.setValidator(this.nameFilter);
-    this.nameField.setMaxStringLength(50);
+    this.nameField.setFilter(this.nameFilter);
+    this.nameField.setMaxLength(50);
     this.nameField.setVisible(false);
     this.nameField.setCanLoseFocus(true);
 
-    this.textField = this.addButton(new TextFieldWidget(this.font, this.width/2-60, this.height/2-10, 120, 20, StringTextComponent.EMPTY));
+    this.textField = this.addRenderableWidget(new EditBox(this.font, this.width/2-60, this.height/2-10, 120, 20, TextComponent.EMPTY));
     this.textField.setResponder(this::setNewText);
-    this.textField.setMaxStringLength(500);
+    this.textField.setMaxLength(500);
     this.textField.setVisible(false);
     this.textField.setCanLoseFocus(true);
 
-    this.responseField = this.addButton(new TextFieldWidget(this.font, this.width/2-60, this.height/2-10, 120, 20, StringTextComponent.EMPTY));
+    this.responseField = this.addRenderableWidget(new EditBox(this.font, this.width/2-60, this.height/2-10, 120, 20, TextComponent.EMPTY));
     this.responseField.setResponder(this::setNewResponse);
-    this.responseField.setMaxStringLength(500);
+    this.responseField.setMaxLength(500);
     this.responseField.setVisible(false);
     this.responseField.setCanLoseFocus(true);
 
     this.functionListWidget.calculatePositionAndDimensions();
-    this.functionParamsField = this.addButton(new TextFieldWidget(this.font, width/2-60, height-44, 120, 20, StringTextComponent.EMPTY));
+    this.functionParamsField = this.addRenderableWidget(new EditBox(this.font, width/2-60, height-44, 120, 20, TextComponent.EMPTY));
     this.functionParamsField.setResponder(this::setNewFunctionParams);
-    this.functionParamsField.setValidator(this.nameFilter);
-    this.functionParamsField.setMaxStringLength(100);
+    this.functionParamsField.setFilter(this.nameFilter);
+    this.functionParamsField.setMaxLength(100);
     this.functionParamsField.setVisible(false);
     this.functionParamsField.setCanLoseFocus(true);
     this.functionListWidget.setVisible(false);
   }
 
   private boolean isAnyTextFieldVisible() {
-    return nameField.getVisible() || textField.getVisible() || responseField.getVisible() || this.functionListWidget.isVisible();
+    return nameField.isVisible() || textField.isVisible() || responseField.isVisible() || this.functionListWidget.isVisible();
   }
 
   private void setNewName(String s) {
@@ -203,9 +205,9 @@ public class DialogueBuilderScreen extends Screen {
 
   public void setNodeBeingEdited(@Nullable DialogueNode node, EditType editType) {
     if (node != null) {
-      this.nameField.setText(node.getName());
-      this.textField.setText(node.getText());
-      this.responseField.setText(node.getResponse());
+      this.nameField.setValue(node.getName());
+      this.textField.setValue(node.getText());
+      this.responseField.setValue(node.getResponse());
       int i = -1;
       if (!node.getFunction().isEmpty()) {
         String[] splitFunction = node.getFunction().split("::");
@@ -219,13 +221,13 @@ public class DialogueBuilderScreen extends Screen {
         }
         this.functionListWidget.clickedOnFunction(i);
         if (splitFunction.length == 2)
-          this.functionParamsField.setText(splitFunction[1]);
+          this.functionParamsField.setValue(splitFunction[1]);
       }
     } else {
-      this.nameField.setText("");
-      this.textField.setText("");
-      this.responseField.setText("");
-      this.functionParamsField.setText("");
+      this.nameField.setValue("");
+      this.textField.setValue("");
+      this.responseField.setValue("");
+      this.functionParamsField.setValue("");
     }
 
     this.nameField.setVisible(editType == EditType.NAME);
@@ -328,27 +330,29 @@ public class DialogueBuilderScreen extends Screen {
   }
 
   @Override
-  public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
     this.drawWindowBackground(matrixStack, mouseX, mouseY);
     this.functionListWidget.draw(matrixStack);
     super.render(matrixStack, mouseX, mouseY, partialTicks);
   }
 
-  private void drawWindowBackground(MatrixStack matrixStack, int mouseX, int mouseY) {
-    RenderSystem.pushMatrix();
-    RenderSystem.translatef(9, 18, 0.0F);
+  private void drawWindowBackground(PoseStack matrixStack, int mouseX, int mouseY) {
+    matrixStack.pushPose();
+    matrixStack.translate(9, 18, 0.0F);
     drawBackground(matrixStack, mouseX, mouseY);
     RenderSystem.depthFunc(GL11.GL_LEQUAL);
     RenderSystem.disableDepthTest();
-    RenderSystem.popMatrix();
+    matrixStack.popPose();
   }
 
-  private void drawBackground(MatrixStack matrixStack, int mouseX, int mouseY) {
-    RenderSystem.pushMatrix();
-    this.minecraft.getTextureManager().bindTexture(BACKGROUND);
+  private void drawBackground(PoseStack matrixStack, int mouseX, int mouseY) {
+    matrixStack.pushPose();
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    RenderSystem.setShaderTexture(0, BACKGROUND);
 
-    int i = MathHelper.floor(scrollX);
-    int j = MathHelper.floor(scrollY);
+    int i = Mth.floor(scrollX);
+    int j = Mth.floor(scrollY);
     int k = i % 16;
     int l = j % 16;
 
@@ -365,12 +369,12 @@ public class DialogueBuilderScreen extends Screen {
       drawLinesToMouse(matrixStack, mouseX, mouseY);
     }
     allDialogueNodes.forEach(dialogueNode -> dialogueNode.draw(matrixStack, scrollX, scrollY, mouseX, mouseY));
-    RenderSystem.popMatrix();
+    matrixStack.popPose();
   }
 
 
 
-  private void drawLinesToMouse(MatrixStack matrixStack, double mouseX, double mouseY) {
+  private void drawLinesToMouse(PoseStack matrixStack, double mouseX, double mouseY) {
     if (getSelectedNode() != null) {
       int index = getSelectedNodeIndex();
       DialogueNode selectedNode = getSelectedNode();
@@ -382,7 +386,7 @@ public class DialogueBuilderScreen extends Screen {
 
         int color = 0xFFFFFF00;
 
-        matrixStack.push();
+        matrixStack.pushPose();
         {
           matrixStack.translate(selectedNode.getX()+scrollX, selectedNode.getY()+scrollY, 0);
           matrixStack.translate(nodeXY[0], nodeXY[1], 0);
@@ -395,7 +399,7 @@ public class DialogueBuilderScreen extends Screen {
           fill(matrixStack, lineLength / 2, 0, lineLength / 2 + 1, lineHeight, color);
           fill(matrixStack, lineLength / 2 + 1, lineHeight, lineLength, lineHeight + 1, color);
         }
-        matrixStack.pop();
+        matrixStack.popPose();
       }
     }
   }
@@ -437,9 +441,9 @@ public class DialogueBuilderScreen extends Screen {
   }
 
   public void dragGui(double dragX, double dragY) {
-    this.scrollX = MathHelper.clamp(this.scrollX + dragX, -(maxX - width), 0.0D);
+    this.scrollX = Mth.clamp(this.scrollX + dragX, -(maxX - width), 0.0D);
 
-    this.scrollY = MathHelper.clamp(this.scrollY + dragY, -(maxY - height), 0.0D);
+    this.scrollY = Mth.clamp(this.scrollY + dragY, -(maxY - height), 0.0D);
   }
 
   @Override
@@ -507,8 +511,8 @@ public class DialogueBuilderScreen extends Screen {
   }
 
   public void centerScreenOnNode(DialogueNode node) {
-    scrollX = -MathHelper.clamp(node.getX() + node.getWidth() / 2 - width / 2, 0, maxX - width);
-    scrollY = -MathHelper.clamp(node.getY() + node.getHeight() / 2 - height / 2, 0, maxY - height);
+    scrollX = -Mth.clamp(node.getX() + node.getWidth() / 2 - width / 2, 0, maxX - width);
+    scrollY = -Mth.clamp(node.getY() + node.getHeight() / 2 - height / 2, 0, maxY - height);
   }
 
   public int getSelectedNodeIndex() {

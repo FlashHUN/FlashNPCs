@@ -3,10 +3,10 @@ package flash.npcmod.init;
 import flash.npcmod.Main;
 import flash.npcmod.item.NpcEditorItem;
 import flash.npcmod.item.QuestEditorItem;
-import net.minecraft.item.Item;
-import net.minecraftforge.fml.RegistryObject;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 public class ItemInit {
 

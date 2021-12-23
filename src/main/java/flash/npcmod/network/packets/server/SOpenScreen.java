@@ -1,8 +1,8 @@
 package flash.npcmod.network.packets.server;
 
 import flash.npcmod.Main;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -18,15 +18,15 @@ public class SOpenScreen {
     this.entityid = entityid;
   }
 
-  public static void encode(SOpenScreen msg, PacketBuffer buf) {
+  public static void encode(SOpenScreen msg, FriendlyByteBuf buf) {
     buf.writeInt(msg.screen.ordinal());
-    buf.writeString(msg.data);
+    buf.writeUtf(msg.data);
     buf.writeInt(msg.entityid);
   }
 
-  public static SOpenScreen decode(PacketBuffer buf) {
+  public static SOpenScreen decode(FriendlyByteBuf buf) {
     EScreens screen = EScreens.values()[buf.readInt()];
-    String data = buf.readString();
+    String data = buf.readUtf();
     int entityid = buf.readInt();
     return new SOpenScreen(screen, data, entityid);
   }

@@ -1,6 +1,6 @@
 package flash.npcmod.client.gui.screen.dialogue;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.client.gui.widget.DialogueDisplayWidget;
 import flash.npcmod.client.gui.widget.TextButton;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
@@ -9,10 +9,10 @@ import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CCallFunction;
 import flash.npcmod.network.packets.client.CRequestQuestCapabilitySync;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.inventory.InventoryScreen;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -36,7 +36,7 @@ public class DialogueScreen extends Screen {
   private String playerName;
 
   public DialogueScreen(String name, NpcEntity npcEntity) {
-    super(StringTextComponent.EMPTY);
+    super(TextComponent.EMPTY);
     dialogueName = name;
 
     ClientDialogueUtil.loadDialogue(name);
@@ -53,7 +53,7 @@ public class DialogueScreen extends Screen {
       addDisplayedNPCText(ClientDialogueUtil.getCurrentText());
 
     if (!ClientDialogueUtil.getCurrentFunction().isEmpty())
-      PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction(), npcEntity.getEntityId()));
+      PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction(), npcEntity.getId()));
 
     PacketDispatcher.sendToServer(new CRequestQuestCapabilitySync());
   }
@@ -80,15 +80,14 @@ public class DialogueScreen extends Screen {
   public void resetOptionButtons() {
     currentOptions = ClientDialogueUtil.getDialogueOptionsFromChildren();
     currentOptionNames = ClientDialogueUtil.getDialogueOptionNamesFromChildren();
-    this.buttons.clear();
-    this.children.clear();
+    clearWidgets();
     if (currentOptionNames.length > 0) {
       int x = 20;
       int width = this.width-120-x;
       int optionsHeight = 0;
       int[] optionHeights = new int[currentOptionNames.length];
       for (int i = 0; i < currentOptionNames.length; i++) {
-        List<IReorderingProcessor> trimmedText = font.trimStringToWidth(new StringTextComponent(currentOptions[i]), width);
+        List<FormattedCharSequence> trimmedText = font.split(new TextComponent(currentOptions[i]), width);
         int height = trimmedText.size()*10;
         optionHeights[i] = height;
         optionsHeight += height;
@@ -98,7 +97,7 @@ public class DialogueScreen extends Screen {
       for (int i = 0; i < currentOptionNames.length; i++) {
         String name = currentOptionNames[i];
         String text = currentOptions[i];
-        this.addButton(new TextButton(x, y, width, new StringTextComponent(text.replaceAll("@p", playerName).replaceAll("@npc", getNpcName())), btn -> {
+        this.addRenderableWidget(new TextButton(x, y, width, new TextComponent(text.replaceAll("@p", playerName).replaceAll("@npc", getNpcName())), btn -> {
           if (!text.isEmpty()) {
             addDisplayedPlayerText(text);
           }
@@ -108,7 +107,7 @@ public class DialogueScreen extends Screen {
           }
           this.dialogueDisplayWidget.clampScroll(0);
           if (!ClientDialogueUtil.getCurrentFunction().isEmpty()) {
-            PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction(), this.npcEntity.getEntityId()));
+            PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction(), this.npcEntity.getId()));
           }
           resetOptionButtons();
         }));
@@ -119,7 +118,7 @@ public class DialogueScreen extends Screen {
 
   public void chooseRandomOption() {
     List<TextButton> options = new ArrayList<>();
-    this.buttons.forEach(btn -> {
+    this.children().forEach(btn -> {
       if (btn instanceof TextButton) options.add((TextButton) btn);
     });
 
@@ -145,7 +144,7 @@ public class DialogueScreen extends Screen {
   }
 
   @Override
-  public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
     renderBackground(matrixStack);
 
     // Render the NPC on screen
@@ -153,11 +152,11 @@ public class DialogueScreen extends Screen {
       int x = width-60;
       int y = height/4*3;
       int scale = height/3;
-      InventoryScreen.drawEntityOnScreen(x, y, scale, 40, -20, npcEntity);
+      InventoryScreen.renderEntityInInventory(x, y, scale, 40, -20, npcEntity);
     }
 
     // Render the actual dialogue text
-    this.dialogueDisplayWidget.renderWidget(matrixStack, mouseX, mouseY, partialTicks);
+    this.dialogueDisplayWidget.renderButton(matrixStack, mouseX, mouseY, partialTicks);
 
     // Render a line between the text and the options
     {

@@ -8,7 +8,7 @@ import org.json.JSONTokener;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-
+// FIXME org.json isn't loaded during runtime for some reason...
 public class CommonDialogueUtil {
 
   public static final String DEFAULT_DIALOGUE_JSON = "{\"name\":\"init\",\"text\":\"Hi @p!\",\"function\":\"\",\"children\":[{\"name\":\"hello\",\"text\":\"Hey @npc.\"}]}";
@@ -25,6 +25,7 @@ public class CommonDialogueUtil {
   private static Writer fw;
 
   public static void buildDialogue(String name, String jsonText) {
+    Writer fw = null;
     try {
       File jsonFile = FileUtil.getJsonFile("dialogues", name);
       JSONObject jsonObject = new JSONObject(jsonText);
@@ -34,8 +35,12 @@ public class CommonDialogueUtil {
       Main.LOGGER.warn("Could not build dialogue file " + name + ".json");
     } finally {
       try {
-        fw.flush();
-        fw.close();
+        if (fw != null) {
+          fw.flush();
+          fw.close();
+        } else {
+          Main.LOGGER.debug("Could not close FileWriter for dialogue file " + name + ".json, fw is null");
+        }
       } catch (IOException e) {
         Main.LOGGER.warn("Could not close FileWriter for dialogue file " + name + ".json");
       }

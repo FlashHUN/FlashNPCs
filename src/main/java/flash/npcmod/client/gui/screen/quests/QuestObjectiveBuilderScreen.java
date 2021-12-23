@@ -1,23 +1,23 @@
 package flash.npcmod.client.gui.screen.quests;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.client.gui.widget.DropdownWidget;
 import flash.npcmod.core.EntityUtil;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.core.quests.QuestObjectiveTypes;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CRequestContainer;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.client.gui.widget.button.CheckboxButton;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.Mth;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -31,8 +31,8 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
   private DropdownWidget<QuestObjective.ObjectiveType> typeDropdown;
   private DropdownWidget<EntityUtil.LivingEntities> entityTypeDropdown;
-  private TextFieldWidget nameField, amountField, primaryObjectiveField, secondaryObjectiveField, runOnCompleteField;
-  private CheckboxButton optionalCheckbox, hiddenCheckbox, displayProgressCheckbox;
+  private EditBox nameField, amountField, primaryObjectiveField, secondaryObjectiveField, runOnCompleteField;
+  private Checkbox optionalCheckbox, hiddenCheckbox, displayProgressCheckbox;
   private Button itemFromInventoryButton, plusRunOnCompleteButton;
   private Button[] removeRunOnCompletionButtons;
 
@@ -76,7 +76,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
   }
 
   public QuestObjectiveBuilderScreen(QuestEditorScreen questEditorScreen, QuestObjective questObjective) {
-    super(StringTextComponent.EMPTY);
+    super(TextComponent.EMPTY);
     this.questEditorScreen = questEditorScreen;
     this.objectiveType = QuestObjective.ObjectiveType.Gather;
     this.name = "";
@@ -124,69 +124,69 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
   @Override
   protected void init() {
-    this.optionalCheckbox = this.addButton(new CheckboxButton(5+font.getStringWidth(TYPE)+120+font.getStringWidth(OPTIONAL), 0, 20, 20, StringTextComponent.EMPTY, optional));
+    this.optionalCheckbox = this.addRenderableWidget(new Checkbox(5+font.width(TYPE)+120+font.width(OPTIONAL), 0, 20, 20, TextComponent.EMPTY, optional));
 
 
-    this.nameField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(NAME), 25-6, 100, 20, StringTextComponent.EMPTY));
-    this.nameField.setText(name);
+    this.nameField = this.addRenderableWidget(new EditBox(font, 5+font.width(NAME), 25-6, 100, 20, TextComponent.EMPTY));
+    this.nameField.setValue(name);
     this.nameField.setResponder(this::setName);
-    this.nameField.setMaxStringLength(250);
+    this.nameField.setMaxLength(250);
     this.nameField.setCanLoseFocus(true);
 
-    this.amountField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(NAME)+105+font.getStringWidth(AMOUNT), 25-6, 100, 20, StringTextComponent.EMPTY));
-    this.amountField.setText(String.valueOf(amount));
-    this.amountField.setValidator(amountFilter);
+    this.amountField = this.addRenderableWidget(new EditBox(font, 5+font.width(NAME)+105+font.width(AMOUNT), 25-6, 100, 20, TextComponent.EMPTY));
+    this.amountField.setValue(String.valueOf(amount));
+    this.amountField.setFilter(amountFilter);
     this.amountField.setResponder(this::setAmount);
-    this.amountField.setMaxStringLength(3);
+    this.amountField.setMaxLength(3);
     this.amountField.setCanLoseFocus(true);
 
 
-    this.hiddenCheckbox = this.addButton(new CheckboxButton(5+font.getStringWidth(HIDDEN), 52-6, 20, 20, StringTextComponent.EMPTY, isHidden));
-    this.displayProgressCheckbox = this.addButton(new CheckboxButton(5+font.getStringWidth(HIDDEN)+25+font.getStringWidth(DISPLAY_PROGRESS), 52-6, 20, 20, StringTextComponent.EMPTY, displayProgress));
+    this.hiddenCheckbox = this.addRenderableWidget(new Checkbox(5+font.width(HIDDEN), 52-6, 20, 20, TextComponent.EMPTY, isHidden));
+    this.displayProgressCheckbox = this.addRenderableWidget(new Checkbox(5+font.width(HIDDEN)+25+font.width(DISPLAY_PROGRESS), 52-6, 20, 20, TextComponent.EMPTY, displayProgress));
 
-    this.primaryObjectiveField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(PRIMARY), 82-6, 100, 20, StringTextComponent.EMPTY));
-    this.primaryObjectiveField.setText(primaryObjective);
+    this.primaryObjectiveField = this.addRenderableWidget(new EditBox(font, 5+font.width(PRIMARY), 82-6, 100, 20, TextComponent.EMPTY));
+    this.primaryObjectiveField.setValue(primaryObjective);
     this.primaryObjectiveField.setResponder(this::setPrimaryObjective);
-    this.primaryObjectiveField.setMaxStringLength(600);
+    this.primaryObjectiveField.setMaxLength(600);
     this.primaryObjectiveField.setCanLoseFocus(true);
 
-    this.secondaryObjectiveField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(SECONDARY), 112-6, 100, 20, StringTextComponent.EMPTY));
-    this.secondaryObjectiveField.setText(secondaryObjective);
+    this.secondaryObjectiveField = this.addRenderableWidget(new EditBox(font, 5+font.width(SECONDARY), 112-6, 100, 20, TextComponent.EMPTY));
+    this.secondaryObjectiveField.setValue(secondaryObjective);
     this.secondaryObjectiveField.setResponder(this::setSecondaryObjective);
-    this.secondaryObjectiveField.setMaxStringLength(600);
+    this.secondaryObjectiveField.setMaxLength(600);
     this.secondaryObjectiveField.setCanLoseFocus(true);
 
-    this.itemFromInventoryButton = this.addButton(new Button(5+font.getStringWidth(PRIMARY), 82-6, 100, 20, new StringTextComponent("From Inventory"), btn -> {
+    this.itemFromInventoryButton = this.addRenderableWidget(new Button(5+font.width(PRIMARY), 82-6, 100, 20, new TextComponent("From Inventory"), btn -> {
       String jsons = create().toJson().toString() + "::::::::::" + questEditorScreen.build().toJson().toString() + (originalObjectiveName == null ? "" : "::::::::::" + originalObjectiveName);
       PacketDispatcher.sendToServer(new CRequestContainer(jsons, CRequestContainer.ContainerType.OBJECTIVE_STACK_SELECTOR));
     }));
 
-    this.runOnCompleteField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(RUNONCOMPLETE), 142-6, 100, 20, StringTextComponent.EMPTY));
-    this.runOnCompleteField.setText(currentRunOnComplete);
+    this.runOnCompleteField = this.addRenderableWidget(new EditBox(font, 5+font.width(RUNONCOMPLETE), 142-6, 100, 20, TextComponent.EMPTY));
+    this.runOnCompleteField.setValue(currentRunOnComplete);
     this.runOnCompleteField.setResponder(this::setRunOnComplete);
-    this.runOnCompleteField.setMaxStringLength(500);
+    this.runOnCompleteField.setMaxLength(500);
     this.runOnCompleteField.setCanLoseFocus(true);
-    this.plusRunOnCompleteButton = this.addButton(new Button(5+font.getStringWidth(RUNONCOMPLETE)+105, 142-6, 20, 20, new StringTextComponent("+"), btn -> {
+    this.plusRunOnCompleteButton = this.addRenderableWidget(new Button(5+font.width(RUNONCOMPLETE)+105, 142-6, 20, 20, new TextComponent("+"), btn -> {
       if (canAddRunOnComplete()) {
         this.runOnComplete.add(currentRunOnComplete);
-        runOnCompleteField.setText("");
+        runOnCompleteField.setValue("");
       }
     }));
 
     EntityUtil.LivingEntities entity = entityObjective != null ? EntityUtil.LivingEntities.valueOf(EntityType.getKey(entityObjective).toString().replaceAll(":", "_")) : EntityUtil.LivingEntities.valueOf("minecraft_pig");
-    this.entityTypeDropdown = this.addButton(new DropdownWidget<>(entity, 5+font.getStringWidth(PRIMARY), 82-2, 200, 10));
-    this.typeDropdown = this.addButton(new DropdownWidget<>(objectiveType, 5+font.getStringWidth(TYPE), 3, 100));
+    this.entityTypeDropdown = this.addRenderableWidget(new DropdownWidget<>(entity, 5+font.width(PRIMARY), 82-2, 200, 10));
+    this.typeDropdown = this.addRenderableWidget(new DropdownWidget<>(objectiveType, 5+font.width(TYPE), 3, 100));
 
     this.removeRunOnCompletionButtons = new Button[6];
     for (int i = 0; i < removeRunOnCompletionButtons.length; i++) {
       int j = i;
-      this.removeRunOnCompletionButtons[i] = this.addButton(new Button(5, 161+i*12, 10, 10, new StringTextComponent("-"), btn -> {
+      this.removeRunOnCompletionButtons[i] = this.addRenderableWidget(new Button(5, 161+i*12, 10, 10, new TextComponent("-"), btn -> {
         removeRunOnComplete(j);
       }));
     }
 
-    this.addButton(new Button(width-100, 0, 100, 20, new StringTextComponent("Cancel"), btn -> {
-      minecraft.displayGuiScreen(questEditorScreen);
+    this.addRenderableWidget(new Button(width-100, 0, 100, 20, new TextComponent("Cancel"), btn -> {
+      minecraft.setScreen(questEditorScreen);
     }));
   }
 
@@ -278,11 +278,11 @@ public class QuestObjectiveBuilderScreen extends Screen {
     entityTypeDropdown.active = !typeDropdown.isShowingOptions();
     entityTypeDropdown.visible = isPrimaryEntityObjective || isSecondaryEntityObjective;
     if (isPrimaryEntityObjective) {
-      entityTypeDropdown.x = 5 + font.getStringWidth(PRIMARY);
+      entityTypeDropdown.x = 5 + font.width(PRIMARY);
       entityTypeDropdown.y = 82 - 2;
       entityObjective = entityTypeDropdown.getSelectedOption().entityType;
     } else if (isSecondaryEntityObjective) {
-      entityTypeDropdown.x = 5 + font.getStringWidth(SECONDARY);
+      entityTypeDropdown.x = 5 + font.width(SECONDARY);
       entityTypeDropdown.y = 112 - 2;
       entityObjective = entityTypeDropdown.getSelectedOption().entityType;
     }
@@ -310,36 +310,36 @@ public class QuestObjectiveBuilderScreen extends Screen {
     hiddenCheckbox.visible = isNotEscortObjective;
     displayProgressCheckbox.visible = isNotEscortObjective;
 
-    this.optional = optionalCheckbox.isChecked();
-    this.isHidden = hiddenCheckbox.isChecked();
-    this.displayProgress = displayProgressCheckbox.isChecked();
+    this.optional = optionalCheckbox.selected();
+    this.isHidden = hiddenCheckbox.selected();
+    this.displayProgress = displayProgressCheckbox.selected();
   }
 
   @Override
-  public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
     renderBackground(matrixStack);
 
     drawString(matrixStack, font, TYPE, 5, 5, 0xFFFFFF);
-    drawString(matrixStack, font, OPTIONAL, 5+font.getStringWidth(TYPE)+120, 5, 0xFFFFFF);
+    drawString(matrixStack, font, OPTIONAL, 5+font.width(TYPE)+120, 5, 0xFFFFFF);
 
     drawString(matrixStack, font, NAME, 5, 25, 0xFFFFFF);
-    drawString(matrixStack, font, AMOUNT, 5+font.getStringWidth(NAME)+105, 25, 0xFFFFFF);
+    drawString(matrixStack, font, AMOUNT, 5+font.width(NAME)+105, 25, 0xFFFFFF);
 
     drawString(matrixStack, font, HIDDEN, 5, 52, 0xFFFFFF);
-    drawString(matrixStack, font, DISPLAY_PROGRESS, 5+font.getStringWidth(HIDDEN)+25, 52, 0xFFFFFF);
+    drawString(matrixStack, font, DISPLAY_PROGRESS, 5+font.width(HIDDEN)+25, 52, 0xFFFFFF);
 
     drawString(matrixStack, font, PRIMARY, 5, 82, 0xFFFFFF);
     drawString(matrixStack, font, SECONDARY, 5, 112, 0xFFFFFF);
 
     if (!tip1.isEmpty())
-      drawString(matrixStack, font, tip1, 5 + font.getStringWidth(PRIMARY) + 105, 82, 0xFFFFFF);
+      drawString(matrixStack, font, tip1, 5 + font.width(PRIMARY) + 105, 82, 0xFFFFFF);
     if (!tip2.isEmpty())
-      drawString(matrixStack, font, tip2, 5 + font.getStringWidth(SECONDARY) + 105, 112, 0xFFFFFF);
+      drawString(matrixStack, font, tip2, 5 + font.width(SECONDARY) + 105, 112, 0xFFFFFF);
 
     if (itemStackObjective != null && !itemStackObjective.isEmpty() && itemFromInventoryButton.visible) {
-      int x = 5 + font.getStringWidth(PRIMARY) + 105;
+      int x = 5 + font.width(PRIMARY) + 105;
       int y = 82 - 4;
-      minecraft.getItemRenderer().renderItemAndEffectIntoGuiWithoutEntity(itemStackObjective, x, y);
+      minecraft.getItemRenderer().renderAndDecorateFakeItem(itemStackObjective, x, y);
       if (mouseX >= x && mouseX <= x+16 && mouseY >= y && mouseY <= y+16) {
         this.renderTooltip(matrixStack, itemStackObjective, mouseX, mouseY);
       }
@@ -355,7 +355,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
     String save = canSave ? CANSAVE : CANNOTSAVE;
     int color = canSave ? 0x00FF00 : 0xFF0000;
 
-    drawString(matrixStack, font, save, width-2-font.getStringWidth(save), height-font.FONT_HEIGHT-2, color);
+    drawString(matrixStack, font, save, width-2-font.width(save), height-font.lineHeight-2, color);
 
     super.render(matrixStack, mouseX, mouseY, partialTicks);
   }
@@ -444,7 +444,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
   }
 
   @Override
-  public void closeScreen() {
+  public void onClose() {
     if (!name.isEmpty() && canCreateObjective()) {
       QuestObjective questObjective = create();
 
@@ -477,7 +477,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
     }
 
-    minecraft.displayGuiScreen(questEditorScreen);
+    minecraft.setScreen(questEditorScreen);
   }
 
   private boolean canConvertToArea(String s) {
@@ -521,7 +521,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
   public int clampScroll(int newScroll) {
     int max = runOnComplete.size()-6;
     if (max > 0)
-      return MathHelper.clamp(newScroll, 0, max);
+      return Mth.clamp(newScroll, 0, max);
     else
       return 0;
   }

@@ -2,29 +2,29 @@ package flash.npcmod.inventory.container;
 
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.ContainerInit;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
-public class NpcTradeEditorContainer extends Container {
+public class NpcTradeEditorContainer extends AbstractContainerMenu {
   private NpcEntity npcEntity;
 
-  private Inventory buyingItems, sellingItems;
+  private SimpleContainer buyingItems, sellingItems;
 
-  public NpcTradeEditorContainer(int id, PlayerInventory inventory, int entityId) {
+  public NpcTradeEditorContainer(int id, Inventory inventory, int entityId) {
     super(ContainerInit.NPC_TRADE_EDITOR_CONTAINER, id);
 
-    Entity entity = inventory.player.world.getEntityByID(entityId);
+    Entity entity = inventory.player.level.getEntity(entityId);
     if (!(entity instanceof NpcEntity)) return;
     NpcEntity npcEntity = (NpcEntity) entity;
     this.npcEntity = npcEntity;
 
-    buyingItems = new Inventory(36);
-    sellingItems = new Inventory(36);
+    buyingItems = new SimpleContainer(36);
+    sellingItems = new SimpleContainer(36);
 
     for (int i = 0; i < 18; i++) {
       int index = i / 3;
@@ -52,27 +52,27 @@ public class NpcTradeEditorContainer extends Container {
   }
 
   @Override
-  public boolean canInteractWith(PlayerEntity playerIn) {
-    return playerIn.hasPermissionLevel(4);
+  public boolean stillValid(Player playerIn) {
+    return playerIn.hasPermissions(4);
   }
 
-  public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
+  public ItemStack quickMoveStack(Player playerIn, int index) {
     ItemStack itemstack = ItemStack.EMPTY;
-    Slot slot = this.inventorySlots.get(index);
-    if (slot != null && slot.getHasStack()) {
-      ItemStack stackInSlot = slot.getStack();
+    Slot slot = this.slots.get(index);
+    if (slot != null && slot.hasItem()) {
+      ItemStack stackInSlot = slot.getItem();
       itemstack = stackInSlot.copy();
       if (index < 72) {
-        if (!this.mergeItemStack(stackInSlot, 72, this.inventorySlots.size(), true))
+        if (!this.moveItemStackTo(stackInSlot, 72, this.slots.size(), true))
           return ItemStack.EMPTY;
-      } else if (!this.mergeItemStack(stackInSlot, 0, 72, false)) {
+      } else if (!this.moveItemStackTo(stackInSlot, 0, 72, false)) {
         return ItemStack.EMPTY;
       }
 
       if (stackInSlot.isEmpty()) {
-        slot.putStack(ItemStack.EMPTY);
+        slot.set(ItemStack.EMPTY);
       } else {
-        slot.onSlotChanged();
+        slot.setChanged();
       }
     }
 
@@ -100,20 +100,19 @@ public class NpcTradeEditorContainer extends Container {
     int rowOffset = slotIndex < 18 ? rowIndex*18 : (rowIndex-6)*18;
     return new Slot(buyingItems, slotIndex, x+itemIndex*18, -28+rowOffset) {
       @Override
-      public void putStack(ItemStack stack) {
+      public void set(ItemStack stack) {
         setBuyingItem(rowIndex, itemIndex, stack);
-        inventory.markDirty();
+        container.setChanged();
       }
 
       @Override
-      public ItemStack onTake(PlayerEntity thePlayer, ItemStack stack) {
-        thePlayer.inventory.setItemStack(getBuyingItem(rowIndex, itemIndex));
+      public void onTake(Player thePlayer, ItemStack stack) {
+        thePlayer.inventoryMenu.setCarried(getBuyingItem(rowIndex, itemIndex));
         setBuyingItem(rowIndex, itemIndex, ItemStack.EMPTY);
-        return stack;
       }
 
       @Override
-      public ItemStack getStack() {
+      public ItemStack getItem() {
         return getBuyingItem(rowIndex, itemIndex);
       }
     };
@@ -124,20 +123,19 @@ public class NpcTradeEditorContainer extends Container {
     int rowOffset = slotIndex < 18 ? rowIndex*18 : (rowIndex-6)*18;
     return new Slot(sellingItems, slotIndex, x+itemIndex*18, -28+rowOffset) {
       @Override
-      public void putStack(ItemStack stack) {
+      public void set(ItemStack stack) {
         setSellingItem(rowIndex, itemIndex, stack);
-        inventory.markDirty();
+        container.setChanged();
       }
 
       @Override
-      public ItemStack onTake(PlayerEntity thePlayer, ItemStack stack) {
-        thePlayer.inventory.setItemStack(getSellingItem(rowIndex, itemIndex));
+      public void onTake(Player thePlayer, ItemStack stack) {
+        thePlayer.inventoryMenu.setCarried(getSellingItem(rowIndex, itemIndex));
         setSellingItem(rowIndex, itemIndex, ItemStack.EMPTY);
-        return stack;
       }
 
       @Override
-      public ItemStack getStack() {
+      public ItemStack getItem() {
         return getSellingItem(rowIndex, itemIndex);
       }
     };

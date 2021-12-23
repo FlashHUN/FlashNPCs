@@ -4,26 +4,31 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.arguments.EntityArgument;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.minecraft.command.Commands.argument;
-import static net.minecraft.command.Commands.literal;
+import static net.minecraft.commands.Commands.literal;
+import static net.minecraft.commands.Commands.argument;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
 
 public class QuestsCommand extends Command {
   @Override
@@ -37,7 +42,7 @@ public class QuestsCommand extends Command {
   }
 
   @Override
-  public void build(LiteralArgumentBuilder<CommandSource> builder) {
+  public void build(LiteralArgumentBuilder<CommandSourceStack> builder) {
     builder.then(literal("list")
         .executes(context -> list(context.getSource())));
 
@@ -64,31 +69,31 @@ public class QuestsCommand extends Command {
     return false;
   }
 
-  private int list(CommandSource source) {
-    List<IFormattableTextComponent> quests = new ArrayList<>();
+  private int list(CommandSourceStack source) {
+    List<MutableComponent> quests = new ArrayList<>();
     CommonQuestUtil.QUESTS.forEach(quest -> {
-      quests.add(new StringTextComponent(quest.getName()).setStyle(Style.EMPTY.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(quest.getDisplayName()))).setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/flashnpcs quests edit " + quest.getName()))));
+      quests.add(new TextComponent(quest.getName()).setStyle(Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent(quest.getDisplayName()))).withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/flashnpcs quests edit " + quest.getName()))));
     });
 
-    StringTextComponent questsComponent = new StringTextComponent("List of Quests: ");
+    TextComponent questsComponent = new TextComponent("List of Quests: ");
     for (int i = 0; i < quests.size(); i++) {
-      questsComponent.appendSibling(TextComponentUtils.wrapWithSquareBrackets(quests.get(i)).mergeStyle(TextFormatting.GREEN));
+      questsComponent.append(ComponentUtils.wrapInSquareBrackets(quests.get(i)).withStyle(ChatFormatting.GREEN));
       if (i < quests.size()-1)
-        questsComponent.appendString(", ");
+        questsComponent.append(", ");
     }
-    source.sendFeedback(questsComponent, false);
+    source.sendSuccess(questsComponent, false);
     return quests.size();
   }
 
-  private int edit(CommandSource source, String quest) throws CommandSyntaxException {
-    PlayerEntity player = source.asPlayer();
+  private int edit(CommandSourceStack source, String quest) throws CommandSyntaxException {
+    Player player = source.getPlayerOrException();
     PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.QUESTEDITOR, quest, 0), player);
     return 0;
   }
 
-  private int completeObjective(CommandSource source, PlayerEntity player, String questName, String objectiveName) {
+  private int completeObjective(CommandSourceStack source, Player player, String questName, String objectiveName) {
     if (player.isAlive()) {
-      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+      IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
       QuestInstance instance = null;
       for (QuestInstance questInstance : capability.getAcceptedQuests()) {
         if (questInstance.getQuest().getName().equals(questName)) {
@@ -107,31 +112,31 @@ public class QuestsCommand extends Command {
         }
         if (objective != null) {
           objective.forceComplete();
-          source.sendFeedback(new StringTextComponent("Completed quest objective " + objectiveName + " in " + questName + " for " + player.getName().getString()).mergeStyle(TextFormatting.GREEN), true);
+          source.sendSuccess(new TextComponent("Completed quest objective " + objectiveName + " in " + questName + " for " + player.getName().getString()).withStyle(ChatFormatting.GREEN), true);
         }
         else
-          source.sendFeedback(new StringTextComponent("The Quest " + questName + " doesn't have an Objective named " + objectiveName).mergeStyle(TextFormatting.RED), true);
+          source.sendSuccess(new TextComponent("The Quest " + questName + " doesn't have an Objective named " + objectiveName).withStyle(ChatFormatting.RED), true);
       } else
-        source.sendFeedback(new StringTextComponent(player.getName().getString() + " doesn't have the Quest " + questName).mergeStyle(TextFormatting.RED), true);
+        source.sendSuccess(new TextComponent(player.getName().getString() + " doesn't have the Quest " + questName).withStyle(ChatFormatting.RED), true);
     }
     return 0;
   }
 
-  private int reloadAllQuests(CommandSource source) {
+  private int reloadAllQuests(CommandSourceStack source) {
     CommonQuestUtil.loadAllQuests();
-    List<ServerPlayerEntity> playerList = source.getServer().getPlayerList().getPlayers();
-    for (ServerPlayerEntity player : playerList) {
+    List<ServerPlayer> playerList = source.getServer().getPlayerList().getPlayers();
+    for (ServerPlayer player : playerList) {
       CommonQuestUtil.syncPlayerQuests(player);
     }
-    source.sendFeedback(new StringTextComponent("Reloaded all quests!").mergeStyle(TextFormatting.GREEN), true);
+    source.sendSuccess(new TextComponent("Reloaded all quests!").withStyle(ChatFormatting.GREEN), true);
     return 0;
   }
 
-  private int reset(CommandSource source, PlayerEntity player, String quest) {
+  private int reset(CommandSourceStack source, Player player, String quest) {
     if (player != null && player.isAlive()) {
       Quest quest1 = CommonQuestUtil.fromName(quest);
       if (quest1 != null) {
-        IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+        IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
         QuestInstance toRemoveInstance = null;
         for (QuestInstance questInstance : capability.getAcceptedQuests()) {
           if (questInstance.getQuest().equals(quest1)) {
@@ -151,13 +156,13 @@ public class QuestsCommand extends Command {
             capability.abandonQuest(toRemoveInstance);
           if (toRemoveName != null)
             capability.getCompletedQuests().remove(toRemoveName);
-          source.sendFeedback(new StringTextComponent("Reset " + player.getName().getString() + "'s quest progress for quest " + quest).mergeStyle(TextFormatting.GREEN), true);
+          source.sendSuccess(new TextComponent("Reset " + player.getName().getString() + "'s quest progress for quest " + quest).withStyle(ChatFormatting.GREEN), true);
         }
         else
-          source.sendFeedback(new StringTextComponent(player.getName().getString() + " doesn't have any progress in " + quest).mergeStyle(TextFormatting.RED), true);
+          source.sendSuccess(new TextComponent(player.getName().getString() + " doesn't have any progress in " + quest).withStyle(ChatFormatting.RED), true);
       }
       else
-        source.sendFeedback(new StringTextComponent(quest + " does not exist").mergeStyle(TextFormatting.RED), true);
+        source.sendSuccess(new TextComponent(quest + " does not exist").withStyle(ChatFormatting.RED), true);
     }
     return 0;
   }

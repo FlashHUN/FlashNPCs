@@ -1,59 +1,61 @@
 package flash.npcmod.client.gui.screen.inventory;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.inventory.container.NpcTradeEditorContainer;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class NpcTradeEditorScreen extends ContainerScreen<NpcTradeEditorContainer> {
+public class NpcTradeEditorScreen extends AbstractContainerScreen<NpcTradeEditorContainer> {
 
   private static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/npc_trade_editor.png");
 
   NpcEntity npcEntity;
 
-  public NpcTradeEditorScreen(NpcTradeEditorContainer screenContainer, PlayerInventory inv, ITextComponent titleIn) {
+  public NpcTradeEditorScreen(NpcTradeEditorContainer screenContainer, Inventory inv, Component titleIn) {
     super(screenContainer, inv, titleIn);
     this.passEvents = true;
 
-    this.npcEntity = this.container.getNpcEntity();
+    this.npcEntity = this.menu.getNpcEntity();
   }
 
   @Override
   protected void init() {
-    if (!minecraft.player.hasPermissionLevel(4)) closeScreen();
+    if (!minecraft.player.hasPermissions(4)) onClose();
     super.init();
   }
 
   @Override
-  protected void drawGuiContainerBackgroundLayer(MatrixStack matrixStack, float partialTicks, int x, int y) {
-    RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-    this.minecraft.getTextureManager().bindTexture(TEXTURE);
-    int i = this.guiLeft-72;
-    int j = this.guiTop-36;
+  protected void renderBg(PoseStack matrixStack, float partialTicks, int x, int y) {
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    RenderSystem.setShaderTexture(0, TEXTURE);
+    int i = this.leftPos-72;
+    int j = this.topPos-36;
     this.blit(matrixStack, i, j, 0, 0, 320, 202, 512, 256);
   }
 
   @Override
-  public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
     this.renderBackground(matrixStack);
     super.render(matrixStack, mouseX, mouseY, partialTicks);
-    this.renderHoveredTooltip(matrixStack, mouseX, mouseY);
+    this.renderTooltip(matrixStack, mouseX, mouseY);
   }
 
   @Override
-  protected void drawGuiContainerForegroundLayer(MatrixStack matrixStack, int x, int y) {}
+  protected void renderLabels(PoseStack matrixStack, int x, int y) {}
 
   private boolean isMouseOverScrollIcon(double mouseX, double mouseY) {
-    int i = this.guiLeft+164;
-    int j = this.guiTop+8;
+    int i = this.leftPos+164;
+    int j = this.topPos+8;
     return mouseX >= i && mouseX <= i+4 && mouseY >= j && mouseY <= j+70;
   }
 }

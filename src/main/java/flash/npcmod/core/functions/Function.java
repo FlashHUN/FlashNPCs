@@ -2,9 +2,9 @@ package flash.npcmod.core.functions;
 
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 public class Function extends AbstractFunction {
 
@@ -12,7 +12,7 @@ public class Function extends AbstractFunction {
     super(name, paramNames, callables);
   }
 
-  public void call(String[] params, ServerPlayerEntity sender, NpcEntity npcEntity) {
+  public void call(String[] params, ServerPlayer sender, NpcEntity npcEntity) {
     if (params.length == paramNames.length || (paramNames.length == 1 && paramNames[0].isEmpty())) {
       for (String callable : callables) {
         if (callable.startsWith("function:")) {
@@ -37,7 +37,7 @@ public class Function extends AbstractFunction {
           }
 
           MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-          server.getCommandManager().handleCommand(server.getCommandSource().withFeedbackDisabled(), command);
+          server.getCommands().performCommand(server.createCommandSourceStack().withSuppressedOutput(), command);
         }
       }
       debugUsage(sender, npcEntity);

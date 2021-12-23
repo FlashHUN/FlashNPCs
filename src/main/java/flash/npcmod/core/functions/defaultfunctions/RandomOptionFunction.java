@@ -4,7 +4,7 @@ import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SRandomOptionFunction;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class RandomOptionFunction extends AbstractFunction {
 
@@ -13,7 +13,7 @@ public class RandomOptionFunction extends AbstractFunction {
   }
 
   @Override
-  public void call(String[] params, ServerPlayerEntity sender, NpcEntity npcEntity) {
+  public void call(String[] params, ServerPlayer sender, NpcEntity npcEntity) {
     PacketDispatcher.sendTo(new SRandomOptionFunction(), sender);
     debugUsage(sender, npcEntity);
   }

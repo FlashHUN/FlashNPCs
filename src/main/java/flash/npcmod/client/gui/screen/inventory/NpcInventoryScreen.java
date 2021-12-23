@@ -1,21 +1,22 @@
 package flash.npcmod.client.gui.screen.inventory;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.inventory.container.NpcInventoryContainer;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import static net.minecraft.client.gui.screen.inventory.InventoryScreen.drawEntityOnScreen;
+import static net.minecraft.client.gui.screens.inventory.InventoryScreen.renderEntityInInventory;
 
 @OnlyIn(Dist.CLIENT)
-public class NpcInventoryScreen extends ContainerScreen<NpcInventoryContainer> {
+public class NpcInventoryScreen extends AbstractContainerScreen<NpcInventoryContainer> {
 
   private static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/npc_inventory.png");
   public static final ResourceLocation EMPTY_ARMOR_SLOT_SWORD = new ResourceLocation(Main.MODID, "textures/item/empty_armor_slot_sword.png");
@@ -27,46 +28,47 @@ public class NpcInventoryScreen extends ContainerScreen<NpcInventoryContainer> {
   /** The old y position of the mouse pointer */
   private float oldMouseY;
 
-  public NpcInventoryScreen(NpcInventoryContainer screenContainer, PlayerInventory inv, ITextComponent titleIn) {
+  public NpcInventoryScreen(NpcInventoryContainer screenContainer, Inventory inv, Component titleIn) {
     super(screenContainer, inv, titleIn);
     this.passEvents = true;
-    this.titleX = 0;
-    this.titleY = -12;
+    this.titleLabelX = 0;
+    this.titleLabelY = -12;
 
-    this.npcEntity = this.container.getNpcEntity();
+    this.npcEntity = this.menu.getNpcEntity();
   }
 
   @Override
   protected void init() {
-    if (!minecraft.player.hasPermissionLevel(4)) closeScreen();
+    if (!minecraft.player.hasPermissions(4)) onClose();
     super.init();
   }
 
   @Override
-  protected void drawGuiContainerBackgroundLayer(MatrixStack matrixStack, float partialTicks, int x, int y) {
-    RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-    this.minecraft.getTextureManager().bindTexture(TEXTURE);
-    int i = this.guiLeft;
-    int j = this.guiTop;
-    this.blit(matrixStack, i, j, 0, 0, this.xSize, this.ySize);
-    drawEntityOnScreen(i + 89, j + 75, 30, (float)(i + 89) - this.oldMouseX, (float)(j + 75 - 50) - this.oldMouseY, npcEntity);
-    minecraft.textureManager.bindTexture(EMPTY_ARMOR_SLOT_SWORD);
+  protected void renderBg(PoseStack matrixStack, float partialTicks, int x, int y) {
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    RenderSystem.setShaderTexture(0, TEXTURE);
+    int i = this.leftPos;
+    int j = this.topPos;
+    this.blit(matrixStack, i, j, 0, 0, this.imageWidth, this.imageHeight);
+    renderEntityInInventory(i + 89, j + 75, 30, (float)(i + 89) - this.oldMouseX, (float)(j + 75 - 50) - this.oldMouseY, npcEntity);
+    RenderSystem.setShaderTexture(0, TEXTURE);
     blit(matrixStack, i+115, j+44, 16, 16, 0, 0, 16, 16, 16, 16);
   }
 
   @Override
-  public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
 
     this.renderBackground(matrixStack);
     super.render(matrixStack, mouseX, mouseY, partialTicks);
-    this.renderHoveredTooltip(matrixStack, mouseX, mouseY);
+    this.renderTooltip(matrixStack, mouseX, mouseY);
 
     this.oldMouseX = (float)mouseX;
     this.oldMouseY = (float)mouseY;
   }
 
   @Override
-  protected void drawGuiContainerForegroundLayer(MatrixStack matrixStack, int x, int y) {
-    this.font.drawText(matrixStack, this.title, (float)this.titleX, (float)this.titleY, 0xFFFFFF);
+  protected void renderLabels(PoseStack matrixStack, int x, int y) {
+    this.font.draw(matrixStack, this.title, (float)this.titleLabelX, (float)this.titleLabelY, 0xFFFFFF);
   }
 }

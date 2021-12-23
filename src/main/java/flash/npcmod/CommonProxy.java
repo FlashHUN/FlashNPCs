@@ -5,11 +5,11 @@ import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -36,12 +36,12 @@ public class CommonProxy {
   public void acceptQuest(String name, int entityid) {}
   public void completeQuest(String name, UUID uuid) {}
 
-  public PlayerEntity getPlayer() {
+  public Player getPlayer() {
     return null;
   }
-  public World getWorld() { return ServerLifecycleHooks.getCurrentServer().getWorld(World.OVERWORLD); }
+  public Level getWorld() { return ServerLifecycleHooks.getCurrentServer().getLevel(Level.OVERWORLD); }
 
-  public SSyncQuestCapability decodeQuestCapabilitySync(PacketBuffer buf) { return new SSyncQuestCapability(); }
+  public SSyncQuestCapability decodeQuestCapabilitySync(FriendlyByteBuf buf) { return new SSyncQuestCapability(); }
   public void syncTrades(int entityid, TradeOffers tradeOffers) {}
 
 }

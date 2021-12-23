@@ -1,8 +1,8 @@
 package flash.npcmod.network.packets.server;
 
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -16,13 +16,13 @@ public class SSendDialogueEditor {
     this.data = data;
   }
 
-  public static void encode(SSendDialogueEditor msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
-    buf.writeString(msg.data);
+  public static void encode(SSendDialogueEditor msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
+    buf.writeUtf(msg.data);
   }
 
-  public static SSendDialogueEditor decode(PacketBuffer buf) {
-    return new SSendDialogueEditor(buf.readString(51), buf.readString(CommonDialogueUtil.MAX_DIALOGUE_LENGTH));
+  public static SSendDialogueEditor decode(FriendlyByteBuf buf) {
+    return new SSendDialogueEditor(buf.readUtf(51), buf.readUtf(CommonDialogueUtil.MAX_DIALOGUE_LENGTH));
   }
 
   public static void handle(SSendDialogueEditor msg, Supplier<NetworkEvent.Context> ctx) {

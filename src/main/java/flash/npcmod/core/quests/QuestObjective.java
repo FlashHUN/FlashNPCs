@@ -2,15 +2,15 @@ package flash.npcmod.core.quests;
 
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.core.pathing.Path;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.util.Mth;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -78,7 +78,7 @@ public abstract class QuestObjective {
   }
 
   public void setProgress(int progress) {
-    this.progress = MathHelper.clamp(progress, 0, amount);
+    this.progress = Mth.clamp(progress, 0, amount);
   }
 
   public boolean isComplete() {
@@ -95,7 +95,7 @@ public abstract class QuestObjective {
     onComplete = runOnComplete;
   }
 
-  public void onComplete(PlayerEntity playerEntity) {
+  public void onComplete(Player playerEntity) {
     if (onComplete != null) {
       if (isComplete()) {
         for (String s : onComplete) {
@@ -121,16 +121,16 @@ public abstract class QuestObjective {
                 objective.forceComplete();
             }
           } else if (s.startsWith("/")) {
-            if (!playerEntity.world.isRemote && !onCompleteRan) {
+            if (!playerEntity.level.isClientSide && !onCompleteRan) {
               if (ConfigHolder.COMMON.isInvalidCommand(s)) continue;
 
               MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-              server.getCommandManager().handleCommand(server.getCommandSource().withFeedbackDisabled(), s.replaceAll("@p", playerEntity.getName().getString()));
+              server.getCommands().performCommand(server.createCommandSourceStack().withSuppressedOutput(), s.replaceAll("@p", playerEntity.getName().getString()));
             }
           }
         }
         if (!onCompleteRan) {
-          playerEntity.sendStatusMessage(new TranslationTextComponent("msg.flashnpcs.objectivecomplete").mergeStyle(TextFormatting.YELLOW), true);
+          playerEntity.displayClientMessage(new TranslatableComponent("msg.flashnpcs.objectivecomplete").withStyle(ChatFormatting.YELLOW), true);
         }
         onCompleteRan = true;
       }
@@ -283,7 +283,7 @@ public abstract class QuestObjective {
   public static QuestObjective fromJson(JSONObject jsonObject) {
     int id = jsonObject.getInt("index");
     String objectiveName = jsonObject.getString("name");
-    int type = MathHelper.clamp(jsonObject.getInt("type"), 0, QuestObjective.ObjectiveType.values().length);
+    int type = Mth.clamp(jsonObject.getInt("type"), 0, QuestObjective.ObjectiveType.values().length);
     QuestObjective.ObjectiveType objectiveType = QuestObjective.ObjectiveType.values()[type];
     int objectiveAmount = jsonObject.getInt("amount");
     String primaryObjective = jsonObject.getString("primaryObjective");

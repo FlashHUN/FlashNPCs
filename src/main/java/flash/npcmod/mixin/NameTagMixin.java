@@ -1,13 +1,13 @@
 package flash.npcmod.mixin;
 
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.NameTagItem;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.NameTagItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,8 +19,8 @@ public class NameTagMixin extends Item {
     super(properties);
   }
 
-  @Inject(method = "itemInteractionForEntity", at = @At("INVOKE"), cancellable = true)
-  public void itemInteractionForEntity(ItemStack stack, PlayerEntity playerIn, LivingEntity target, Hand hand, CallbackInfoReturnable<ActionResultType> ci) {
-    if (target instanceof NpcEntity) ci.setReturnValue(ActionResultType.FAIL);
+  @Inject(method = "interactLivingEntity", at = @At("INVOKE"), cancellable = true)
+  public void interactLivingEntity(ItemStack stack, Player playerIn, LivingEntity target, InteractionHand hand, CallbackInfoReturnable<InteractionResult> ci) {
+    if (target instanceof NpcEntity) ci.setReturnValue(InteractionResult.FAIL);
   }
 }

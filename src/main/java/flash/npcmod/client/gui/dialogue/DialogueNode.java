@@ -1,14 +1,16 @@
 package flash.npcmod.client.gui.dialogue;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -16,8 +18,8 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.minecraft.client.gui.AbstractGui.blit;
-import static net.minecraft.client.gui.AbstractGui.fill;
+import static net.minecraft.client.gui.GuiComponent.blit;
+import static net.minecraft.client.gui.GuiComponent.fill;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueNode {
@@ -36,7 +38,7 @@ public class DialogueNode {
   private int[] optionsBarHeight;
 
   private static final int maxWidth = 120;
-  private static final int defaultTextHeight = 2+Minecraft.getInstance().fontRenderer.FONT_HEIGHT;
+  private static final int defaultTextHeight = 2+Minecraft.getInstance().font.lineHeight;
 
   public boolean hasConflictingName;
 
@@ -84,7 +86,7 @@ public class DialogueNode {
   }
 
   private void adjustWidth(String text) {
-    int textWidth = minecraft.fontRenderer.getStringWidth(text);
+    int textWidth = minecraft.font.width(text);
     if (textWidth > width && textWidth < maxWidth) {
       setWidth(textWidth);
     } else {
@@ -104,24 +106,24 @@ public class DialogueNode {
     }
 
     // Setting text bar height
-    List<IReorderingProcessor> trimmedText = minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(text), this.width-4);
+    List<FormattedCharSequence> trimmedText = minecraft.font.split(new TextComponent(text), this.width-4);
     int numOfTextLines = trimmedText.size() > 0 ? trimmedText.size() : 1;
     this.textBarHeight = defaultTextHeight * numOfTextLines;
 
     // Setting response bar height
-    List<IReorderingProcessor> trimmedResponse = minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(response), this.width-4);
+    List<FormattedCharSequence> trimmedResponse = minecraft.font.split(new TextComponent(response), this.width-4);
     int numOfResponseLines = trimmedResponse.size() > 0 ? trimmedResponse.size() : 1;
     this.responseBarHeight = isDialogueStart() ? -1 : defaultTextHeight * numOfResponseLines;
 
     // Setting the function bar height
-    List<IReorderingProcessor> trimmedFunction = minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(function), this.width-4);
+    List<FormattedCharSequence> trimmedFunction = minecraft.font.split(new TextComponent(function), this.width-4);
     int numOfFunctionLines = trimmedFunction.size() > 0 ? trimmedFunction.size() : 1;
     this.functionBarHeight = defaultTextHeight * numOfFunctionLines;
 
     // Setting options bar height
     this.optionsBarHeight = new int[getOptionsNames().length+1];
     for (int i = 0; i < getOptionsNames().length; i++) {
-      List<IReorderingProcessor> trimmedOption = minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(getOptionsNames()[i]), this.width-4);
+      List<FormattedCharSequence> trimmedOption = minecraft.font.split(new TextComponent(getOptionsNames()[i]), this.width-4);
       optionsBarHeight[i] = defaultTextHeight*trimmedOption.size();
     }
     optionsBarHeight[getOptionsNames().length] = defaultTextHeight;
@@ -171,16 +173,16 @@ public class DialogueNode {
   }
 
   public void setPosition(int x, int y) {
-    this.x = MathHelper.clamp(x, 0, dialogueBuilderScreen.maxX);
-    this.y = MathHelper.clamp(y, 0, dialogueBuilderScreen.maxY);
+    this.x = Mth.clamp(x, 0, dialogueBuilderScreen.maxX);
+    this.y = Mth.clamp(y, 0, dialogueBuilderScreen.maxY);
   }
 
   private void setWidth(int width) {
     this.width = Math.min(Math.max(50, width), maxWidth);
   }
 
-  public void draw(MatrixStack matrixStack, double scrollX, double scrollY, double mouseX, double mouseY) {
-    matrixStack.push();
+  public void draw(PoseStack matrixStack, double scrollX, double scrollY, double mouseX, double mouseY) {
+    matrixStack.pushPose();
     matrixStack.translate(scrollX, scrollY, 0);
     matrixStack.translate(x, y, 0);
 
@@ -192,7 +194,7 @@ public class DialogueNode {
 
       drawRectangles(matrixStack);
 
-      minecraft.fontRenderer.drawString(matrixStack, getName(), 3, 3, 0x000000);
+      minecraft.font.draw(matrixStack, getName(), 3, 3, 0x000000);
 
       String text = getText();
       String response = getResponse();
@@ -226,18 +228,18 @@ public class DialogueNode {
 
     }
 
-    matrixStack.pop();
+    matrixStack.popPose();
   }
 
-  private void drawMultilineText(MatrixStack matrixStack, String text, int y, boolean isEmpty) {
-    List<IReorderingProcessor> lines = minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(text), width-4);
+  private void drawMultilineText(PoseStack matrixStack, String text, int y, boolean isEmpty) {
+    List<FormattedCharSequence> lines = minecraft.font.split(new TextComponent(text), width-4);
     for (int i = 0; i < lines.size(); i++) {
-      IReorderingProcessor processor = lines.get(i);
-      minecraft.fontRenderer.func_238422_b_(matrixStack, processor, 3, y+2+(defaultTextHeight*i), isEmpty ? 0xFFBBBBBB : 0x000000);
+      FormattedCharSequence processor = lines.get(i);
+      minecraft.font.draw(matrixStack, processor, 3, y+2+(defaultTextHeight*i), isEmpty ? 0xFFBBBBBB : 0x000000);
     }
   }
 
-  private void drawRectangles(MatrixStack matrixStack) {
+  private void drawRectangles(PoseStack matrixStack) {
     int black = 0xFF000000;
     int gray = 0xFFCCCCCC;
     int nameBar = hasConflictingName ? 0xFFFF0000 : 0xFF00FFFF;
@@ -278,8 +280,10 @@ public class DialogueNode {
     }
   }
 
-  private void drawIcons(MatrixStack matrixStack) {
-    this.minecraft.getTextureManager().bindTexture(TEXTURES);
+  private void drawIcons(PoseStack matrixStack) {
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    RenderSystem.setShaderTexture(0, TEXTURES);
 
     // Drag icon
     blit(matrixStack, -9, -9, 7, 7, 8, 0, 7, 7, 256, 256);
@@ -292,7 +296,7 @@ public class DialogueNode {
 
     // Option Icon on Parent, so the line we draw from this to the parent isn't over said icon
     if (parent != null) {
-      matrixStack.push();
+      matrixStack.pushPose();
 
       int x = this.x - parent.getX();
       int y = this.y - parent.getY();
@@ -304,21 +308,21 @@ public class DialogueNode {
         int[] xy = parent.getOptionIconLocation(index);
         blit(matrixStack, xy[0], xy[1], 8, 8, 0, 0, 8, 8, 256, 256);
       }
-      matrixStack.pop();
+      matrixStack.popPose();
     }
 
     // Option Icons on this
-    matrixStack.push();
+    matrixStack.pushPose();
     {
       for (int i = 0; i < optionsBarHeight.length; i++) {
         int[] xy = getOptionIconLocation(i);
         blit(matrixStack, xy[0], xy[1], 8, 8, 0, 0, 8, 8, 256, 256);
       }
     }
-    matrixStack.pop();
+    matrixStack.popPose();
   }
 
-  private void drawLinesToParent(MatrixStack matrixStack) {
+  private void drawLinesToParent(PoseStack matrixStack) {
     if (parent != null) {
       int index = 0;
       for (int i = 0; i < parent.getOptionsNames().length; i++) {
@@ -339,7 +343,7 @@ public class DialogueNode {
 
         int color = 0xFFFFFF00;
 
-        matrixStack.push();
+        matrixStack.pushPose();
         {
           matrixStack.translate(thisXY[0], thisXY[1], 0);
           matrixStack.translate(3.5, 3.5, 0);
@@ -351,7 +355,7 @@ public class DialogueNode {
           fill(matrixStack, lineLength / 2, 0, lineLength / 2 + 1, lineHeight, color);
           fill(matrixStack, lineLength / 2 + 1, lineHeight, lineLength, lineHeight + 1, color);
         }
-        matrixStack.pop();
+        matrixStack.popPose();
       }
     }
   }
@@ -601,7 +605,7 @@ public class DialogueNode {
   }
 
   public boolean isVisible(double scrollX, double scrollY) {
-    return -scrollX <= x+9+width+12 && -scrollY <= y+18+actualHeight && -scrollX + minecraft.getMainWindow().getScaledWidth() >= x+9-12 && -scrollY + minecraft.getMainWindow().getScaledHeight() >= y+18;
+    return -scrollX <= x+9+width+12 && -scrollY <= y+18+actualHeight && -scrollX + minecraft.getWindow().getGuiScaledWidth() >= x+9-12 && -scrollY + minecraft.getWindow().getGuiScaledHeight() >= y+18;
   }
 
   public boolean isDialogueStart() {

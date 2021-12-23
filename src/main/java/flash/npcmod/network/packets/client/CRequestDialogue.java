@@ -5,10 +5,10 @@ import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSendDialogue;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 import org.json.JSONObject;
 
 import java.util.function.Supplier;
@@ -27,18 +27,18 @@ public class CRequestDialogue {
     this.entityid = entityid;
   }
 
-  public static void encode(CRequestDialogue msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
+  public static void encode(CRequestDialogue msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
     buf.writeInt(msg.entityid);
   }
 
-  public static CRequestDialogue decode(PacketBuffer buf) {
-    return new CRequestDialogue(buf.readString(CommonDialogueUtil.MAX_DIALOGUE_LENGTH), buf.readInt());
+  public static CRequestDialogue decode(FriendlyByteBuf buf) {
+    return new CRequestDialogue(buf.readUtf(CommonDialogueUtil.MAX_DIALOGUE_LENGTH), buf.readInt());
   }
 
   public static void handle(CRequestDialogue msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
+      ServerPlayer sender = ctx.get().getSender();
 
       JSONObject dialogue = CommonDialogueUtil.loadDialogueFile(msg.name);
 
@@ -47,7 +47,7 @@ public class CRequestDialogue {
       } else {
         String dialogueJson = CommonDialogueUtil.DEFAULT_DIALOGUE_JSON;
         if (msg.entityid != -1000) {
-          Entity entity = sender.world.getEntityByID(msg.entityid);
+          Entity entity = sender.level.getEntity(msg.entityid);
           if (entity instanceof NpcEntity) {
             NpcEntity npcEntity = (NpcEntity) entity;
             for (String name : CommonDialogueUtil.HELLO_THERE_NAMES) {

@@ -1,9 +1,9 @@
 package flash.npcmod.core.trades;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
 import static flash.npcmod.core.ItemUtil.*;
 
@@ -15,9 +15,9 @@ public class TradeOffer {
     this(ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY);
   }
 
-  public TradeOffer(CompoundNBT dataTag) {
-    this(ItemStack.read(dataTag.getCompound("buyA")), ItemStack.read(dataTag.getCompound("buyB")), ItemStack.read(dataTag.getCompound("buyC")),
-        ItemStack.read(dataTag.getCompound("sellA")), ItemStack.read(dataTag.getCompound("sellB")), ItemStack.read(dataTag.getCompound("sellC")));
+  public TradeOffer(CompoundTag dataTag) {
+    this(ItemStack.of(dataTag.getCompound("buyA")), ItemStack.of(dataTag.getCompound("buyB")), ItemStack.of(dataTag.getCompound("buyC")),
+        ItemStack.of(dataTag.getCompound("sellA")), ItemStack.of(dataTag.getCompound("sellB")), ItemStack.of(dataTag.getCompound("sellC")));
   }
 
   public TradeOffer(ItemStack buyingFirst, ItemStack buyingSecond, ItemStack buyingThird,
@@ -50,25 +50,25 @@ public class TradeOffer {
     }
   }
 
-  public CompoundNBT write() {
-    CompoundNBT compoundnbt = new CompoundNBT();
-    compoundnbt.put("buyA", this.buyingStacks[0].write(new CompoundNBT()));
-    compoundnbt.put("buyB", this.buyingStacks[1].write(new CompoundNBT()));
-    compoundnbt.put("buyC", this.buyingStacks[2].write(new CompoundNBT()));
-    compoundnbt.put("sellA", this.sellingStacks[0].write(new CompoundNBT()));
-    compoundnbt.put("sellB", this.sellingStacks[1].write(new CompoundNBT()));
-    compoundnbt.put("sellC", this.sellingStacks[2].write(new CompoundNBT()));
+  public CompoundTag write() {
+    CompoundTag compoundnbt = new CompoundTag();
+    compoundnbt.put("buyA", this.buyingStacks[0].save(new CompoundTag()));
+    compoundnbt.put("buyB", this.buyingStacks[1].save(new CompoundTag()));
+    compoundnbt.put("buyC", this.buyingStacks[2].save(new CompoundTag()));
+    compoundnbt.put("sellA", this.sellingStacks[0].save(new CompoundTag()));
+    compoundnbt.put("sellB", this.sellingStacks[1].save(new CompoundTag()));
+    compoundnbt.put("sellC", this.sellingStacks[2].save(new CompoundTag()));
     return compoundnbt;
   }
 
-  public boolean canDoTransaction(PlayerEntity sender) {
+  public boolean canDoTransaction(Player sender) {
     for (ItemStack stack : buyingStacks) {
       if (!hasAmount(sender, stack)) return false;
     }
     return true;
   }
 
-  public void doTransaction(ServerPlayerEntity sender) {
+  public void doTransaction(ServerPlayer sender) {
     if (isEmpty() || !canDoTransaction(sender)) return;
 
     for (ItemStack stack : buyingStacks) {

@@ -4,8 +4,8 @@ import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SMoveToDialogue;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.scoreboard.ScoreObjective;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.scores.Objective;
 
 public class MoveOnScoreboardFunction extends AbstractFunction {
 
@@ -14,7 +14,7 @@ public class MoveOnScoreboardFunction extends AbstractFunction {
   }
 
   @Override
-  public void call(String[] params, ServerPlayerEntity sender, NpcEntity npcEntity) {
+  public void call(String[] params, ServerPlayer sender, NpcEntity npcEntity) {
     if (params.length == 5) {
       int value;
       try {
@@ -26,9 +26,9 @@ public class MoveOnScoreboardFunction extends AbstractFunction {
       if (!params[2].equals("min") && !params[2].equals("max"))
         params[2] = "exact";
 
-      ScoreObjective scoreObjective = sender.getWorldScoreboard().getObjective(params[0]);
+      Objective scoreObjective = sender.getScoreboard().getOrCreateObjective(params[0]);
       if (scoreObjective != null) {
-        int points = sender.getWorldScoreboard().getOrCreateScore(sender.getName().getString(), scoreObjective).getScorePoints();
+        int points = sender.getScoreboard().getOrCreatePlayerScore(sender.getName().getString(), scoreObjective).getScore();
 
         boolean canMoveTo;
 
@@ -37,9 +37,9 @@ public class MoveOnScoreboardFunction extends AbstractFunction {
         else canMoveTo = value == points;
 
         if (canMoveTo)
-          PacketDispatcher.sendTo(new SMoveToDialogue(params[3], npcEntity.getEntityId()), sender);
+          PacketDispatcher.sendTo(new SMoveToDialogue(params[3], npcEntity.getId()), sender);
         else if (!params[4].isEmpty())
-          PacketDispatcher.sendTo(new SMoveToDialogue(params[4], npcEntity.getEntityId()), sender);
+          PacketDispatcher.sendTo(new SMoveToDialogue(params[4], npcEntity.getId()), sender);
 
         debugUsage(sender, npcEntity);
       }

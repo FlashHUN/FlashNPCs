@@ -1,58 +1,59 @@
 package flash.npcmod.client.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class DialogueDisplayWidget extends Widget {
+public class DialogueDisplayWidget extends AbstractWidget {
   private DialogueScreen screen;
   private int scrollY;
 
   public DialogueDisplayWidget(DialogueScreen screen, int x, int y, int width, int height) {
-    super(x, y, width, height, StringTextComponent.EMPTY);
+    super(x, y, width, height, TextComponent.EMPTY);
     this.screen = screen;
     this.scrollY = 0;
   }
 
   @Override
-  public void renderWidget(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-    RenderSystem.pushMatrix();
+  public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    matrixStack.pushPose();
     Minecraft minecraft = Minecraft.getInstance();
-    FontRenderer fontrenderer = minecraft.fontRenderer;
-    RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
+    Font fontrenderer = minecraft.font;
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
     RenderSystem.enableDepthTest();
     int prevHeight = 0;
     for (int i = screen.displayedText.size()-1-scrollY; i >= 0; i--) {
-      List<IReorderingProcessor> trimmedText = fontrenderer.trimStringToWidth(new StringTextComponent(screen.displayedText.get(i)), width);
+      List<FormattedCharSequence> trimmedText = fontrenderer.split(new TextComponent(screen.displayedText.get(i)), width);
 
-      int lineHeight = fontrenderer.FONT_HEIGHT+1;
+      int lineHeight = fontrenderer.lineHeight+1;
 
       drawMultilineText(matrixStack, trimmedText, fontrenderer, x, y+height-prevHeight-lineHeight*trimmedText.size(), (i & 1) == 0 ? screen.getNpcTextColor() : 0xFFFFFF);
 
       prevHeight += lineHeight*trimmedText.size()+lineHeight;
     }
-    RenderSystem.popMatrix();
+    matrixStack.popPose();
   }
 
-  private void drawMultilineText(MatrixStack matrixStack, List<IReorderingProcessor> trimmedText, FontRenderer font, int x, int y, int color) {
+  private void drawMultilineText(PoseStack matrixStack, List<FormattedCharSequence> trimmedText, Font font, int x, int y, int color) {
     for (int i = 0; i < trimmedText.size(); i++) {
-      int y2 = y+((font.FONT_HEIGHT+1)*i);
+      int y2 = y+((font.lineHeight+1)*i);
       if (y2 >= this.y) {
-        IReorderingProcessor processor = trimmedText.get(i);
-        font.func_238422_b_(matrixStack, processor, x, y2, color);
+        FormattedCharSequence processor = trimmedText.get(i);
+        font.draw(matrixStack, processor, x, y2, color);
       }
     }
   }
@@ -68,20 +69,25 @@ public class DialogueDisplayWidget extends Widget {
   }
 
   public int clampScroll(int newScroll) {
-    FontRenderer fontRenderer = Minecraft.getInstance().fontRenderer;
-    int lineHeight = fontRenderer.FONT_HEIGHT+1;
+    Font fontRenderer = Minecraft.getInstance().font;
+    int lineHeight = fontRenderer.lineHeight+1;
     int numOfLines = 0;
     for (int i = 0; i < screen.displayedText.size(); i++) {
-      List<IReorderingProcessor> trimmedText = fontRenderer.trimStringToWidth(new StringTextComponent(screen.displayedText.get(i)), width);
+      List<FormattedCharSequence> trimmedText = fontRenderer.split(new TextComponent(screen.displayedText.get(i)), width);
 
       numOfLines += trimmedText.size()+1;
     }
     int maxLinesInHeight = height/lineHeight;
     int max = numOfLines - maxLinesInHeight;
     if (max > 0) {
-      return MathHelper.clamp(newScroll, 0, max/2);
+      return Mth.clamp(newScroll, 0, max/2);
     } else {
       return scrollY;
     }
+  }
+
+  @Override
+  public void updateNarration(NarrationElementOutput p_169152_) {
+    // TODO?
   }
 }

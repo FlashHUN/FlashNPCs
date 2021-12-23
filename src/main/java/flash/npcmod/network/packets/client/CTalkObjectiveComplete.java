@@ -1,11 +1,11 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.core.quests.QuestObjective;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -17,18 +17,18 @@ public class CTalkObjectiveComplete {
     this.objective = objectiveName;
   }
 
-  public static void encode(CTalkObjectiveComplete msg, PacketBuffer buf) {
-    buf.writeString(msg.objective, 1000);
+  public static void encode(CTalkObjectiveComplete msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.objective, 1000);
   }
 
-  public static CTalkObjectiveComplete decode(PacketBuffer buf) {
-    return new CTalkObjectiveComplete(buf.readString(1000));
+  public static CTalkObjectiveComplete decode(FriendlyByteBuf buf) {
+    return new CTalkObjectiveComplete(buf.readUtf(1000));
   }
 
   public static void handle(CTalkObjectiveComplete msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
-      IQuestCapability capability = QuestCapabilityProvider.getCapability(sender);
+      ServerPlayer sender = ctx.get().getSender();
+      IQuestCapability capability = QuestCapabilityAttacher.getCapability(sender);
 
       String[] split = msg.objective.split(":::");
       String questName = split[0];

@@ -2,10 +2,10 @@ package flash.npcmod.network.packets.client;
 
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.ChatFormatting;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -23,26 +23,26 @@ public class CBuildQuest {
     this.jsonText = jsonText;
   }
 
-  public static void encode(CBuildQuest msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
-    buf.writeString(msg.jsonText);
+  public static void encode(CBuildQuest msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
+    buf.writeUtf(msg.jsonText);
   }
 
-  public static CBuildQuest decode(PacketBuffer buf) {
-    return new CBuildQuest(buf.readString(51),
-        buf.readString(100000));
+  public static CBuildQuest decode(FriendlyByteBuf buf) {
+    return new CBuildQuest(buf.readUtf(51),
+        buf.readUtf(100000));
   }
 
   public static void handle(CBuildQuest msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      if (ctx.get().getSender().hasPermissionLevel(4)) {
+      if (ctx.get().getSender().hasPermissions(4)) {
         CommonQuestUtil.buildQuest(msg.name, msg.jsonText);
 
         Quest quest = CommonQuestUtil.loadQuestFile(msg.name);
         if (quest != null)
-          ctx.get().getSender().sendStatusMessage(new StringTextComponent("Successfully built quest \'" + msg.name + "\'").mergeStyle(TextFormatting.GREEN), false);
+          ctx.get().getSender().displayClientMessage(new TextComponent("Successfully built quest \'" + msg.name + "\'").withStyle(ChatFormatting.GREEN), false);
         else
-          ctx.get().getSender().sendStatusMessage(new StringTextComponent("Couldn't build quest \'" + msg.name + "\'").mergeStyle(TextFormatting.RED), false);
+          ctx.get().getSender().displayClientMessage(new TextComponent("Couldn't build quest \'" + msg.name + "\'").withStyle(ChatFormatting.RED), false);
       }
     });
     ctx.get().setPacketHandled(true);

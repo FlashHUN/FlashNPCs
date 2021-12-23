@@ -1,21 +1,20 @@
 package flash.npcmod;
 
-import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityStorage;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.events.QuestEvents;
+import flash.npcmod.init.CapabilityInit;
 import flash.npcmod.init.CommandInit;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.init.ItemInit;
 import flash.npcmod.network.PacketDispatcher;
-import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -39,9 +38,9 @@ public class Main {
   // Proxies
   public static final CommonProxy PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
 
-  public static final ItemGroup NPC_ITEMGROUP = new ItemGroup(Main.MODID) {
+  public static final CreativeModeTab NPC_ITEMGROUP = new CreativeModeTab(Main.MODID) {
     @Override
-    public ItemStack createIcon() {
+    public ItemStack makeIcon() {
       return new ItemStack(ItemInit.NPC_EDITOR.get());
     }
   };
@@ -51,6 +50,7 @@ public class Main {
 
     // Register the setup method for modloading
     modEventBus.addListener(this::setup);
+    modEventBus.addListener(this::registerEntityAttributes);
 
     // Register the config
     ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHolder.COMMON_SPEC);
@@ -60,19 +60,17 @@ public class Main {
     EntityInit.ENTITIES.register(modEventBus);
 
     MinecraftForge.EVENT_BUS.register(this);
+    MinecraftForge.EVENT_BUS.register(new CapabilityInit());
     MinecraftForge.EVENT_BUS.register(new QuestEvents());
   }
 
   private void setup(final FMLCommonSetupEvent event) {
-    // Entity Attributes
-    event.enqueueWork(() -> {
-      GlobalEntityTypeAttributes.put(EntityInit.NPC_ENTITY.get(), NpcEntity.setCustomAttributes().create());
-    });
-
     // Register packets
     PacketDispatcher.registerMessages();
+  }
 
-    CapabilityManager.INSTANCE.register(IQuestCapability.class, new QuestCapabilityStorage(), QuestCapability::new);
+  private void registerEntityAttributes(EntityAttributeCreationEvent event) {
+    event.put(EntityInit.NPC_ENTITY.get(), NpcEntity.setCustomAttributes().build());
   }
 
   @SubscribeEvent

@@ -3,8 +3,8 @@ package flash.npcmod.network.packets.server;
 import flash.npcmod.Main;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,21 +44,21 @@ public class SSyncQuestCapability {
     this.objectiveProgressMap = objectiveProgressMap;
   }
 
-  public static void encode(SSyncQuestCapability msg, PacketBuffer buf) {
+  public static void encode(SSyncQuestCapability msg, FriendlyByteBuf buf) {
     buf.writeInt(msg.type.ordinal());
     switch (msg.type) {
       case TRACKED_QUEST:
         if (msg.trackedQuest != null) {
-          buf.writeString(msg.trackedQuest, 51);
+          buf.writeUtf(msg.trackedQuest, 51);
         } else
-          buf.writeString("");
+          buf.writeUtf("");
         break;
       case ACCEPTED_QUESTS:
         buf.writeInt(msg.acceptedQuests.length);
         for (QuestInstance questInstance : msg.acceptedQuests) {
-          buf.writeString(questInstance.getQuest().getName(), 51);
-          buf.writeUniqueId(questInstance.getPickedUpFrom());
-          buf.writeString(questInstance.getPickedUpFromName(), 200);
+          buf.writeUtf(questInstance.getQuest().getName(), 51);
+          buf.writeUUID(questInstance.getPickedUpFrom());
+          buf.writeUtf(questInstance.getPickedUpFromName(), 200);
           for (int i = 0; i < questInstance.getQuest().getObjectives().size(); i++) {
             QuestObjective objective = questInstance.getQuest().getObjectives().get(i);
             buf.writeInt(objective.getId());
@@ -70,20 +70,20 @@ public class SSyncQuestCapability {
       case COMPLETED_QUESTS:
         buf.writeInt(msg.completedQuests.length);
         for (String name : msg.completedQuests) {
-          buf.writeString(name, 51);
+          buf.writeUtf(name, 51);
         }
         break;
       case PROGRESS_MAP:
         buf.writeInt(msg.objectiveProgressMap.keySet().size());
         msg.objectiveProgressMap.forEach((questObjective, progress) -> {
-          buf.writeString(questObjective.getQuest().getName()+":::"+questObjective.getName(), 300);
+          buf.writeUtf(questObjective.getQuest().getName()+":::"+questObjective.getName(), 300);
           buf.writeInt(questObjective.getProgress());
         });
         break;
     }
   }
 
-  public static SSyncQuestCapability decode(PacketBuffer buf) {
+  public static SSyncQuestCapability decode(FriendlyByteBuf buf) {
     return Main.PROXY.decodeQuestCapabilitySync(buf);
   }
 

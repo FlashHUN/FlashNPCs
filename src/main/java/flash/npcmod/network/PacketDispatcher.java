@@ -3,14 +3,14 @@ package flash.npcmod.network;
 import flash.npcmod.Main;
 import flash.npcmod.network.packets.client.*;
 import flash.npcmod.network.packets.server.*;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
 
 public class PacketDispatcher {
 
@@ -64,8 +64,8 @@ public class PacketDispatcher {
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncTrades.class, SSyncTrades::encode, SSyncTrades::decode, SSyncTrades::handle);
   }
 
-  public static <MSG> void sendTo(MSG msg, PlayerEntity player) {
-    INSTANCE.sendTo(msg, ((ServerPlayerEntity)player).connection.getNetworkManager(), NetworkDirection.PLAY_TO_CLIENT);
+  public static <MSG> void sendTo(MSG msg, Player player) {
+    INSTANCE.sendTo(msg, ((ServerPlayer)player).connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
   }
 
   public static <MSG> void sendToAllTracking(MSG msg, LivingEntity entityToTrack) {

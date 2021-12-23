@@ -4,7 +4,7 @@ import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SMoveToDialogue;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class MoveToDialogueFunction extends AbstractFunction {
 
@@ -13,9 +13,9 @@ public class MoveToDialogueFunction extends AbstractFunction {
   }
 
   @Override
-  public void call(String[] params, ServerPlayerEntity sender, NpcEntity npcEntity) {
+  public void call(String[] params, ServerPlayer sender, NpcEntity npcEntity) {
     if (params.length == 1) {
-      PacketDispatcher.sendTo(new SMoveToDialogue(params[0], npcEntity.getEntityId()), sender);
+      PacketDispatcher.sendTo(new SMoveToDialogue(params[0], npcEntity.getId()), sender);
       debugUsage(sender, npcEntity);
     } else {
       warnParameterAmount(npcEntity);

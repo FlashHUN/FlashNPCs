@@ -2,11 +2,13 @@ package flash.npcmod.capability.quests;
 
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraftforge.common.util.INBTSerializable;
 
 import java.util.ArrayList;
 import java.util.Map;
 
-public interface IQuestCapability {
+public interface IQuestCapability extends INBTSerializable<CompoundTag> {
 
   String getTrackedQuest();
   QuestInstance getTrackedQuestInstance();

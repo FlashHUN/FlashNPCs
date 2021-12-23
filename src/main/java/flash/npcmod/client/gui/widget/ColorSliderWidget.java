@@ -1,15 +1,21 @@
 package flash.npcmod.client.gui.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.client.gui.screen.NpcBuilderScreen;
 import flash.npcmod.core.ColorUtil;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class ColorSliderWidget extends Widget {
+public class ColorSliderWidget extends AbstractWidget {
+
+  @Override
+  public void updateNarration(NarrationElementOutput p_169152_) {
+    // TODO?
+  }
 
   public enum Color {
     RED(0xFFFF0000) {
@@ -21,7 +27,7 @@ public class ColorSliderWidget extends Widget {
       @Override
       public void setColor(NpcBuilderScreen screen, int color) {
         screen.setR(color);
-        screen.redField.setText(String.valueOf(color));
+        screen.redField.setValue(String.valueOf(color));
       }
 
       @Override
@@ -38,7 +44,7 @@ public class ColorSliderWidget extends Widget {
       @Override
       public void setColor(NpcBuilderScreen screen, int color) {
         screen.setG(color);
-        screen.greenField.setText(String.valueOf(color));
+        screen.greenField.setValue(String.valueOf(color));
       }
 
       @Override
@@ -55,7 +61,7 @@ public class ColorSliderWidget extends Widget {
       @Override
       public void setColor(NpcBuilderScreen screen, int color) {
         screen.setB(color);
-        screen.blueField.setText(String.valueOf(color));
+        screen.blueField.setValue(String.valueOf(color));
       }
 
       @Override
@@ -86,7 +92,7 @@ public class ColorSliderWidget extends Widget {
   private double colorY;
 
   public ColorSliderWidget(NpcBuilderScreen screen, int x, int y, int width, int height, Color color) {
-    super(x, y, width, height, StringTextComponent.EMPTY);
+    super(x, y, width, height, TextComponent.EMPTY);
     this.color = color;
     this.screen = screen;
     updateColorY();
@@ -97,18 +103,18 @@ public class ColorSliderWidget extends Widget {
   }
 
   @Override
-  public void renderWidget(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
     fill(matrixStack, x-1, y-1, x+width+1, y+height+1, 0xFF000000);
 
     int mask = color.getMask(screen);
     fillGradient(matrixStack, x, y, x+width, y+height, color.getColorHex() | mask, 0xFF000000 | mask);
 
-    matrixStack.push();
+    matrixStack.pushPose();
     {
       matrixStack.translate(0, height - colorY*height, 0);
       hLine(matrixStack, x, x+width, y, 0xFF000000);
     }
-    matrixStack.pop();
+    matrixStack.popPose();
   }
 
   @Override

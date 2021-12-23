@@ -9,10 +9,10 @@ import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SResetFunctionNames;
 import flash.npcmod.network.packets.server.SSendDialogueEditor;
 import flash.npcmod.network.packets.server.SSendFunctionName;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -33,20 +33,20 @@ public class CRequestDialogueEditor {
     this.entityid = entityid;
   }
 
-  public static void encode(CRequestDialogueEditor msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
+  public static void encode(CRequestDialogueEditor msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
     buf.writeInt(msg.entityid);
   }
 
-  public static CRequestDialogueEditor decode(PacketBuffer buf) {
-    return new CRequestDialogueEditor(buf.readString(CommonDialogueUtil.MAX_DIALOGUE_LENGTH), buf.readInt());
+  public static CRequestDialogueEditor decode(FriendlyByteBuf buf) {
+    return new CRequestDialogueEditor(buf.readUtf(CommonDialogueUtil.MAX_DIALOGUE_LENGTH), buf.readInt());
   }
 
   public static void handle(CRequestDialogueEditor msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
+      ServerPlayer sender = ctx.get().getSender();
 
-      if (sender.hasPermissionLevel(4)) {
+      if (sender.hasPermissions(4)) {
         // Send function names to player
         List<String> functionNames = new ArrayList<>();
         for (AbstractFunction function : FunctionUtil.FUNCTIONS) {
@@ -73,7 +73,7 @@ public class CRequestDialogueEditor {
         } else {
           String dialogueEditorJson = CommonDialogueUtil.DEFAULT_DIALOGUE_EDITOR_JSON;
           if (msg.entityid != -1000) {
-            Entity entity = sender.world.getEntityByID(msg.entityid);
+            Entity entity = sender.level.getEntity(msg.entityid);
             if (entity instanceof NpcEntity) {
               NpcEntity npcEntity = (NpcEntity) entity;
               for (String name : CommonDialogueUtil.HELLO_THERE_NAMES) {

@@ -1,8 +1,8 @@
 package flash.npcmod.network.packets.server;
 
 import flash.npcmod.Main;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -14,12 +14,12 @@ public class SSendFunctionName {
     this.name = name;
   }
 
-  public static void encode(SSendFunctionName msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
+  public static void encode(SSendFunctionName msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
   }
 
-  public static SSendFunctionName decode(PacketBuffer buf) {
-    return new SSendFunctionName(buf.readString(250));
+  public static SSendFunctionName decode(FriendlyByteBuf buf) {
+    return new SSendFunctionName(buf.readUtf(250));
   }
 
   public static void handle(SSendFunctionName msg, Supplier<NetworkEvent.Context> ctx) {

@@ -1,30 +1,31 @@
 package flash.npcmod.client.gui.overlay;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.core.client.ScreenHelper;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.events.ClientEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class HudOverlay extends AbstractGui {
+public class HudOverlay extends GuiComponent {
 
   private static int width, height;
   private static final Minecraft minecraft = Minecraft.getInstance();
@@ -43,11 +44,11 @@ public class HudOverlay extends AbstractGui {
   public void renderGameOverlay(RenderGameOverlayEvent.Pre event) {
     if (minecraft.player != null && minecraft.player.isAlive()) {
       if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
-        width = Minecraft.getInstance().getMainWindow().getScaledWidth();
-        height = Minecraft.getInstance().getMainWindow().getScaledHeight();
+        width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        height = Minecraft.getInstance().getWindow().getGuiScaledHeight();
 
-        MatrixStack matrixStack = event.getMatrixStack();
-        IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
+        PoseStack matrixStack = event.getMatrixStack();
+        IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
 
         renderTrackedQuest(matrixStack, questCapability);
 
@@ -56,7 +57,7 @@ public class HudOverlay extends AbstractGui {
     }
   }
 
-  private void renderTrackedQuest(MatrixStack matrixStack, IQuestCapability capability) {
+  private void renderTrackedQuest(PoseStack matrixStack, IQuestCapability capability) {
     QuestInstance trackedQuestInstance = capability.getTrackedQuestInstance();
     if (trackedQuestInstance != null) {
       Quest trackedQuest = trackedQuestInstance.getQuest();
@@ -69,13 +70,13 @@ public class HudOverlay extends AbstractGui {
       int oneFourthWidth = width/4;
 
       int gradientOffset = 20;
-      int nameWidth = minecraft.fontRenderer.getStringWidth(name);
+      int nameWidth = minecraft.font.width(name);
       int actualWidth = Math.min(oneFourthWidth, nameWidth);
 
-      List<IReorderingProcessor> multiLineName = minecraft.fontRenderer.trimStringToWidth(new StringTextComponent(name), actualWidth);
+      List<FormattedCharSequence> multiLineName = minecraft.font.split(new TextComponent(name), actualWidth);
 
-      int nameHeight = 5 + multiLineName.size()*(minecraft.fontRenderer.FONT_HEIGHT+2);
-      int objectivesHeight = 6 + visibleObjectives.size()*(minecraft.fontRenderer.FONT_HEIGHT+2);
+      int nameHeight = 5 + multiLineName.size()*(minecraft.font.lineHeight+2);
+      int objectivesHeight = 6 + visibleObjectives.size()*(minecraft.font.lineHeight+2);
 
       int hudWidth = actualWidth + gradientOffset + 2;
       int hudX = width-hudWidth;
@@ -93,42 +94,46 @@ public class HudOverlay extends AbstractGui {
         fill(matrixStack, hudX+gradientOffset, hudY+nameHeight-2, width, hudY+nameHeight-1, lineColor);
 
         ResourceLocation icon = trackedQuest.canComplete() ? ClientEvents.QUEST_COMPLETE_ICON : ClientEvents.QUEST_ICON;
-        minecraft.textureManager.bindTexture(icon);
-        int iconWidth = minecraft.fontRenderer.FONT_HEIGHT+2;
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.setShaderTexture(0, icon);
+        int iconWidth = minecraft.font.lineHeight+2;
         blit(matrixStack, hudX+3, hudY+(nameHeight-iconWidth)/2, iconWidth, iconWidth, 0, 0, 32, 32, 32, 32);
 
         for (int i = 0; i < multiLineName.size(); i++) {
-          IReorderingProcessor processor = multiLineName.get(i);
-          int nameW = (int)minecraft.fontRenderer.getCharacterManager().func_243238_a(processor);
+          FormattedCharSequence processor = multiLineName.get(i);
+          int nameW = (int)minecraft.font.getSplitter().stringWidth(processor);
           int offset = (actualWidth-nameW)/2;
-          minecraft.fontRenderer.func_238422_b_(matrixStack, processor, width - 5 - actualWidth + offset, hudY + 4 + (minecraft.fontRenderer.FONT_HEIGHT+2)*i, 0xFFFF00);
+          minecraft.font.draw(matrixStack, processor, width - 5 - actualWidth + offset, hudY + 4 + (minecraft.font.lineHeight+2)*i, 0xFFFF00);
         }
       }
       ScreenHelper.sidewaysFillGradient(matrixStack, hudX, hudY+nameHeight, width, hudY+nameHeight+objectivesHeight, 0x00000000, 0x87000000);
 
       for (int i = 0; i < visibleObjectives.size(); i++) {
         QuestObjective objective = visibleObjectives.get(i);
-        int y = hudY + nameHeight + 3 + i * (minecraft.fontRenderer.FONT_HEIGHT + 2);
-        int iconSize = minecraft.fontRenderer.FONT_HEIGHT + 2;
+        int y = hudY + nameHeight + 3 + i * (minecraft.font.lineHeight + 2);
+        int iconSize = minecraft.font.lineHeight + 2;
         int x = width - iconSize - 2;
         drawObjective(matrixStack, x, y, objective, oneFourthWidth);
       }
     }
   }
 
-  public static void drawObjective(MatrixStack matrixStack, int x, int y, QuestObjective objective, int maxObjectiveNameWidth) {
+  public static void drawObjective(PoseStack matrixStack, int x, int y, QuestObjective objective, int maxObjectiveNameWidth) {
     String progress = objective.getProgress() + "/" + objective.getAmount();
     String addon = ": " + (objective.shouldDisplayProgress() ? progress + " " : "");
     String objectiveName = objective.getName() + addon;
-    int objectiveNameWidth = minecraft.fontRenderer.getStringWidth(objectiveName);
+    int objectiveNameWidth = minecraft.font.width(objectiveName);
     if (maxObjectiveNameWidth > 0 && objectiveNameWidth > maxObjectiveNameWidth) {
-      objectiveName = minecraft.fontRenderer.trimStringToWidth(objective.getName(), maxObjectiveNameWidth - minecraft.fontRenderer.getStringWidth(addon) - minecraft.fontRenderer.getStringWidth("...")) + "..." + addon;
+      objectiveName = minecraft.font.plainSubstrByWidth(objective.getName(), maxObjectiveNameWidth - minecraft.font.width(addon) - minecraft.font.width("...")) + "..." + addon;
       objectiveNameWidth = maxObjectiveNameWidth;
     }
     boolean isOptional = objective.isOptional();
-    int iconSize = minecraft.fontRenderer.FONT_HEIGHT + 2;
-    drawString(matrixStack, minecraft.fontRenderer, objectiveName, x - 2 - objectiveNameWidth, y + 2, isOptional ? 0x96B7FF : 0xFFFFFF);
-    minecraft.textureManager.bindTexture(TEXTURES);
+    int iconSize = minecraft.font.lineHeight + 2;
+    drawString(matrixStack, minecraft.font, objectiveName, x - 2 - objectiveNameWidth, y + 2, isOptional ? 0x96B7FF : 0xFFFFFF);
+    RenderSystem.setShader(GameRenderer::getPositionTexShader);
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    RenderSystem.setShaderTexture(0, TEXTURES);
     blit(matrixStack, x, y, iconSize, iconSize, objective.isComplete() ? 24 : (isOptional ? 48 : 0), 0, 24, 24, 256, 256);
   }
 

@@ -1,7 +1,7 @@
 package flash.npcmod;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.client.gui.screen.FunctionBuilderScreen;
 import flash.npcmod.client.gui.screen.NpcBuilderScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
@@ -20,11 +20,11 @@ import flash.npcmod.network.packets.client.CRequestQuestInfo;
 import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.world.World;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -37,7 +37,7 @@ public class ClientProxy extends CommonProxy {
 
   public void openScreen(SOpenScreen.EScreens screen, String data, int entityid) {
     Screen toOpen = null;
-    NpcEntity npcEntity = (NpcEntity) minecraft.player.world.getEntityByID(entityid);
+    NpcEntity npcEntity = (NpcEntity) minecraft.player.level.getEntity(entityid);
     switch (screen) {
       case DIALOGUE: toOpen = new DialogueScreen(data, npcEntity); break;
       case EDITDIALOGUE: toOpen = new DialogueBuilderScreen(data); break;
@@ -54,21 +54,21 @@ public class ClientProxy extends CommonProxy {
         }
         break;
     }
-    minecraft.displayGuiScreen(toOpen);
+    minecraft.setScreen(toOpen);
   }
 
 
 
   public void randomDialogueOption() {
-    if (minecraft.currentScreen instanceof DialogueScreen) {
-      DialogueScreen screen = (DialogueScreen)minecraft.currentScreen;
+    if (minecraft.screen instanceof DialogueScreen) {
+      DialogueScreen screen = (DialogueScreen)minecraft.screen;
       screen.chooseRandomOption();
     }
   }
 
   public void moveToDialogue(String dialogueName, int entityid) {
-    if (minecraft.currentScreen instanceof DialogueScreen) {
-      DialogueScreen screen = (DialogueScreen)minecraft.currentScreen;
+    if (minecraft.screen instanceof DialogueScreen) {
+      DialogueScreen screen = (DialogueScreen)minecraft.screen;
       ClientDialogueUtil.loadDialogue(screen.getDialogueName());
       ClientDialogueUtil.loadDialogueOption(dialogueName);
       if (!ClientDialogueUtil.getCurrentResponse().isEmpty()) {
@@ -88,8 +88,8 @@ public class ClientProxy extends CommonProxy {
   }
 
   public void closeDialogue() {
-    if (minecraft.currentScreen instanceof DialogueScreen) {
-      minecraft.currentScreen.closeScreen();
+    if (minecraft.screen instanceof DialogueScreen) {
+      minecraft.screen.onClose();
     }
   }
 
@@ -107,27 +107,27 @@ public class ClientProxy extends CommonProxy {
 
 
 
-  public boolean shouldSaveInWorld() { return minecraft.isSingleplayer(); }
+  public boolean shouldSaveInWorld() { return minecraft.hasSingleplayerServer(); }
 
 
 
   public void syncTrackedQuest(String trackedQuest) {
-    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
     questCapability.setTrackedQuest(trackedQuest);
   }
 
   public void syncAcceptedQuests(ArrayList<QuestInstance> acceptedQuests) {
-    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
     questCapability.setAcceptedQuests(acceptedQuests);
   }
 
   public void syncCompletedQuests(ArrayList<String> completedQuests) {
-    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
     questCapability.setCompletedQuests(completedQuests);
   }
 
   public void syncQuestProgressMap(Map<QuestObjective, Integer> progressMap) {
-    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
     Map<QuestObjective, Integer> map = questCapability.getQuestProgressMap();
     progressMap.forEach((objective, progress) -> {
       map.put(objective, progress);
@@ -138,17 +138,17 @@ public class ClientProxy extends CommonProxy {
   public void acceptQuest(String name, int entityid) {
     PacketDispatcher.sendToServer(new CRequestQuestInfo(name));
     Quest quest = ClientQuestUtil.fromName(name);
-    Entity entity = minecraft.player.world.getEntityByID(entityid);
+    Entity entity = minecraft.player.level.getEntity(entityid);
     if (quest != null && entity instanceof NpcEntity) {
-      IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
+      IQuestCapability capability = QuestCapabilityAttacher.getCapability(minecraft.player);
 
-      QuestInstance questInstance = new QuestInstance(quest, entity.getUniqueID(), entity.getName().getString(), minecraft.player);
+      QuestInstance questInstance = new QuestInstance(quest, entity.getUUID(), entity.getName().getString(), minecraft.player);
       capability.acceptQuest(questInstance);
     }
   }
 
   public void completeQuest(String name, UUID uuid) {
-    IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
+    IQuestCapability capability = QuestCapabilityAttacher.getCapability(minecraft.player);
 
     QuestInstance instance = null;
     for (QuestInstance current : capability.getAcceptedQuests()) {
@@ -159,27 +159,27 @@ public class ClientProxy extends CommonProxy {
 
     if (instance != null)
       capability.completeQuest(instance);
-      
+
     ClientQuestUtil.loadQuest(name);
   }
 
 
-  public PlayerEntity getPlayer() {
+  public Player getPlayer() {
     return minecraft.player;
   }
 
   @Override
-  public World getWorld() {
-    return minecraft.world;
+  public Level getWorld() {
+    return minecraft.level;
   }
 
-  public SSyncQuestCapability decodeQuestCapabilitySync(PacketBuffer buf) {
+  public SSyncQuestCapability decodeQuestCapabilitySync(FriendlyByteBuf buf) {
     int typeInt = buf.readInt();
     if (typeInt < 0 || typeInt >= SSyncQuestCapability.CapabilityType.values().length) return new SSyncQuestCapability();
     SSyncQuestCapability.CapabilityType type = SSyncQuestCapability.CapabilityType.values()[typeInt];
     switch (type) {
       default:
-        String trackedName = buf.readString(51);
+        String trackedName = buf.readUtf(51);
         if (!trackedName.isEmpty()) {
           Quest quest = ClientQuestUtil.fromName(trackedName);
           if (quest != null)
@@ -192,9 +192,9 @@ public class ClientProxy extends CommonProxy {
         List<QuestInstance> acceptedQuests = new ArrayList<>();
         int acceptedAmount = buf.readInt();
         for (int i = 0; i < acceptedAmount; i++) {
-          String questName = buf.readString(51);
-          UUID pickedUpFrom = buf.readUniqueId();
-          String pickedUpFromName = buf.readString(200);
+          String questName = buf.readUtf(51);
+          UUID pickedUpFrom = buf.readUUID();
+          String pickedUpFromName = buf.readUtf(200);
           Quest quest = ClientQuestUtil.fromName(questName);
           if (quest != null) {
             acceptedQuests.add(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, minecraft.player));
@@ -219,7 +219,7 @@ public class ClientProxy extends CommonProxy {
         List<String> completedQuests = new ArrayList<>();
         int completedAmount = buf.readInt();
         for (int i = 0; i < completedAmount; i++) {
-          String name = buf.readString(51);
+          String name = buf.readUtf(51);
           completedQuests.add(name);
         }
         return new SSyncQuestCapability(completedQuests.toArray(new String[0]));
@@ -227,7 +227,7 @@ public class ClientProxy extends CommonProxy {
         Map<QuestObjective, Integer> objectiveProgressMap = new HashMap<>();
         int progressMapAmount = buf.readInt();
         for (int i = 0; i < progressMapAmount; i++) {
-          String key = buf.readString();
+          String key = buf.readUtf();
           String[] splitKey = key.split(":::");
           int progress = buf.readInt();
           Quest quest = ClientQuestUtil.fromName(splitKey[0]);
@@ -244,7 +244,7 @@ public class ClientProxy extends CommonProxy {
   }
 
   public void syncTrades(int entityid, TradeOffers tradeOffers) {
-    Entity entity = minecraft.player.world.getEntityByID(entityid);
+    Entity entity = minecraft.player.level.getEntity(entityid);
     if (entity instanceof NpcEntity) {
       ((NpcEntity) entity).setTradeOffers(tradeOffers);
     }

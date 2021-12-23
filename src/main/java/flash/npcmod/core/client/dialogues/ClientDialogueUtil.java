@@ -2,7 +2,7 @@ package flash.npcmod.core.client.dialogues;
 
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.core.quests.QuestInstance;
@@ -12,7 +12,7 @@ import flash.npcmod.network.packets.client.CRequestDialogue;
 import flash.npcmod.network.packets.client.CRequestDialogueEditor;
 import flash.npcmod.network.packets.client.CTalkObjectiveComplete;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.json.JSONArray;
@@ -22,7 +22,6 @@ import org.json.JSONTokener;
 import javax.annotation.Nullable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -142,11 +141,11 @@ public class ClientDialogueUtil {
     }
 
     // Quest Talk Objective Check
-    if (Minecraft.getInstance().currentScreen instanceof DialogueScreen) {
-      DialogueScreen dialogueScreen = (DialogueScreen) Minecraft.getInstance().currentScreen;
-      PlayerEntity player = Minecraft.getInstance().player;
+    if (Minecraft.getInstance().screen instanceof DialogueScreen) {
+      DialogueScreen dialogueScreen = (DialogueScreen) Minecraft.getInstance().screen;
+      Player player = Minecraft.getInstance().player;
       if (player != null && player.isAlive()) {
-        IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+        IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
         List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
         acceptedQuests.forEach(questInstance -> {
           questInstance.getQuest().getObjectives().forEach(objective -> {

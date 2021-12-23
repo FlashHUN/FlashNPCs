@@ -1,8 +1,8 @@
 package flash.npcmod.network.packets.server;
 
 import flash.npcmod.Main;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -16,13 +16,13 @@ public class SAcceptQuest {
     this.entityid = entityid;
   }
 
-  public static void encode(SAcceptQuest msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
+  public static void encode(SAcceptQuest msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
     buf.writeInt(msg.entityid);
   }
 
-  public static SAcceptQuest decode(PacketBuffer buf) {
-    return new SAcceptQuest(buf.readString(51), buf.readInt());
+  public static SAcceptQuest decode(FriendlyByteBuf buf) {
+    return new SAcceptQuest(buf.readUtf(51), buf.readInt());
   }
 
   public static void handle(SAcceptQuest msg, Supplier<NetworkEvent.Context> ctx) {

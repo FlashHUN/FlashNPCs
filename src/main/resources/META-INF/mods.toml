@@ -12,12 +12,12 @@ Flash's NPC Mod
 [[dependencies.flashnpcs]]
 modId = "forge"
 mandatory = true
-versionRange = "[36,)"
+versionRange = "[39,)"
 ordering = "NONE"
 side = "BOTH"
 [[dependencies.flashnpcs]]
 modId = "minecraft"
 mandatory = true
-versionRange = "[1.16.3,1.17)"
+versionRange = "[1.18.1,1.19)"
 ordering = "NONE"
 side = "BOTH"

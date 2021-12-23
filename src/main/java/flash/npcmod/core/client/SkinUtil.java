@@ -1,16 +1,21 @@
 package flash.npcmod.core.client;
 
 import com.google.common.hash.Hashing;
+import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import flash.npcmod.core.FileUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.DownloadingTexture;
-import net.minecraft.client.renderer.texture.Texture;
+import net.minecraft.client.renderer.texture.HttpTexture;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.resources.SkinManager;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileNotFoundException;
 
 @OnlyIn(Dist.CLIENT)
 public class SkinUtil {
@@ -26,13 +31,12 @@ public class SkinUtil {
   public static ResourceLocation loadSkin(String url) {
     String s = Hashing.sha1().hashUnencodedChars(url).toString();
     ResourceLocation resourcelocation = new ResourceLocation("loaded_skins/" + s);
-    Texture texture = minecraft.getTextureManager().getTexture(resourcelocation);
-    if (texture == null) {
+    AbstractTexture abstracttexture = minecraft.textureManager.getTexture(resourcelocation, MissingTextureAtlasSprite.getTexture());
+    if (abstracttexture == MissingTextureAtlasSprite.getTexture()) {
       File file1 = new File(skinCacheDir, s.length() > 2 ? s.substring(0, 2) : "xx");
       File file2 = new File(file1, s);
-      DownloadingTexture downloadingtexture = new DownloadingTexture(file2, url, DefaultPlayerSkin.getDefaultSkinLegacy(), true, () -> {
-      });
-      minecraft.getTextureManager().loadTexture(resourcelocation, downloadingtexture);
+      HttpTexture httptexture = new HttpTexture(file2, url, DefaultPlayerSkin.getDefaultSkin(), true, () -> {});
+      minecraft.textureManager.register(resourcelocation, httptexture);
     }
 
     return resourcelocation;

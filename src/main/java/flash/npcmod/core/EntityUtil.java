@@ -1,13 +1,13 @@
 package flash.npcmod.core;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class EntityUtil {
 
-  public static void loadAllEntitiesIntoEnum(World world) {
+  public static void loadAllEntitiesIntoEnum(Level world) {
     ForgeRegistries.ENTITIES.forEach(entityType -> {
       if (entityType.create(world) instanceof LivingEntity) {
         String name = EntityType.getKey(entityType).toString().replaceAll(":", "_");

@@ -3,128 +3,125 @@ package flash.npcmod.inventory.container;
 import com.mojang.datafixers.util.Pair;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.ContainerInit;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.PlayerContainer;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-public class NpcInventoryContainer extends Container {
-  private static final ResourceLocation[] ARMOR_SLOT_TEXTURES = new ResourceLocation[]{PlayerContainer.EMPTY_ARMOR_SLOT_BOOTS, PlayerContainer.EMPTY_ARMOR_SLOT_LEGGINGS, PlayerContainer.EMPTY_ARMOR_SLOT_CHESTPLATE, PlayerContainer.EMPTY_ARMOR_SLOT_HELMET};
-  private static final EquipmentSlotType[] VALID_EQUIPMENT_SLOTS = new EquipmentSlotType[]{EquipmentSlotType.HEAD, EquipmentSlotType.CHEST, EquipmentSlotType.LEGS, EquipmentSlotType.FEET};
+public class NpcInventoryContainer extends AbstractContainerMenu {
+  private static final ResourceLocation[] ARMOR_SLOT_TEXTURES = new ResourceLocation[]{InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS, InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE, InventoryMenu.EMPTY_ARMOR_SLOT_HELMET};
+  private static final EquipmentSlot[] VALID_EQUIPMENT_SLOTS = new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
 
   private NpcEntity npcEntity;
 
-  public NpcInventoryContainer(int id, PlayerInventory inventory, int entityId) {
+  public NpcInventoryContainer(int id, Inventory inventory, int entityId) {
     super(ContainerInit.NPC_INVENTORY_CONTAINER, id);
 
-    Entity entity = inventory.player.world.getEntityByID(entityId);
+    Entity entity = inventory.player.level.getEntity(entityId);
     if (!(entity instanceof NpcEntity)) return;
     NpcEntity npcEntity = (NpcEntity) entity;
     this.npcEntity = npcEntity;
 
-    Inventory npcInventory = new Inventory(getNpcItems(npcEntity));
+    SimpleContainer npcInventory = new SimpleContainer(getNpcItems(npcEntity));
 
     this.addSlot(new Slot(npcInventory, 0, 115, 44) {
       @Override
-      public void putStack(ItemStack stack) {
-        npcEntity.setItemStackToSlot(EquipmentSlotType.MAINHAND, stack);
-        npcInventory.markDirty();
-        inventory.markDirty();
+      public void set(ItemStack stack) {
+        npcEntity.setItemSlot(EquipmentSlot.MAINHAND, stack);
+        npcInventory.setChanged();
+        container.setChanged();
       }
 
       @Override
-      public ItemStack onTake(PlayerEntity thePlayer, ItemStack stack) {
-        thePlayer.inventory.setItemStack(npcEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND));
-        npcEntity.setItemStackToSlot(EquipmentSlotType.MAINHAND, ItemStack.EMPTY);
-        npcInventory.markDirty();
-        this.onSlotChanged();
-        return stack;
+      public void onTake(Player thePlayer, ItemStack stack) {
+        thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(EquipmentSlot.MAINHAND));
+        npcEntity.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        npcInventory.setChanged();
+        this.setChanged();
       }
 
       @Override
-      public ItemStack getStack() {
-        return npcEntity.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
+      public ItemStack getItem() {
+        return npcEntity.getItemBySlot(EquipmentSlot.MAINHAND);
       }
     });
 
     this.addSlot(new Slot(npcInventory, 1, 115, 62) {
       @Override
-      public void putStack(ItemStack stack) {
-        npcEntity.setItemStackToSlot(EquipmentSlotType.OFFHAND, stack);
-        npcInventory.markDirty();
-        inventory.markDirty();
+      public void set(ItemStack stack) {
+        npcEntity.setItemSlot(EquipmentSlot.OFFHAND, stack);
+        npcInventory.setChanged();
+        container.setChanged();
       }
 
       @Override
-      public ItemStack onTake(PlayerEntity thePlayer, ItemStack stack) {
-        thePlayer.inventory.setItemStack(npcEntity.getItemStackFromSlot(EquipmentSlotType.OFFHAND));
-        npcEntity.setItemStackToSlot(EquipmentSlotType.OFFHAND, ItemStack.EMPTY);
-        npcInventory.markDirty();
-        this.onSlotChanged();
-        return stack;
+      public void onTake(Player thePlayer, ItemStack stack) {
+        thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(EquipmentSlot.OFFHAND));
+        npcEntity.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+        npcInventory.setChanged();
+        this.setChanged();
       }
 
       @Override
-      public ItemStack getStack() {
-        return npcEntity.getItemStackFromSlot(EquipmentSlotType.OFFHAND);
+      public ItemStack getItem() {
+        return npcEntity.getItemBySlot(EquipmentSlot.OFFHAND);
       }
 
       @OnlyIn(Dist.CLIENT)
-      public Pair<ResourceLocation, ResourceLocation> getBackground() {
-        return Pair.of(PlayerContainer.LOCATION_BLOCKS_TEXTURE, PlayerContainer.EMPTY_ARMOR_SLOT_SHIELD);
+      public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+        return Pair.of(InventoryMenu.BLOCK_ATLAS, InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD);
       }
     });
 
     for(int k = 0; k < 4; ++k) {
-      final EquipmentSlotType equipmentslottype = VALID_EQUIPMENT_SLOTS[k];
+      final EquipmentSlot equipmentslottype = VALID_EQUIPMENT_SLOTS[k];
       this.addSlot(new Slot(npcInventory, 2+k, 46, 8 + k * 18) {
         /**
          * Returns the maximum stack size for a given slot (usually the same as getInventoryStackLimit(), but 1 in
          * the case of armor slots)
          */
-        public int getSlotStackLimit() {
+        public int getMaxStackSize() {
           return 1;
         }
 
         /**
          * Check if the stack is allowed to be placed in this slot, used for armor slots as well as furnace fuel.
          */
-        public boolean isItemValid(ItemStack stack) {
+        public boolean mayPlace(ItemStack stack) {
           return stack.canEquip(equipmentslottype, npcEntity);
         }
 
         @Override
-        public void putStack(ItemStack stack) {
-          npcEntity.setItemStackToSlot(equipmentslottype, stack);
-          npcInventory.markDirty();
-          inventory.markDirty();
+        public void set(ItemStack stack) {
+          npcEntity.setItemSlot(equipmentslottype, stack);
+          npcInventory.setChanged();
+          container.setChanged();
         }
 
         @Override
-        public ItemStack onTake(PlayerEntity thePlayer, ItemStack stack) {
-          thePlayer.inventory.setItemStack(npcEntity.getItemStackFromSlot(equipmentslottype));
-          npcEntity.setItemStackToSlot(equipmentslottype, ItemStack.EMPTY);
-          npcInventory.markDirty();
-          this.onSlotChanged();
-          return stack;
+        public void onTake(Player thePlayer, ItemStack stack) {
+          thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(equipmentslottype));
+          npcEntity.setItemSlot(equipmentslottype, ItemStack.EMPTY);
+          npcInventory.setChanged();
+          this.setChanged();
         }
 
         @Override
-        public ItemStack getStack() {
-          return npcEntity.getItemStackFromSlot(equipmentslottype);
+        public ItemStack getItem() {
+          return npcEntity.getItemBySlot(equipmentslottype);
         }
 
         @OnlyIn(Dist.CLIENT)
-        public Pair<ResourceLocation, ResourceLocation> getBackground() {
-          return Pair.of(PlayerContainer.LOCATION_BLOCKS_TEXTURE, ARMOR_SLOT_TEXTURES[equipmentslottype.getIndex()]);
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+          return Pair.of(InventoryMenu.BLOCK_ATLAS, ARMOR_SLOT_TEXTURES[equipmentslottype.getIndex()]);
         }
       });
     }
@@ -141,27 +138,27 @@ public class NpcInventoryContainer extends Container {
   }
 
   @Override
-  public boolean canInteractWith(PlayerEntity playerIn) {
-    return playerIn.hasPermissionLevel(4);
+  public boolean stillValid(Player playerIn) {
+    return playerIn.hasPermissions(4);
   }
 
-  public ItemStack transferStackInSlot(PlayerEntity playerIn, int index) {
+  public ItemStack quickMoveStack(Player playerIn, int index) {
     ItemStack itemstack = ItemStack.EMPTY;
-    Slot slot = this.inventorySlots.get(index);
-    if (slot != null && slot.getHasStack()) {
-      ItemStack stackInSlot = slot.getStack();
+    Slot slot = this.slots.get(index);
+    if (slot != null && slot.hasItem()) {
+      ItemStack stackInSlot = slot.getItem();
       itemstack = stackInSlot.copy();
       if (index < 6) {
-        if (!this.mergeItemStack(stackInSlot, 6, this.inventorySlots.size(), true))
+        if (!this.moveItemStackTo(stackInSlot, 6, this.slots.size(), true))
           return ItemStack.EMPTY;
-      } else if (!this.mergeItemStack(stackInSlot, 0, 6, false)) {
+      } else if (!this.moveItemStackTo(stackInSlot, 0, 6, false)) {
         return ItemStack.EMPTY;
       }
 
       if (stackInSlot.isEmpty()) {
-        slot.putStack(ItemStack.EMPTY);
+        slot.set(ItemStack.EMPTY);
       } else {
-        slot.onSlotChanged();
+        slot.setChanged();
       }
     }
 
@@ -170,9 +167,9 @@ public class NpcInventoryContainer extends Container {
 
   private ItemStack[] getNpcItems(NpcEntity npcEntity) {
     return new ItemStack[] {
-        npcEntity.getHeldItemMainhand(), npcEntity.getHeldItemOffhand(),
-        npcEntity.getItemStackFromSlot(EquipmentSlotType.HEAD), npcEntity.getItemStackFromSlot(EquipmentSlotType.CHEST),
-        npcEntity.getItemStackFromSlot(EquipmentSlotType.LEGS), npcEntity.getItemStackFromSlot(EquipmentSlotType.FEET)
+        npcEntity.getMainHandItem(), npcEntity.getOffhandItem(),
+        npcEntity.getItemBySlot(EquipmentSlot.HEAD), npcEntity.getItemBySlot(EquipmentSlot.CHEST),
+        npcEntity.getItemBySlot(EquipmentSlot.LEGS), npcEntity.getItemBySlot(EquipmentSlot.FEET)
     };
   }
 

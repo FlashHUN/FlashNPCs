@@ -4,7 +4,7 @@ import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.core.functions.defaultfunctions.*;
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.*;
@@ -123,7 +123,7 @@ public class FunctionUtil {
     return false;
   }
 
-  public static void callFromName(String name, ServerPlayerEntity sender, NpcEntity npcEntity) {
+  public static void callFromName(String name, ServerPlayer sender, NpcEntity npcEntity) {
     name = name.replaceFirst("function:", "");
     String[] params = new String[0];
     if (name.contains("::")) {
@@ -149,7 +149,7 @@ public class FunctionUtil {
     }
   }
 
-  public static String replaceSelectors(String s, ServerPlayerEntity sender) {
+  public static String replaceSelectors(String s, ServerPlayer sender) {
     return s.replaceAll("@p", sender.getName().getString());
   }
 

@@ -1,11 +1,11 @@
 package flash.npcmod.core.quests;
 
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.config.ConfigHolder;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -93,7 +93,7 @@ public class Quest {
     return true;
   }
 
-  public void complete(PlayerEntity player, UUID pickedUpFrom, String pickedUpFromName) {
+  public void complete(Player player, UUID pickedUpFrom, String pickedUpFromName) {
     if (!canComplete()) return;
 
     for (QuestObjective objective : objectives) {
@@ -112,16 +112,16 @@ public class Quest {
 
     for (String command : runOnComplete) {
       if (command.startsWith("/")) {
-        if (!player.world.isRemote) {
+        if (!player.level.isClientSide) {
           if (ConfigHolder.COMMON.isInvalidCommand(command)) continue;
 
           MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-          server.getCommandManager().handleCommand(server.getCommandSource().withFeedbackDisabled(), command.replaceAll("@p", player.getName().getString()));
+          server.getCommands().performCommand(server.createCommandSourceStack().withSuppressedOutput(), command.replaceAll("@p", player.getName().getString()));
         }
       } else if (command.startsWith("acceptQuest:")) {
         Quest quest = CommonQuestUtil.fromName(command.substring(12));
         if (quest != null)
-          QuestCapabilityProvider.getCapability(player).acceptQuest(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, player));
+          QuestCapabilityAttacher.getCapability(player).acceptQuest(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, player));
       }
     }
   }

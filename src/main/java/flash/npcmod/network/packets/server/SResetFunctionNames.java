@@ -1,8 +1,8 @@
 package flash.npcmod.network.packets.server;
 
 import flash.npcmod.Main;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -10,9 +10,9 @@ public class SResetFunctionNames {
 
   public SResetFunctionNames() {}
 
-  public static void encode(SResetFunctionNames msg, PacketBuffer buf) {}
+  public static void encode(SResetFunctionNames msg, FriendlyByteBuf buf) {}
 
-  public static SResetFunctionNames decode(PacketBuffer buf) {
+  public static SResetFunctionNames decode(FriendlyByteBuf buf) {
     return new SResetFunctionNames();
   }
 

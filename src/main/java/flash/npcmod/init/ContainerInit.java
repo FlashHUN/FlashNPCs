@@ -2,24 +2,24 @@ package flash.npcmod.init;
 
 import flash.npcmod.Main;
 import flash.npcmod.inventory.container.*;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.ContainerType;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.network.IContainerFactory;
+import net.minecraftforge.network.IContainerFactory;
 
 public class ContainerInit {
 
-  public static ContainerType<QuestStackSelectorContainer> QUEST_STACK_SELECTOR_CONTAINER;
-  public static ContainerType<ObjectiveStackSelectorContainer> OBJECTIVE_STACK_SELECTOR_CONTAINER;
-  public static ContainerType<NpcInventoryContainer> NPC_INVENTORY_CONTAINER;
-  public static ContainerType<NpcTradeContainer> NPC_TRADE_CONTAINER;
-  public static ContainerType<NpcTradeEditorContainer> NPC_TRADE_EDITOR_CONTAINER;
+  public static MenuType<QuestStackSelectorContainer> QUEST_STACK_SELECTOR_CONTAINER;
+  public static MenuType<ObjectiveStackSelectorContainer> OBJECTIVE_STACK_SELECTOR_CONTAINER;
+  public static MenuType<NpcInventoryContainer> NPC_INVENTORY_CONTAINER;
+  public static MenuType<NpcTradeContainer> NPC_TRADE_CONTAINER;
+  public static MenuType<NpcTradeEditorContainer> NPC_TRADE_EDITOR_CONTAINER;
 
-  public static void register(RegistryEvent.Register<ContainerType<?>> event) {
+  public static void register(RegistryEvent.Register<MenuType<?>> event) {
     QUEST_STACK_SELECTOR_CONTAINER = createContainerType((windowId, inventory, buffer)
-        -> new QuestStackSelectorContainer(windowId, inventory, buffer.readString(100000)));
+        -> new QuestStackSelectorContainer(windowId, inventory, buffer.readUtf(100000)));
     OBJECTIVE_STACK_SELECTOR_CONTAINER = createContainerType((windowId, inventory, buffer)
-        -> new ObjectiveStackSelectorContainer(windowId, inventory, buffer.readString(100000), buffer.readString(100000), buffer.readString(400)));
+        -> new ObjectiveStackSelectorContainer(windowId, inventory, buffer.readUtf(100000), buffer.readUtf(100000), buffer.readUtf(400)));
     NPC_INVENTORY_CONTAINER = createContainerType((windowId, inventory, buffer)
         -> new NpcInventoryContainer(windowId, inventory, buffer.readInt()));
     NPC_TRADE_CONTAINER = createContainerType((windowId, inventory, buffer)
@@ -36,8 +36,8 @@ public class ContainerInit {
     );
   }
 
-  private static <T extends Container> ContainerType<T> createContainerType(IContainerFactory<T> factory) {
-    return new ContainerType<T>(factory);
+  private static <T extends AbstractContainerMenu> MenuType<T> createContainerType(IContainerFactory<T> factory) {
+    return new MenuType<>(factory);
   }
 
 }

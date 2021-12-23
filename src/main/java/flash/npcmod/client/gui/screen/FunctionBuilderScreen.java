@@ -1,14 +1,14 @@
 package flash.npcmod.client.gui.screen;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CBuildFunction;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.util.Mth;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -26,15 +26,15 @@ public class FunctionBuilderScreen extends Screen {
   private String callable;
   private final List<String> callables;
 
-  private TextFieldWidget nameField;
-  private TextFieldWidget parametersField;
-  private TextFieldWidget callableField;
+  private EditBox nameField;
+  private EditBox parametersField;
+  private EditBox callableField;
   private Button addCallableButton;
   private Button confirmButton;
   private Button[] removeCallableButtons;
 
   private static int maxCallables;
-  private static final int lineHeight = Minecraft.getInstance().fontRenderer.FONT_HEIGHT+2;
+  private static final int lineHeight = Minecraft.getInstance().font.lineHeight+2;
 
   private static final String NAME = "Name: ", PARAMNAMES = "Parameter Names: ", RUNNABLES = "Runnables: ";
 
@@ -47,7 +47,7 @@ public class FunctionBuilderScreen extends Screen {
   };
 
   public FunctionBuilderScreen() {
-    super(StringTextComponent.EMPTY);
+    super(TextComponent.EMPTY);
     this.callables = new ArrayList<>();
     this.name = "";
     this.callable = "";
@@ -56,33 +56,33 @@ public class FunctionBuilderScreen extends Screen {
 
   @Override
   protected void init() {
-    this.nameField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(NAME), 5, 100, 20, StringTextComponent.EMPTY));
+    this.nameField = this.addRenderableWidget(new EditBox(font, 5+font.width(NAME), 5, 100, 20, TextComponent.EMPTY));
     this.nameField.setResponder(this::setName);
-    this.nameField.setValidator(paramFilter);
-    this.nameField.setMaxStringLength(50);
-    this.nameField.setText(this.name);
+    this.nameField.setFilter(paramFilter);
+    this.nameField.setMaxLength(50);
+    this.nameField.setValue(this.name);
 
-    this.parametersField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(PARAMNAMES), 30, 100, 20, StringTextComponent.EMPTY));
+    this.parametersField = this.addRenderableWidget(new EditBox(font, 5+font.width(PARAMNAMES), 30, 100, 20, TextComponent.EMPTY));
     this.parametersField.setResponder(this::setParameterNames);
-    this.parametersField.setValidator(paramFilter);
-    this.parametersField.setMaxStringLength(100);
-    this.parametersField.setText(this.parameterNames);
+    this.parametersField.setFilter(paramFilter);
+    this.parametersField.setMaxLength(100);
+    this.parametersField.setValue(this.parameterNames);
 
-    this.callableField = this.addButton(new TextFieldWidget(font, 5+font.getStringWidth(RUNNABLES), 55, 100, 20, StringTextComponent.EMPTY));
+    this.callableField = this.addRenderableWidget(new EditBox(font, 5+font.width(RUNNABLES), 55, 100, 20, TextComponent.EMPTY));
     this.callableField.setResponder(this::setCallable);
-    this.callableField.setMaxStringLength(250);
-    this.callableField.setText("");
+    this.callableField.setMaxLength(250);
+    this.callableField.setValue("");
 
-    this.addCallableButton = this.addButton(new Button(115+font.getStringWidth(RUNNABLES), 55, 20, 20, new StringTextComponent("+"), btn -> {
+    this.addCallableButton = this.addRenderableWidget(new Button(115+font.width(RUNNABLES), 55, 20, 20, new TextComponent("+"), btn -> {
       if (canAddCallable())
         this.callables.add(callable);
-      this.callableField.setText("");
+      this.callableField.setValue("");
     }));
     this.addCallableButton.active = this.canAddCallable();
 
-    this.confirmButton = this.addButton(new Button(width-50, height-20, 50, 20, new StringTextComponent("Confirm"), btn -> {
+    this.confirmButton = this.addRenderableWidget(new Button(width-50, height-20, 50, 20, new TextComponent("Confirm"), btn -> {
       PacketDispatcher.sendToServer(new CBuildFunction(this.name, build()));
-      closeScreen();
+      onClose();
     }));
     this.confirmButton.active = this.name.length() > 0 && this.callables.size() > 0;
 
@@ -90,7 +90,7 @@ public class FunctionBuilderScreen extends Screen {
     removeCallableButtons = new Button[maxCallables];
     for (int i = 0; i < maxCallables; i++) {
       int j = i;
-      removeCallableButtons[i] = this.addButton(new Button(5, 78+i*lineHeight, 11, 11, new StringTextComponent("-"), btn -> {
+      removeCallableButtons[i] = this.addRenderableWidget(new Button(5, 78+i*lineHeight, 11, 11, new TextComponent("-"), btn -> {
         this.removeCallable(j);
       }));
       removeCallableButtons[i].visible = false;
@@ -136,10 +136,10 @@ public class FunctionBuilderScreen extends Screen {
   }
 
   @Override
-  public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
     this.renderBackground(matrixStack);
 
-    int center = (20-font.FONT_HEIGHT)/2;
+    int center = (20-font.lineHeight)/2;
     drawString(matrixStack, font, NAME, 5, 5+center, 0xFFFFFF);
     drawString(matrixStack, font, PARAMNAMES, 5, 30+center, 0xFFFFFF);
     drawString(matrixStack, font, RUNNABLES, 5, 55+center, 0xFFFFFF);
@@ -166,7 +166,7 @@ public class FunctionBuilderScreen extends Screen {
   public int clampScroll(int newScroll) {
     int max = this.callables.size()-maxCallables;
     if (max > 0)
-      return MathHelper.clamp(newScroll, 0, max);
+      return Mth.clamp(newScroll, 0, max);
     else
       return 0;
   }

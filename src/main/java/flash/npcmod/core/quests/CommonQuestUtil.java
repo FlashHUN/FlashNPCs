@@ -2,11 +2,11 @@ package flash.npcmod.core.quests;
 
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SSendQuestInfo;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.io.FilenameUtils;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -38,9 +38,9 @@ public class CommonQuestUtil {
     }
   }
 
-  public static void syncPlayerQuests(ServerPlayerEntity player) {
+  public static void syncPlayerQuests(ServerPlayer player) {
     if (player != null && player.isAlive()) {
-      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+      IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
       List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       List<QuestInstance> markedForRemoval = new ArrayList<>();
       acceptedQuests.forEach(questInstance -> {

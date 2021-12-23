@@ -4,17 +4,13 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import flash.npcmod.Main;
 import flash.npcmod.core.pathing.Path;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.command.arguments.BlockStateArgument;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.passive.PigEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.commands.arguments.blocks.BlockStateArgument;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
@@ -388,7 +384,7 @@ public class QuestObjectiveTypes {
   }
 
   public static String entityToString(LivingEntity livingEntity) {
-    return livingEntity.getEntityString();
+    return livingEntity.getEncodeId();
   }
 
   public static String areaToString(BlockPos[] area) {
@@ -424,9 +420,9 @@ public class QuestObjectiveTypes {
 
   public static BlockState blockStateFromString(String s) {
     try {
-      return BlockStateArgument.blockState().parse(new StringReader(s)).getState();
+      return BlockStateArgument.block().parse(new StringReader(s)).getState();
     } catch (CommandSyntaxException e) {
-      return Blocks.AIR.getDefaultState();
+      return Blocks.AIR.defaultBlockState();
     }
   }
 

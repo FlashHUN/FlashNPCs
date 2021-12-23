@@ -4,7 +4,7 @@ import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SCloseDialogue;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class CloseDialogueFunction extends AbstractFunction {
 
@@ -13,7 +13,7 @@ public class CloseDialogueFunction extends AbstractFunction {
   }
 
   @Override
-  public void call(String[] params, ServerPlayerEntity sender, NpcEntity npcEntity) {
+  public void call(String[] params, ServerPlayer sender, NpcEntity npcEntity) {
     PacketDispatcher.sendTo(new SCloseDialogue(), sender);
     debugUsage(sender, npcEntity);
   }

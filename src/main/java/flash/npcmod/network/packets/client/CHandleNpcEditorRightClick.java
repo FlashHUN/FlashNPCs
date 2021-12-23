@@ -4,12 +4,12 @@ import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -33,7 +33,7 @@ public class CHandleNpcEditorRightClick {
     this.pos = pos;
   }
 
-  public static void encode(CHandleNpcEditorRightClick msg, PacketBuffer buf) {
+  public static void encode(CHandleNpcEditorRightClick msg, FriendlyByteBuf buf) {
     buf.writeInt(msg.handleType);
     if (msg.handleType == HandleType.ENTITY.ordinal())
       buf.writeInt(msg.entityid);
@@ -41,7 +41,7 @@ public class CHandleNpcEditorRightClick {
       buf.writeBlockPos(msg.pos);
   }
 
-  public static CHandleNpcEditorRightClick decode(PacketBuffer buf) {
+  public static CHandleNpcEditorRightClick decode(FriendlyByteBuf buf) {
     int handleType = buf.readInt();
     if (handleType == HandleType.ENTITY.ordinal())
       return new CHandleNpcEditorRightClick(buf.readInt());
@@ -53,28 +53,28 @@ public class CHandleNpcEditorRightClick {
 
   public static void handle(CHandleNpcEditorRightClick msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
-      if (sender.hasPermissionLevel(4)) {
+      ServerPlayer sender = ctx.get().getSender();
+      if (sender.hasPermissions(4)) {
         if (msg.handleType == HandleType.AIR.ordinal() && sender.isDiscrete()) {
           // If we right click in the air while sneaking, open the function builder
           PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.FUNCTIONBUILDER, "", 0), sender);
         }
         else if (msg.handleType == HandleType.ENTITY.ordinal()) {
           // If we right click on an entity and it is an NPC, edit it
-          Entity entity = sender.world.getEntityByID(msg.entityid);
+          Entity entity = sender.level.getEntity(msg.entityid);
           if (entity instanceof NpcEntity) {
             PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.EDITNPC, "", msg.entityid), sender);
           }
         }
         else if (msg.handleType == HandleType.BLOCK.ordinal()) {
           // If we right click on a block, create a new NPC and start editing it
-          NpcEntity newNpc = EntityInit.NPC_ENTITY.get().create(sender.world);
+          NpcEntity newNpc = EntityInit.NPC_ENTITY.get().create(sender.level);
           BlockPos pos = msg.pos;
-          VoxelShape collisionShape = sender.world.getBlockState(pos).getCollisionShape(sender.world, pos);
-          double blockHeight = collisionShape.isEmpty() ? 0 : collisionShape.getBoundingBox().maxY;
-          newNpc.setPosition(pos.getX()+0.5, pos.getY()+blockHeight, pos.getZ()+0.5);
-          sender.world.addEntity(newNpc);
-          PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.EDITNPC, "", newNpc.getEntityId()), sender);
+          VoxelShape collisionShape = sender.level.getBlockState(pos).getBlockSupportShape(sender.level, pos);
+          double blockHeight = collisionShape.isEmpty() ? 0 : collisionShape.bounds().maxY;
+          newNpc.setPos(pos.getX()+0.5, pos.getY()+blockHeight, pos.getZ()+0.5);
+          sender.level.addFreshEntity(newNpc);
+          PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.EDITNPC, "", newNpc.getId()), sender);
         }
       }
     });

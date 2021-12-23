@@ -2,26 +2,26 @@ package flash.npcmod.core;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.command.arguments.ItemArgument;
-import net.minecraft.command.arguments.ItemInput;
-import net.minecraft.entity.item.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.commands.arguments.item.ItemArgument;
+import net.minecraft.commands.arguments.item.ItemInput;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public class ItemUtil {
 
   public static boolean matches(ItemStack stack1, ItemStack stack2) {
-    return ItemStack.areItemsEqual(stack1, stack2) && ItemStack.areItemStackTagsEqual(stack1, stack2);
+    return ItemStack.isSame(stack1, stack2) && ItemStack.tagMatches(stack1, stack2);
   }
 
-  public static void takeStack(PlayerEntity player, ItemStack itemStack) {
+  public static void takeStack(Player player, ItemStack itemStack) {
     takeStack(player, itemStack, itemStack.getCount());
   }
 
-  public static void takeStack(PlayerEntity player, ItemStack itemStack, int neededCount) {
+  public static void takeStack(Player player, ItemStack itemStack, int neededCount) {
     if (itemStack.isEmpty()) return;
 
-    for (ItemStack stack : player.inventory.mainInventory) {
+    for (ItemStack stack : player.getInventory().items) {
       if (matches(itemStack, stack)) {
         int count = stack.getCount();
         stack.shrink(neededCount);
@@ -34,22 +34,22 @@ public class ItemUtil {
     }
   }
 
-  public static void giveStack(PlayerEntity player, ItemStack itemstack) {
+  public static void giveStack(Player player, ItemStack itemstack) {
     if (itemstack.isEmpty()) return;
 
-    ItemEntity itemEntity = player.dropItem(itemstack, true, true);
+    ItemEntity itemEntity = player.drop(itemstack, true, true);
     if (itemEntity != null) {
-      itemEntity.setNoPickupDelay();
-      itemEntity.setOwnerId(player.getUniqueID());
+      itemEntity.setNoPickUpDelay();
+      itemEntity.setOwner(player.getUUID());
     }
   }
 
-  public static boolean hasAmount(PlayerEntity sender, ItemStack itemStackIn) {
+  public static boolean hasAmount(Player sender, ItemStack itemStackIn) {
     if (itemStackIn.isEmpty()) return true;
 
     int neededCount = itemStackIn.getCount();
     int currentCount = 0;
-    for(ItemStack itemStack : sender.inventory.mainInventory) {
+    for(ItemStack itemStack : sender.getInventory().items) {
       if (matches(itemStackIn, itemStack))
         currentCount += itemStack.getCount();
 
@@ -59,10 +59,10 @@ public class ItemUtil {
     return false;
   }
 
-  public static boolean hasItem(PlayerEntity sender, ItemStack itemStackIn) {
+  public static boolean hasItem(Player sender, ItemStack itemStackIn) {
     if (itemStackIn.isEmpty()) return true;
 
-    for(ItemStack itemStack : sender.inventory.mainInventory) {
+    for(ItemStack itemStack : sender.getInventory().items) {
       if (matches(itemStackIn, itemStack))
         return true;
     }
@@ -70,11 +70,11 @@ public class ItemUtil {
     return false;
   }
 
-  public static int getAmount(PlayerEntity sender, ItemStack itemStackIn) {
+  public static int getAmount(Player sender, ItemStack itemStackIn) {
     if (itemStackIn.isEmpty()) return 0;
 
     int currentCount = 0;
-    for(ItemStack itemStack : sender.inventory.mainInventory) {
+    for(ItemStack itemStack : sender.getInventory().items) {
       if (matches(itemStackIn, itemStack))
         currentCount += itemStack.getCount();
     }
@@ -86,7 +86,7 @@ public class ItemUtil {
     ItemArgument itemArgument = new ItemArgument();
     try {
       ItemInput itemInput = itemArgument.parse(new StringReader(s));
-      return itemInput.createStack(1, false);
+      return itemInput.createItemStack(1, false);
     } catch (CommandSyntaxException e) {
       return ItemStack.EMPTY;
     }

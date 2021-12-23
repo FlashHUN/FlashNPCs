@@ -2,7 +2,7 @@ package flash.npcmod.core;
 
 import flash.npcmod.Main;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -12,7 +12,7 @@ public class FileUtil {
 
   public static String getWorldName() {
     MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-    String worldName = server.getServerConfiguration().getWorldName();
+    String worldName = server.getWorldData().getLevelName();
     if (server.isDedicatedServer()) {
       return worldName;
     }

@@ -2,7 +2,7 @@ package flash.npcmod.core.functions;
 
 import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public abstract class AbstractFunction {
   protected static final String[] empty = new String[0];
@@ -21,7 +21,7 @@ public abstract class AbstractFunction {
     return callables;
   }
 
-  public abstract void call(String[] params, ServerPlayerEntity sender, NpcEntity npcEntity);
+  public abstract void call(String[] params, ServerPlayer sender, NpcEntity npcEntity);
 
   public String getName() {
     return name;
@@ -35,7 +35,7 @@ public abstract class AbstractFunction {
     Main.LOGGER.warn("Function " + name + " in " + npcEntity.getName().getString() + " does not have the right amount of parameters");
   }
 
-  protected void debugUsage(ServerPlayerEntity sender, NpcEntity npcEntity) {
+  protected void debugUsage(ServerPlayer sender, NpcEntity npcEntity) {
     Main.LOGGER.debug(sender.getName().getString() + " used function " + name + " from npc " + npcEntity.getName().getString());
   }
 

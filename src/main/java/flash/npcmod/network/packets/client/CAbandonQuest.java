@@ -1,11 +1,11 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.core.quests.QuestInstance;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,20 +25,20 @@ public class CAbandonQuest {
     this.pickedUpFrom = pickedUpFrom;
   }
 
-  public static void encode(CAbandonQuest msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
-    buf.writeUniqueId(msg.pickedUpFrom);
+  public static void encode(CAbandonQuest msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
+    buf.writeUUID(msg.pickedUpFrom);
   }
 
-  public static CAbandonQuest decode(PacketBuffer buf) {
-    return new CAbandonQuest(buf.readString(51),
-        buf.readUniqueId());
+  public static CAbandonQuest decode(FriendlyByteBuf buf) {
+    return new CAbandonQuest(buf.readUtf(51),
+        buf.readUUID());
   }
 
   public static void handle(CAbandonQuest msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
-      IQuestCapability capability = QuestCapabilityProvider.getCapability(sender);
+      ServerPlayer sender = ctx.get().getSender();
+      IQuestCapability capability = QuestCapabilityAttacher.getCapability(sender);
       List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       for (QuestInstance questInstance : acceptedQuests) {
         if (questInstance.getQuest().getName().equals(msg.name) && questInstance.getPickedUpFrom().equals(msg.pickedUpFrom)) {

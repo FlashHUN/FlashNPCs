@@ -6,17 +6,22 @@ import flash.npcmod.core.functions.Function;
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.EntityInit;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.arguments.EntityArgument;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.text.*;
-import net.minecraft.util.text.event.HoverEvent;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.HoverEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.minecraft.command.Commands.argument;
-import static net.minecraft.command.Commands.literal;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
+
+import static net.minecraft.commands.Commands.literal;
+import static net.minecraft.commands.Commands.argument;
 
 public class FunctionsCommand extends Command {
   @Override
@@ -30,12 +35,12 @@ public class FunctionsCommand extends Command {
   }
 
   @Override
-  public void build(LiteralArgumentBuilder<CommandSource> builder) {
+  public void build(LiteralArgumentBuilder<CommandSourceStack> builder) {
     builder.then(literal("list").executes(context -> list(context.getSource())));
 
     builder.then(literal("run")
         .then(argument("function", StringArgumentType.string())
-        .executes(context -> runAs(context.getSource(), context.getSource().asPlayer(), StringArgumentType.getString(context, "function")))));
+        .executes(context -> runAs(context.getSource(), context.getSource().getPlayerOrException(), StringArgumentType.getString(context, "function")))));
 
     builder.then(literal("runAs")
         .then(argument("player", EntityArgument.player()).then(argument("function", StringArgumentType.string())
@@ -47,19 +52,19 @@ public class FunctionsCommand extends Command {
     return false;
   }
 
-  private int list(CommandSource source) {
-    List<IFormattableTextComponent> functions = new ArrayList<>();
+  private int list(CommandSourceStack source) {
+    List<MutableComponent> functions = new ArrayList<>();
     FunctionUtil.FUNCTIONS.forEach(abstractFunction -> {
       if (abstractFunction instanceof Function) {
         String functionName = abstractFunction.getName();
         String[] parameterNames = abstractFunction.getParamNames();
-        StringTextComponent functionTextComponent = new StringTextComponent(functionName);
+        TextComponent functionTextComponent = new TextComponent(functionName);
         if (parameterNames.length > 0 && !(parameterNames.length == 1 && parameterNames[0].isEmpty())) {
-          functionTextComponent.appendString("::");
+          functionTextComponent.append("::");
           for (int i = 0; i < parameterNames.length; i++) {
-            functionTextComponent.appendSibling(new StringTextComponent(parameterNames[i]).mergeStyle(TextFormatting.AQUA));
+            functionTextComponent.append(new TextComponent(parameterNames[i]).withStyle(ChatFormatting.AQUA));
             if (i < parameterNames.length - 1)
-              functionTextComponent.appendString(",");
+              functionTextComponent.append(",");
           }
         }
         StringBuilder callables = new StringBuilder();
@@ -69,26 +74,26 @@ public class FunctionsCommand extends Command {
           if (i < abstractFunction.getCallables().length - 1)
             callables.append("\n");
         }
-        functions.add(functionTextComponent.setStyle(Style.EMPTY.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(callables.toString())))));
+        functions.add(functionTextComponent.setStyle(Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TextComponent(callables.toString())))));
       }
     });
 
-    StringTextComponent functionsComponent = new StringTextComponent("List of Functions: ");
+    TextComponent functionsComponent = new TextComponent("List of Functions: ");
     for (int i = 0; i < functions.size(); i++) {
-      functionsComponent.appendSibling(TextComponentUtils.wrapWithSquareBrackets(functions.get(i)).mergeStyle(TextFormatting.GREEN));
+      functionsComponent.append(ComponentUtils.wrapInSquareBrackets(functions.get(i)).withStyle(ChatFormatting.GREEN));
       if (i < functions.size()-1)
-        functionsComponent.appendString(", ");
+        functionsComponent.append(", ");
     }
 
-    source.sendFeedback(functionsComponent, false);
+    source.sendSuccess(functionsComponent, false);
     return functions.size();
   }
 
-  private int runAs(CommandSource source, ServerPlayerEntity player, String name) {
-    NpcEntity npcEntity = EntityInit.NPC_ENTITY.get().create(player.world);
-    npcEntity.setCustomName(new StringTextComponent("FAKE NPC"));
+  private int runAs(CommandSourceStack source, ServerPlayer player, String name) {
+    NpcEntity npcEntity = EntityInit.NPC_ENTITY.get().create(player.level);
+    npcEntity.setCustomName(new TextComponent("FAKE NPC"));
     FunctionUtil.callFromName(name, player, npcEntity);
-    source.sendFeedback(new StringTextComponent("Called Function " + name + " as " + player.getName().getString()).mergeStyle(TextFormatting.GREEN), true);
+    source.sendSuccess(new TextComponent("Called Function " + name + " as " + player.getName().getString()).withStyle(ChatFormatting.GREEN), true);
     return 0;
   }
 }

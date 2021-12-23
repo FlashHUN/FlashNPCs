@@ -2,10 +2,10 @@ package flash.npcmod.network.packets.client;
 
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -19,19 +19,19 @@ public class CTradeWithNpc {
     this.tradeid = tradeid;
   }
 
-  public static void encode(CTradeWithNpc msg, PacketBuffer buf) {
+  public static void encode(CTradeWithNpc msg, FriendlyByteBuf buf) {
     buf.writeInt(msg.entityid);
     buf.writeInt(msg.tradeid);
   }
 
-  public static CTradeWithNpc decode(PacketBuffer buf) {
+  public static CTradeWithNpc decode(FriendlyByteBuf buf) {
     return new CTradeWithNpc(buf.readInt(), buf.readInt());
   }
 
   public static void handle(CTradeWithNpc msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
-      Entity entity = sender.world.getEntityByID(msg.entityid);
+      ServerPlayer sender = ctx.get().getSender();
+      Entity entity = sender.level.getEntity(msg.entityid);
       if (entity instanceof NpcEntity) {
         NpcEntity npcEntity = (NpcEntity) entity;
         if (msg.tradeid >= 0 && msg.tradeid < npcEntity.getOffers().size()) {

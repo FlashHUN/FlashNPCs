@@ -1,8 +1,8 @@
 package flash.npcmod.network.packets.server;
 
 import flash.npcmod.Main;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -16,13 +16,13 @@ public class SMoveToDialogue {
     this.entityid = entityid;
   }
 
-  public static void encode(SMoveToDialogue msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
+  public static void encode(SMoveToDialogue msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
     buf.writeInt(msg.entityid);
   }
 
-  public static SMoveToDialogue decode(PacketBuffer buf) {
-    return new SMoveToDialogue(buf.readString(51), buf.readInt());
+  public static SMoveToDialogue decode(FriendlyByteBuf buf) {
+    return new SMoveToDialogue(buf.readUtf(51), buf.readInt());
   }
 
   public static void handle(SMoveToDialogue msg, Supplier<NetworkEvent.Context> ctx) {

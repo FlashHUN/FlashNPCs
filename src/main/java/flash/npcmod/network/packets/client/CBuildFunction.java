@@ -1,8 +1,8 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.core.functions.FunctionUtil;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -16,19 +16,19 @@ public class CBuildFunction {
     this.function = function;
   }
 
-  public static void encode(CBuildFunction msg, PacketBuffer buf) {
-    buf.writeString(msg.name);
-    buf.writeString(msg.function);
+  public static void encode(CBuildFunction msg, FriendlyByteBuf buf) {
+    buf.writeUtf(msg.name);
+    buf.writeUtf(msg.function);
   }
 
-  public static CBuildFunction decode(PacketBuffer buf) {
-    return new CBuildFunction(buf.readString(250),
-        buf.readString(100000));
+  public static CBuildFunction decode(FriendlyByteBuf buf) {
+    return new CBuildFunction(buf.readUtf(250),
+        buf.readUtf(100000));
   }
 
   public static void handle(CBuildFunction msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      if (ctx.get().getSender().hasPermissionLevel(4)) {
+      if (ctx.get().getSender().hasPermissions(4)) {
         FunctionUtil.build(msg.name, msg.function);
 
         FunctionUtil.loadFunctionFile(msg.name);

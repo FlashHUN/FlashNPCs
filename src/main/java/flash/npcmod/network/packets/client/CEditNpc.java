@@ -1,13 +1,13 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,59 +34,59 @@ public class CEditNpc {
     }
   }
 
-  public static void encode(CEditNpc msg, PacketBuffer buf) {
+  public static void encode(CEditNpc msg, FriendlyByteBuf buf) {
     buf.writeInt(msg.entityid);
     buf.writeBoolean(msg.isNameVisible);
-    buf.writeString(msg.name);
-    buf.writeString(msg.texture);
+    buf.writeUtf(msg.name);
+    buf.writeUtf(msg.texture);
     buf.writeBoolean(msg.isSlim);
-    buf.writeString(msg.dialogue);
+    buf.writeUtf(msg.dialogue);
     buf.writeInt(msg.textColor);
     if (msg.items != null) {
       for (int i = 0; i < 6; i++) {
-        buf.writeItemStack(msg.items[i]);
+        buf.writeItem(msg.items[i]);
       }
     } else {
       for (int i = 0; i < 6; i++) {
-        buf.writeItemStack(ItemStack.EMPTY);
+        buf.writeItem(ItemStack.EMPTY);
       }
     }
   }
 
-  public static CEditNpc decode(PacketBuffer buf) {
+  public static CEditNpc decode(FriendlyByteBuf buf) {
     int entityid = buf.readInt();
     boolean isNameVisible = buf.readBoolean();
-    String name = buf.readString(201);
-    String texture = buf.readString(201);
+    String name = buf.readUtf(201);
+    String texture = buf.readUtf(201);
     boolean isSlim = buf.readBoolean();
-    String dialogue = buf.readString(201);
+    String dialogue = buf.readUtf(201);
     int textColor = buf.readInt();
     List<ItemStack> items = new ArrayList<>();
     for (int i = 0; i < 6; i++) {
-      items.add(buf.readItemStack());
+      items.add(buf.readItem());
     }
     return new CEditNpc(entityid, isNameVisible, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]));
   }
 
   public static void handle(CEditNpc msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      ServerPlayerEntity sender = ctx.get().getSender();
-      if (sender.hasPermissionLevel(4)) {
-        Entity entity = sender.world.getEntityByID(msg.entityid);
+      ServerPlayer sender = ctx.get().getSender();
+      if (sender.hasPermissions(4)) {
+        Entity entity = sender.level.getEntity(msg.entityid);
         if (entity instanceof NpcEntity) {
           NpcEntity npcEntity = (NpcEntity) entity;
           npcEntity.setCustomNameVisible(msg.isNameVisible);
-          npcEntity.setCustomName(new StringTextComponent(msg.name));
+          npcEntity.setCustomName(new TextComponent(msg.name));
           npcEntity.setTexture(msg.texture);
           npcEntity.setSlim(msg.isSlim);
           npcEntity.setDialogue(msg.dialogue);
           npcEntity.setTextColor(msg.textColor);
-          npcEntity.setItemStackToSlot(EquipmentSlotType.MAINHAND, msg.items[0]);
-          npcEntity.setItemStackToSlot(EquipmentSlotType.OFFHAND, msg.items[1]);
-          npcEntity.setItemStackToSlot(EquipmentSlotType.HEAD, msg.items[2]);
-          npcEntity.setItemStackToSlot(EquipmentSlotType.CHEST, msg.items[3]);
-          npcEntity.setItemStackToSlot(EquipmentSlotType.LEGS, msg.items[4]);
-          npcEntity.setItemStackToSlot(EquipmentSlotType.FEET, msg.items[5]);
+          npcEntity.setItemSlot(EquipmentSlot.MAINHAND, msg.items[0]);
+          npcEntity.setItemSlot(EquipmentSlot.OFFHAND, msg.items[1]);
+          npcEntity.setItemSlot(EquipmentSlot.HEAD, msg.items[2]);
+          npcEntity.setItemSlot(EquipmentSlot.CHEST, msg.items[3]);
+          npcEntity.setItemSlot(EquipmentSlot.LEGS, msg.items[4]);
+          npcEntity.setItemSlot(EquipmentSlot.FEET, msg.items[5]);
         }
       }
     });

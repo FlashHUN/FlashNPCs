@@ -1,6 +1,6 @@
 package flash.npcmod.core.quests;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -11,13 +11,13 @@ public class QuestInstance {
   private UUID pickedUpFrom;
   private String pickedUpFromName;
   @Nullable
-  private PlayerEntity player;
+  private Player player;
 
   public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName) {
     this(quest, pickedUpFrom, pickedUpFromName, null);
   }
 
-  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, @Nullable PlayerEntity player) {
+  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, @Nullable Player player) {
     this.quest = quest.copy();
     this.pickedUpFrom = pickedUpFrom;
     this.pickedUpFromName = pickedUpFromName;
@@ -28,11 +28,11 @@ public class QuestInstance {
     return quest;
   }
 
-  public PlayerEntity getPlayer() {
+  public Player getPlayer() {
     return player;
   }
 
-  public void setPlayer(PlayerEntity player) {
+  public void setPlayer(Player player) {
     this.player = player;
   }
 
