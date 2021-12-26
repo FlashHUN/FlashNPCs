@@ -77,8 +77,9 @@ dependencies {
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation 'org.json:json:20211205'
-    shadow 'org.json:json:20211205'
+//    FOR SOME REASON THIS DOESN'T LOAD DURING RUNTIME -,-
+//    implementation 'org.json:json:20211205'
+//    shadow 'org.json:json:20211205'
 }
 
 shadowJar {
@@ -89,7 +90,7 @@ shadowJar {
     minimize()
 
     dependencies {
-        include(dependency('org.json:json:20211205'))
+//        include(dependency('org.json:json:20211205'))
     }
 }
 
@@ -113,6 +114,6 @@ repositories {
 }
 
 jar.dependsOn shadowJar
-//jar.enabled = false
+//jar.enabled = false    Why was this here again?
 
 jar.finalizedBy('reobfJar')
