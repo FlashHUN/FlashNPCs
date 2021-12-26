@@ -1,5 +1,7 @@
 package flash.npcmod.inventory.container;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.init.ContainerInit;
 import net.minecraft.world.entity.player.Player;
@@ -7,7 +9,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import org.json.JSONObject;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public class QuestStackSelectorContainer extends AbstractContainerMenu {
   private Quest quest;
 
   public QuestStackSelectorContainer(int id, Inventory inventory, String quest) {
-    this(id, inventory, Quest.fromJson(new JSONObject(quest)));
+    this(id, inventory, Quest.fromJson(new Gson().fromJson(quest, JsonObject.class)));
   }
 
   public QuestStackSelectorContainer(int id, Inventory inventory, Quest quest) {

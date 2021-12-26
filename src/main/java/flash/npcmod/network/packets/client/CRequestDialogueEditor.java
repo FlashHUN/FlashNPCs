@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import com.google.gson.JsonObject;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.core.functions.FunctionUtil;
@@ -13,7 +14,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +66,7 @@ public class CRequestDialogueEditor {
           PacketDispatcher.sendTo(new SSendFunctionName(name), sender);
         }
 
-        JSONObject dialogue = CommonDialogueUtil.loadDialogueEditorFile(msg.name);
+        JsonObject dialogue = CommonDialogueUtil.loadDialogueEditorFile(msg.name);
 
         if (dialogue != null) {
           PacketDispatcher.sendTo(new SSendDialogueEditor(msg.name, dialogue.toString()), sender);

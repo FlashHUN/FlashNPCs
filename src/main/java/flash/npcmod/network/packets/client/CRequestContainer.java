@@ -1,5 +1,7 @@
 package flash.npcmod.network.packets.client;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.entity.NpcEntity;
@@ -15,7 +17,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
-import org.json.JSONObject;
 
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
@@ -115,12 +116,12 @@ public class CRequestContainer {
       }
 
       private QuestObjective objectiveFromString(String name) {
-        JSONObject jsonObject = new JSONObject(name.split("::::::::::")[0]);
+        JsonObject jsonObject = new Gson().fromJson(name.split("::::::::::")[0], JsonObject.class);
         return QuestObjective.fromJson(jsonObject);
       }
 
       private Quest questFromString(String name) {
-        JSONObject jsonObject = new JSONObject(name.split("::::::::::")[1]);
+        JsonObject jsonObject = new Gson().fromJson(name.split("::::::::::")[1], JsonObject.class);
         return Quest.fromJson(jsonObject);
       }
     },
@@ -131,7 +132,7 @@ public class CRequestContainer {
       }
 
       private Quest questFromString(String name) {
-        JSONObject jsonObject = new JSONObject(name);
+        JsonObject jsonObject = new Gson().fromJson(name, JsonObject.class);
         return Quest.fromJson(jsonObject);
       }
     };

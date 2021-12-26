@@ -1,5 +1,9 @@
 package flash.npcmod.core.quests;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.core.pathing.Path;
 import net.minecraft.world.entity.player.Player;
@@ -11,8 +15,6 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -253,43 +255,43 @@ public abstract class QuestObjective {
     }
   }
 
-  public JSONObject toJson() {
-    JSONObject jsonObject = new JSONObject();
-    jsonObject.put("index", id);
-    jsonObject.put("name", getName());
-    jsonObject.put("type", getType().ordinal());
-    jsonObject.put("amount", getAmount());
-    jsonObject.put("primaryObjective", primaryToString());
+  public JsonObject toJson() {
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.addProperty("index", id);
+    jsonObject.addProperty("name", getName());
+    jsonObject.addProperty("type", getType().ordinal());
+    jsonObject.addProperty("amount", getAmount());
+    jsonObject.addProperty("primaryObjective", primaryToString());
     if (getSecondaryObjective() != null && !secondaryToString().isEmpty())
-      jsonObject.put("secondaryObjective", secondaryToString());
+      jsonObject.addProperty("secondaryObjective", secondaryToString());
 
     if (isHidden())
-      jsonObject.put("isHidden", true);
+      jsonObject.addProperty("isHidden", true);
     if (isOptional())
-      jsonObject.put("isOptional", true);
+      jsonObject.addProperty("isOptional", true);
     if (!shouldDisplayProgress())
-      jsonObject.put("displayProgress", false);
+      jsonObject.addProperty("displayProgress", false);
 
     if (getRunOnComplete() != null && !getRunOnComplete().isEmpty()) {
-      JSONArray runOnCompleteArray = new JSONArray();
+      JsonArray runOnCompleteArray = new JsonArray();
       for (String s : getRunOnComplete()) {
-        runOnCompleteArray.put(s);
+        runOnCompleteArray.add(s);
       }
-      jsonObject.put("objectiveRunOnComplete", runOnCompleteArray);
+      jsonObject.add("objectiveRunOnComplete", runOnCompleteArray);
     }
     return jsonObject;
   }
 
-  public static QuestObjective fromJson(JSONObject jsonObject) {
-    int id = jsonObject.getInt("index");
-    String objectiveName = jsonObject.getString("name");
-    int type = Mth.clamp(jsonObject.getInt("type"), 0, QuestObjective.ObjectiveType.values().length);
+  public static QuestObjective fromJson(JsonObject jsonObject) {
+    int id = jsonObject.get("index").getAsInt();
+    String objectiveName = jsonObject.get("name").getAsString();
+    int type = Mth.clamp(jsonObject.get("type").getAsInt(), 0, QuestObjective.ObjectiveType.values().length);
     QuestObjective.ObjectiveType objectiveType = QuestObjective.ObjectiveType.values()[type];
-    int objectiveAmount = jsonObject.getInt("amount");
-    String primaryObjective = jsonObject.getString("primaryObjective");
+    int objectiveAmount = jsonObject.get("amount").getAsInt();
+    String primaryObjective = jsonObject.get("primaryObjective").getAsString();
     String secondaryObjective = "";
     if (jsonObject.has("secondaryObjective"))
-      secondaryObjective = jsonObject.getString("secondaryObjective");
+      secondaryObjective = jsonObject.get("secondaryObjective").getAsString();
     QuestObjective questObjective;
     switch (objectiveType) {
       default:
@@ -329,17 +331,17 @@ public abstract class QuestObjective {
     }
 
     if (jsonObject.has("isHidden"))
-      questObjective.setHidden(jsonObject.getBoolean("isHidden"));
+      questObjective.setHidden(jsonObject.get("isHidden").getAsBoolean());
     if (jsonObject.has("isOptional"))
-      questObjective.setOptional(jsonObject.getBoolean("isOptional"));
+      questObjective.setOptional(jsonObject.get("isOptional").getAsBoolean());
     if (jsonObject.has("displayProgress"))
-      questObjective.setShouldDisplayProgress(jsonObject.getBoolean("displayProgress"));
+      questObjective.setShouldDisplayProgress(jsonObject.get("displayProgress").getAsBoolean());
 
     if (jsonObject.has("objectiveRunOnComplete")) {
-      JSONArray runOnCompleteArray = jsonObject.getJSONArray("objectiveRunOnComplete");
+      JsonArray runOnCompleteArray = jsonObject.getAsJsonArray("objectiveRunOnComplete");
       List<String> runOnCompleteList = new ArrayList<>();
-      for (int j = 0; j < runOnCompleteArray.length(); j++) {
-        String s = runOnCompleteArray.getString(j);
+      for (int j = 0; j < runOnCompleteArray.size(); j++) {
+        String s = runOnCompleteArray.get(j).getAsString();
         runOnCompleteList.add(s);
       }
 

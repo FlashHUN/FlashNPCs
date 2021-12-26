@@ -1,5 +1,7 @@
 package flash.npcmod.client.gui.screen.dialogue;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -20,8 +22,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
@@ -99,13 +99,13 @@ public class DialogueBuilderScreen extends Screen {
   }
 
   private void updateNodePositionsFromJson() {
-    JSONArray entries = ClientDialogueUtil.currentDialogueEditor.getJSONArray("entries");
+    JsonArray entries = ClientDialogueUtil.currentDialogueEditor.getAsJsonArray("entries");
     allDialogueNodes.forEach(node -> {
-      for (int i = 0; i < entries.length(); i++) {
-        JSONObject entry = entries.getJSONObject(i);
+      for (int i = 0; i < entries.size(); i++) {
+        JsonObject entry = entries.get(i).getAsJsonObject();
         if (entry.has("name") && entry.has("x") && entry.has("y")) {
-          if (node.getDialogue().getName().equals(entry.getString("name"))) {
-            node.setPosition(entry.getInt("x"), entry.getInt("y"));
+          if (node.getDialogue().getName().equals(entry.get("name").getAsString())) {
+            node.setPosition(entry.get("x").getAsInt(), entry.get("y").getAsInt());
           }
         }
       }
@@ -120,8 +120,8 @@ public class DialogueBuilderScreen extends Screen {
     this.saveButton = this.addRenderableWidget(new Button(width/2-50, height-25, 100, 20, new TextComponent("Save"), btn -> {
       if (this.editingNode == null) {
         if (conflictingDialogueNames.size() == 0) {
-          JSONObject dialogue = buildDialogueJSON();
-          JSONObject dialogueEditor = buildDialogueEditorJSON();
+          JsonObject dialogue = buildDialogueJSON();
+          JsonObject dialogueEditor = buildDialogueEditorJSON();
           PacketDispatcher.sendToServer(new CEditDialogue(this.dialogueName, dialogue.toString(), dialogueEditor.toString()));
         }
       }
@@ -529,41 +529,41 @@ public class DialogueBuilderScreen extends Screen {
     this.selectedNodeIndex = selectedNodeIndex;
   }
 
-  public JSONObject buildDialogueEditorJSON() {
-    JSONArray entries = new JSONArray();
+  public JsonObject buildDialogueEditorJSON() {
+    JsonArray entries = new JsonArray();
     // Build an entry out of each node and put it in the array
     for (DialogueNode node : allDialogueNodes) {
-      JSONObject entry = new JSONObject();
-      entry.put("name", node.getName());
-      entry.put("x", node.getX());
-      entry.put("y", node.getY());
+      JsonObject entry = new JsonObject();
+      entry.addProperty("name", node.getName());
+      entry.addProperty("x", node.getX());
+      entry.addProperty("y", node.getY());
 
-      entries.put(entry);
+      entries.add(entry);
     }
 
-    JSONObject object = new JSONObject();
-    object.put("entries", entries);
+    JsonObject object = new JsonObject();
+    object.add("entries", entries);
 
     return object;
   }
 
-  public JSONObject buildDialogueJSON() {
+  public JsonObject buildDialogueJSON() {
     // Build our array of dialogue entries
-    JSONArray entries = new JSONArray();
+    JsonArray entries = new JsonArray();
     for (DialogueNode node : allDialogueNodes) {
       if (node.isDialogueStart()) {
-        entries.put(buildDialogueToJSON(node.getDialogue()));
+        entries.add(buildDialogueToJSON(node.getDialogue()));
       }
     }
 
     // Build JSONObject out of the entries array.
-    JSONObject object = new JSONObject();
-    object.put("entries", entries);
+    JsonObject object = new JsonObject();
+    object.add("entries", entries);
 
     return object;
   }
 
-  public JSONObject buildDialogueToJSON(Dialogue dialogue) {
+  public JsonObject buildDialogueToJSON(Dialogue dialogue) {
     // Dialogue Properties
     String name = dialogue.getName();
     String text = dialogue.getText();
@@ -573,18 +573,18 @@ public class DialogueBuilderScreen extends Screen {
     String response = dialogue.getResponse();
     String function = dialogue.getFunction();
     Dialogue[] children = dialogue.getChildren();
-    JSONArray childrenAsObjects = new JSONArray();
+    JsonArray childrenAsObjects = new JsonArray();
     for (Dialogue child : children) {
-      childrenAsObjects.put(buildDialogueToJSON(child));
+      childrenAsObjects.add(buildDialogueToJSON(child));
     }
 
     // Build our JSON Object from the properties
-    JSONObject dialogueObject = new JSONObject();
-    dialogueObject.put("name", name);
-    dialogueObject.put("text", text);
-    dialogueObject.put("response", response);
-    dialogueObject.put("function", function);
-    dialogueObject.put("children", childrenAsObjects);
+    JsonObject dialogueObject = new JsonObject();
+    dialogueObject.addProperty("name", name);
+    dialogueObject.addProperty("text", text);
+    dialogueObject.addProperty("response", response);
+    dialogueObject.addProperty("function", function);
+    dialogueObject.add("children", childrenAsObjects);
 
     return dialogueObject;
   }

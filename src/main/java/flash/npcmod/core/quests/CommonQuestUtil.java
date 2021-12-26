@@ -1,5 +1,7 @@
 package flash.npcmod.core.quests;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityAttacher;
@@ -8,8 +10,6 @@ import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SSendQuestInfo;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.io.FilenameUtils;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -44,7 +44,7 @@ public class CommonQuestUtil {
       List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       List<QuestInstance> markedForRemoval = new ArrayList<>();
       acceptedQuests.forEach(questInstance -> {
-        JSONObject quest = loadQuest(questInstance.getQuest().getName());
+        JsonObject quest = loadQuest(questInstance.getQuest().getName());
         if (quest != null) {
           PacketDispatcher.sendTo(new SSendQuestInfo(questInstance.getQuest().getName(), quest.toString()), player);
         } else {
@@ -60,7 +60,7 @@ public class CommonQuestUtil {
   public static void buildQuest(String name, String jsonText) {
     try {
       File jsonFile = FileUtil.getJsonFile("quests", name);
-      JSONObject jsonObject = new JSONObject(jsonText);
+      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -86,7 +86,7 @@ public class CommonQuestUtil {
   }
 
   @Nullable
-  public static JSONObject loadQuest(String name) {
+  public static JsonObject loadQuest(String name) {
     Quest fromName = fromName(name);
     if (fromName != null) return fromName.toJson();
 
@@ -97,8 +97,7 @@ public class CommonQuestUtil {
   public static Quest loadQuestFile(String name) {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json")), StandardCharsets.UTF_8);
-      JSONTokener tokener = new JSONTokener(is);
-      JSONObject object = new JSONObject(tokener);
+      JsonObject object = new Gson().fromJson(is, JsonObject.class);
 
       Quest quest = Quest.fromJson(object);
       if (QUESTS.contains(quest)) QUESTS.remove(quest);

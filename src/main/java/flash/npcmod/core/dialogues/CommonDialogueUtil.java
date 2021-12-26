@@ -1,9 +1,9 @@
 package flash.npcmod.core.dialogues;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +28,7 @@ public class CommonDialogueUtil {
     Writer fw = null;
     try {
       File jsonFile = FileUtil.getJsonFile("dialogues", name);
-      JSONObject jsonObject = new JSONObject(jsonText);
+      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -50,7 +50,7 @@ public class CommonDialogueUtil {
   public static void buildDialogueEditor(String name, String jsonText) {
     try {
       File jsonFile = FileUtil.getJsonFile("dialogue_editor", name);
-      JSONObject jsonObject = new JSONObject(jsonText);
+      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -65,11 +65,10 @@ public class CommonDialogueUtil {
     }
   }
 
-  public static JSONObject loadDialogueFile(String name) {
+  public static JsonObject loadDialogueFile(String name) {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
-      JSONTokener tokener = new JSONTokener(is);
-      JSONObject object = new JSONObject(tokener);
+      JsonObject object = new Gson().fromJson(is, JsonObject.class);
 
       return object;
     } catch (FileNotFoundException e) {
@@ -78,11 +77,10 @@ public class CommonDialogueUtil {
     return null;
   }
 
-  public static JSONObject loadDialogueEditorFile(String name) {
+  public static JsonObject loadDialogueEditorFile(String name) {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
-      JSONTokener tokener = new JSONTokener(is);
-      JSONObject object = new JSONObject(tokener);
+      JsonObject object = new Gson().fromJson(is, JsonObject.class);
 
       return object;
     } catch (FileNotFoundException e) {

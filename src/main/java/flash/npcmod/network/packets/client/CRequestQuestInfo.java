@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.network.PacketDispatcher;
@@ -7,7 +8,6 @@ import flash.npcmod.network.packets.server.SSendQuestInfo;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import org.json.JSONObject;
 
 import java.util.function.Supplier;
 
@@ -31,7 +31,7 @@ public class CRequestQuestInfo {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
 
-      JSONObject quest = CommonQuestUtil.loadQuest(msg.name);
+      JsonObject quest = CommonQuestUtil.loadQuest(msg.name);
 
       if (quest != null) {
         PacketDispatcher.sendTo(new SSendQuestInfo(msg.name, quest.toString()), sender);

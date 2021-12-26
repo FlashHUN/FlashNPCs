@@ -594,10 +594,12 @@ public class DialogueNode {
       }
       else {
         for (DialogueNode node : dialogueBuilderScreen.allDialogueNodes) {
-          if (node.getName() == this.getOptionsNames()[index-1] && node.parent.equals(this)) {
-            node.setParent(null);
-            this.dialogueBuilderScreen.setSelectedNode(this, getOptionsNames().length+1);
-            break;
+          if (node.getName().equals(this.getOptionsNames()[index - 1])) {
+            if (node.parent != null && node.parent.equals(this)) {
+              node.setParent(null);
+              this.dialogueBuilderScreen.setSelectedNode(this, getOptionsNames().length + 1);
+              break;
+            }
           }
         }
       }

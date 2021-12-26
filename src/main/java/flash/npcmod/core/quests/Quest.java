@@ -1,13 +1,13 @@
 package flash.npcmod.core.quests;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import flash.npcmod.capability.quests.QuestCapabilityAttacher;
 import flash.npcmod.config.ConfigHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -136,79 +136,81 @@ public class Quest {
     return null;
   }
 
-  public static Quest fromJson(JSONObject object) {
-    String name = object.getString("name");
-    String displayName = object.getString("displayName");
+  public static Quest fromJson(JsonObject object) {
+    String name = object.get("name").getAsString();
+    String displayName = object.get("displayName").getAsString();
     List<QuestObjective> objectives = new ArrayList<>();
     if (object.has("objectives")) {
-      JSONArray objectivesArray = object.getJSONArray("objectives");
-      for (int i = 0; i < objectivesArray.length(); i++) {
-        JSONObject objectiveObject = objectivesArray.getJSONObject(i);
+      JsonArray objectivesArray = object.getAsJsonArray("objectives");
+      for (int i = 0; i < objectivesArray.size(); i++) {
+        JsonObject objectiveObject = objectivesArray.get(i).getAsJsonObject();
         objectives.add(QuestObjective.fromJson(objectiveObject));
       }
     }
 
     int xpReward = 0;
     if (object.has("xpReward"))
-      xpReward = object.getInt("xpReward");
+      xpReward = object.get("xpReward").getAsInt();
 
     List<ItemStack> itemRewards = new ArrayList<>();
     if (object.has("itemRewards")) {
-      JSONArray itemsArray = object.getJSONArray("itemRewards");
-      for (int i = 0; i < itemsArray.length(); i++) {
-        JSONObject itemObject = itemsArray.getJSONObject(i);
-        ItemStack item = stackFromString(itemObject.getString("stack"));
-        item.setCount(itemObject.getInt("count"));
+      JsonArray itemsArray = object.getAsJsonArray("itemRewards");
+      for (int i = 0; i < itemsArray.size(); i++) {
+        JsonObject itemObject = itemsArray.get(i).getAsJsonObject();
+        ItemStack item = stackFromString(itemObject.get("stack").getAsString());
+        item.setCount(itemObject.get("count").getAsInt());
         itemRewards.add(item);
       }
     }
 
     boolean repeatable = true;
-    if (object.has("repeatable")) repeatable = object.getBoolean("repeatable");
+    if (object.has("repeatable"))
+      repeatable = object.get("repeatable").getAsBoolean();
 
     List<String> runOnComplete = new ArrayList<>();
     if (object.has("runOnComplete")) {
-      JSONArray runArray = object.getJSONArray("runOnComplete");
-      for (int i = 0; i < runArray.length(); i++) {
-        runOnComplete.add(runArray.getString(i));
+      JsonArray runArray = object.getAsJsonArray("runOnComplete");
+      for (int i = 0; i < runArray.size(); i++) {
+        runOnComplete.add(runArray.get(i).getAsString());
       }
     }
 
     return new Quest(name, displayName, objectives, xpReward, itemRewards, repeatable, runOnComplete);
   }
 
-  public JSONObject toJson() {
-    JSONObject object = new JSONObject();
-    object.put("name", getName());
-    object.put("displayName", getDisplayName());
+  public JsonObject toJson() {
+    JsonObject object = new JsonObject();
+    object.addProperty("name", getName());
+    object.addProperty("displayName", getDisplayName());
 
-    JSONArray objectives = new JSONArray();
+    JsonArray objectives = new JsonArray();
     for (QuestObjective objective : getObjectives()) {
-      objectives.put(objective.toJson());
+      objectives.add(objective.toJson());
     }
     if (!objectives.isEmpty())
-      object.put("objectives", objectives);
+      object.add("objectives", objectives);
 
-    object.put("xpReward", getXpReward());
+    object.addProperty("xpReward", getXpReward());
 
-    JSONArray itemRewards = new JSONArray();
+    JsonArray itemRewards = new JsonArray();
     for (ItemStack stack : getItemRewards()) {
-      JSONObject stackObject = new JSONObject();
-      stackObject.put("stack", stackToString(stack));
-      stackObject.put("count", stack.getCount());
-      itemRewards.put(stackObject);
+      JsonObject stackObject = new JsonObject();
+      stackObject.addProperty("stack", stackToString(stack));
+      stackObject.addProperty("count", stack.getCount());
+      itemRewards.add(stackObject);
     }
     if (!itemRewards.isEmpty())
-      object.put("itemRewards", itemRewards);
+      object.add("itemRewards", itemRewards);
 
-    if (!isRepeatable()) object.put("repeatable", false);
+    if (!isRepeatable())
+      object.addProperty("repeatable", false);
 
-    JSONArray runOnComplete = new JSONArray();
+    JsonArray runOnComplete = new JsonArray();
     for (String command : getRunOnComplete()) {
-      runOnComplete.put(command);
+      runOnComplete.add(command);
     }
     if (!runOnComplete.isEmpty())
-      object.put("runOnComplete", runOnComplete);
+      object.add("runOnComplete", runOnComplete);
 
     return object;
   }

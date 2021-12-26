@@ -1,5 +1,8 @@
 package flash.npcmod.core.client.dialogues;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityAttacher;
@@ -15,9 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import javax.annotation.Nullable;
 import java.io.FileInputStream;
@@ -35,20 +35,19 @@ public class ClientDialogueUtil {
   public static final List<String> FUNCTION_NAMES = new ArrayList<>();
 
   @Nullable
-  public static JSONObject currentDialogue = null;
+  public static JsonObject currentDialogue = null;
   @Nullable
-  public static JSONObject currentDialogueEditor = null;
+  public static JsonObject currentDialogueEditor = null;
 
   private static String currentText = "";
   private static String currentResponse = "";
   private static String currentFunction = "";
-  private static JSONArray currentChildren = new JSONArray();
+  private static JsonArray currentChildren = new JsonArray();
 
   public static void loadDialogue(String name) {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
-      JSONTokener tokener = new JSONTokener(is);
-      JSONObject object = new JSONObject(tokener);
+      JsonObject object = new Gson().fromJson(is, JsonObject.class);
 
       currentDialogue = object;
     } catch (FileNotFoundException e) {
@@ -59,8 +58,7 @@ public class ClientDialogueUtil {
   public static void loadDialogueEditor(String name) {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
-      JSONTokener tokener = new JSONTokener(is);
-      JSONObject object = new JSONObject(tokener);
+      JsonObject object = new Gson().fromJson(is, JsonObject.class);
 
       currentDialogueEditor = object;
     } catch (FileNotFoundException e) {
@@ -76,17 +74,17 @@ public class ClientDialogueUtil {
     findText(name, currentDialogue);
   }
 
-  private static boolean findText(String name, JSONObject currentObject) {
+  private static boolean findText(String name, JsonObject currentObject) {
     if (!currentObject.has("entries")) {
       boolean result;
-      if (name.equals(currentObject.getString("name"))) {
+      if (name.equals(currentObject.get("name").getAsString())) {
         setVars(currentObject);
         return true;
       } else {
         if (currentObject.has("children")) {
-          JSONArray children = currentObject.getJSONArray("children");
-          for (int i = 0; i < children.length(); i++) {
-            JSONObject currentChild = children.getJSONObject(i);
+          JsonArray children = currentObject.getAsJsonArray("children");
+          for (int i = 0; i < children.size(); i++) {
+            JsonObject currentChild = children.get(i).getAsJsonObject();
 
             result = findText(name, currentChild);
 
@@ -102,9 +100,9 @@ public class ClientDialogueUtil {
       return false;
     }
     else {
-      JSONArray entries = currentObject.getJSONArray("entries");
-      for (int i = 0; i < entries.length(); i++) {
-        JSONObject entry = entries.getJSONObject(i);
+      JsonArray entries = currentObject.getAsJsonArray("entries");
+      for (int i = 0; i < entries.size(); i++) {
+        JsonObject entry = entries.get(i).getAsJsonObject();
         boolean b = findText(name, entry);
         if (b) {
           return true;
@@ -119,25 +117,25 @@ public class ClientDialogueUtil {
     currentText = "";
     currentResponse = "";
     currentFunction = "";
-    currentChildren = new JSONArray();
+    currentChildren = new JsonArray();
   }
 
-  private static void setVars(JSONObject object) {
-    currentText = object.getString("text");
+  private static void setVars(JsonObject object) {
+    currentText = object.get("text").getAsString();
     if (object.has("response")) {
-      currentResponse = object.getString("response");
+      currentResponse = object.get("response").getAsString();
     } else {
       currentResponse = "";
     }
     if (object.has("function")) {
-      currentFunction = object.getString("function");
+      currentFunction = object.get("function").getAsString();
     } else {
       currentFunction = "";
     }
     if (object.has("children")) {
-      currentChildren = object.getJSONArray("children");
+      currentChildren = object.getAsJsonArray("children");
     } else {
-      currentChildren = new JSONArray();
+      currentChildren = new JsonArray();
     }
 
     // Quest Talk Objective Check
@@ -151,7 +149,7 @@ public class ClientDialogueUtil {
           questInstance.getQuest().getObjectives().forEach(objective -> {
             if (objective.getType().equals(QuestObjective.ObjectiveType.Talk)) {
               if (objective.getObjective().equals(dialogueScreen.getNpcName())
-                  && objective.getSecondaryObjective().equals(object.getString("name"))) {
+                  && objective.getSecondaryObjective().equals(object.get("name").getAsString())) {
                 String objectiveName = questInstance.getQuest().getName() + ":::" + objective.getName();
                 PacketDispatcher.sendToServer(new CTalkObjectiveComplete(objectiveName));
               }
@@ -175,11 +173,11 @@ public class ClientDialogueUtil {
   }
 
   public static String[] getDialogueOptionNamesFromChildren() {
-    int childrenAmount = currentChildren.length();
+    int childrenAmount = currentChildren.size();
     if (childrenAmount > 0) {
       String[] options = new String[childrenAmount];
       for (int i = 0; i < childrenAmount; i++) {
-        options[i] = currentChildren.getJSONObject(i).getString("name");
+        options[i] = currentChildren.get(i).getAsJsonObject().get("name").getAsString();
       }
       return options;
     }
@@ -187,11 +185,11 @@ public class ClientDialogueUtil {
   }
 
   public static String[] getDialogueOptionsFromChildren() {
-    int childrenAmount = currentChildren.length();
+    int childrenAmount = currentChildren.size();
     if (childrenAmount > 0) {
       String[] options = new String[childrenAmount];
       for (int i = 0; i < childrenAmount; i++) {
-        options[i] = currentChildren.getJSONObject(i).getString("text");
+        options[i] = currentChildren.get(i).getAsJsonObject().get("text").getAsString();
       }
       return options;
     }

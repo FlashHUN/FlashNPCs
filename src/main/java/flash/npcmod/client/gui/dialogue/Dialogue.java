@@ -1,10 +1,10 @@
 package flash.npcmod.client.gui.dialogue;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -103,12 +103,12 @@ public class Dialogue {
     throw new InvalidParameterException("Could not get init dialogue");
   }
 
-  public static final Dialogue[] multipleFromJSONObject(JSONObject object) {
+  public static final Dialogue[] multipleFromJSONObject(JsonObject object) {
     if (object.has("entries")) {
-      JSONArray entries = object.getJSONArray("entries");
-      Dialogue[] dialogues = new Dialogue[entries.length()];
-      for (int i = 0; i < entries.length(); i++) {
-        dialogues[i] = fromJSONObject(entries.getJSONObject(i));
+      JsonArray entries = object.getAsJsonArray("entries");
+      Dialogue[] dialogues = new Dialogue[entries.size()];
+      for (int i = 0; i < entries.size(); i++) {
+        dialogues[i] = fromJSONObject(entries.get(i).getAsJsonObject());
       }
       return dialogues;
     } else {
@@ -116,22 +116,22 @@ public class Dialogue {
     }
   }
 
-  public static final Dialogue fromJSONObject(JSONObject object) {
+  public static final Dialogue fromJSONObject(JsonObject object) {
     Dialogue[] children = new Dialogue[0];
     if (object.has("children")) {
-      JSONArray currentChildren = object.getJSONArray("children");
-      children = new Dialogue[currentChildren.length()];
-      for (int i = 0; i < currentChildren.length(); i++) {
-        JSONObject currentChild = currentChildren.getJSONObject(i);
+      JsonArray currentChildren = object.getAsJsonArray("children");
+      children = new Dialogue[currentChildren.size()];
+      for (int i = 0; i < currentChildren.size(); i++) {
+        JsonObject currentChild = currentChildren.get(i).getAsJsonObject();
         Dialogue childDialogue = fromJSONObject(currentChild);
         children[i] = childDialogue;
       }
     }
 
-    String name = object.getString("name");
-    String text = object.getString("text");
-    String response = object.has("response") ? object.getString("response") : "";
-    String function = object.has("function") ? object.getString("function") : "";
+    String name = object.get("name").getAsString();
+    String text = object.get("text").getAsString();
+    String response = object.has("response") ? object.get("response").getAsString() : "";
+    String function = object.has("function") ? object.get("function").getAsString() : "";
 
     return new Dialogue(name, text, response, function, children);
   }
