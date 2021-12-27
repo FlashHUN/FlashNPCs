@@ -5,7 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.core.quests.QuestInstance;
@@ -143,7 +143,7 @@ public class ClientDialogueUtil {
       DialogueScreen dialogueScreen = (DialogueScreen) Minecraft.getInstance().screen;
       Player player = Minecraft.getInstance().player;
       if (player != null && player.isAlive()) {
-        IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
+        IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
         List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
         acceptedQuests.forEach(questInstance -> {
           questInstance.getQuest().getObjectives().forEach(objective -> {

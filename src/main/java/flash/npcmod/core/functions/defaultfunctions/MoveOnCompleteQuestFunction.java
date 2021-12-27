@@ -1,7 +1,7 @@
 package flash.npcmod.core.functions.defaultfunctions;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -17,7 +17,7 @@ public class MoveOnCompleteQuestFunction extends AbstractFunction {
   @Override
   public void call(String[] params, ServerPlayer sender, NpcEntity npcEntity) {
     if (params.length == 3) {
-      IQuestCapability capability = QuestCapabilityAttacher.getCapability(sender);
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(sender);
       if (capability.getCompletedQuests().contains(params[0]))
         PacketDispatcher.sendTo(new SMoveToDialogue(params[1], npcEntity.getId()), sender);
       else if (!params[2].isEmpty())

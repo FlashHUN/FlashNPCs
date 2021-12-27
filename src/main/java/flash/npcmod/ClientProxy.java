@@ -1,7 +1,7 @@
 package flash.npcmod;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.screen.FunctionBuilderScreen;
 import flash.npcmod.client.gui.screen.NpcBuilderScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
@@ -112,22 +112,22 @@ public class ClientProxy extends CommonProxy {
 
 
   public void syncTrackedQuest(String trackedQuest) {
-    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
     questCapability.setTrackedQuest(trackedQuest);
   }
 
   public void syncAcceptedQuests(ArrayList<QuestInstance> acceptedQuests) {
-    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
     questCapability.setAcceptedQuests(acceptedQuests);
   }
 
   public void syncCompletedQuests(ArrayList<String> completedQuests) {
-    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
     questCapability.setCompletedQuests(completedQuests);
   }
 
   public void syncQuestProgressMap(Map<QuestObjective, Integer> progressMap) {
-    IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
+    IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
     Map<QuestObjective, Integer> map = questCapability.getQuestProgressMap();
     progressMap.forEach((objective, progress) -> {
       map.put(objective, progress);
@@ -140,7 +140,7 @@ public class ClientProxy extends CommonProxy {
     Quest quest = ClientQuestUtil.fromName(name);
     Entity entity = minecraft.player.level.getEntity(entityid);
     if (quest != null && entity instanceof NpcEntity) {
-      IQuestCapability capability = QuestCapabilityAttacher.getCapability(minecraft.player);
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
 
       QuestInstance questInstance = new QuestInstance(quest, entity.getUUID(), entity.getName().getString(), minecraft.player);
       capability.acceptQuest(questInstance);
@@ -148,7 +148,7 @@ public class ClientProxy extends CommonProxy {
   }
 
   public void completeQuest(String name, UUID uuid) {
-    IQuestCapability capability = QuestCapabilityAttacher.getCapability(minecraft.player);
+    IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
 
     QuestInstance instance = null;
     for (QuestInstance current : capability.getAcceptedQuests()) {

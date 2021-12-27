@@ -1,7 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
@@ -38,7 +38,7 @@ public class CAbandonQuest {
   public static void handle(CAbandonQuest msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      IQuestCapability capability = QuestCapabilityAttacher.getCapability(sender);
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(sender);
       List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       for (QuestInstance questInstance : acceptedQuests) {
         if (questInstance.getQuest().getName().equals(msg.name) && questInstance.getPickedUpFrom().equals(msg.pickedUpFrom)) {

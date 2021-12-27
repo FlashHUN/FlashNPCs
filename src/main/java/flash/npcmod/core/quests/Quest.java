@@ -2,7 +2,7 @@ package flash.npcmod.core.quests;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.config.ConfigHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -121,7 +121,7 @@ public class Quest {
       } else if (command.startsWith("acceptQuest:")) {
         Quest quest = CommonQuestUtil.fromName(command.substring(12));
         if (quest != null)
-          QuestCapabilityAttacher.getCapability(player).acceptQuest(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, player));
+          QuestCapabilityProvider.getCapability(player).acceptQuest(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, player));
       }
     }
   }

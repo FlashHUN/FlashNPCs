@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.client.ScreenHelper;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
@@ -24,6 +24,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO check out overlay registry
 @OnlyIn(Dist.CLIENT)
 public class HudOverlay extends GuiComponent {
 
@@ -48,7 +49,7 @@ public class HudOverlay extends GuiComponent {
         height = Minecraft.getInstance().getWindow().getGuiScaledHeight();
 
         PoseStack matrixStack = event.getMatrixStack();
-        IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(minecraft.player);
+        IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
 
         renderTrackedQuest(matrixStack, questCapability);
 

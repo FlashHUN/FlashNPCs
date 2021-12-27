@@ -3,7 +3,7 @@ package flash.npcmod.client.gui.screen.quests;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.overlay.HudOverlay;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
@@ -97,7 +97,7 @@ public class QuestLogScreen extends Screen {
 
   @Override
   public void tick() {
-    acceptedQuests = QuestCapabilityAttacher.getCapability(minecraft.player).getAcceptedQuests();
+    acceptedQuests = QuestCapabilityProvider.getCapability(minecraft.player).getAcceptedQuests();
     if (acceptedQuests.size() > 10 && scrollOffset > acceptedQuests.size()-10)
       updateScrollY(0, 0, 0);
 

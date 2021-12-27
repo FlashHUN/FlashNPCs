@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.screen.quests.QuestLogScreen;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.entity.NpcEntity;
@@ -126,7 +126,7 @@ public class ClientEvents {
 
     NpcEntity npcEntity = (NpcEntity) event.getEntity();
 
-    IQuestCapability capability = QuestCapabilityAttacher.getCapability(minecraft.player);
+    IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
 
     boolean shouldDrawIcon = false;
     boolean canComplete = false;

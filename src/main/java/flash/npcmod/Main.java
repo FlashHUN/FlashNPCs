@@ -1,18 +1,17 @@
 package flash.npcmod;
 
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.events.QuestEvents;
-import flash.npcmod.init.CapabilityInit;
 import flash.npcmod.init.CommandInit;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.init.ItemInit;
 import flash.npcmod.network.PacketDispatcher;
-import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -33,7 +32,7 @@ public class Main {
   public static final String MODID = "flashnpcs";
 
   // Directly reference a log4j logger.
-  public static final Logger LOGGER = LogManager.getLogger();
+  public static final Logger LOGGER = LogManager.getLogger("Flash's NPCs");
 
   // Proxies
   public static final CommonProxy PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
@@ -51,6 +50,7 @@ public class Main {
     // Register the setup method for modloading
     modEventBus.addListener(this::setup);
     modEventBus.addListener(this::registerEntityAttributes);
+    modEventBus.addListener(this::registerCapabilites);
 
     // Register the config
     ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHolder.COMMON_SPEC);
@@ -60,7 +60,6 @@ public class Main {
     EntityInit.ENTITIES.register(modEventBus);
 
     MinecraftForge.EVENT_BUS.register(this);
-    MinecraftForge.EVENT_BUS.register(new CapabilityInit());
     MinecraftForge.EVENT_BUS.register(new QuestEvents());
   }
 
@@ -69,8 +68,12 @@ public class Main {
     PacketDispatcher.registerMessages();
   }
 
-  private void registerEntityAttributes(EntityAttributeCreationEvent event) {
+  public void registerEntityAttributes(EntityAttributeCreationEvent event) {
     event.put(EntityInit.NPC_ENTITY.get(), NpcEntity.setCustomAttributes().build());
+  }
+
+  public void registerCapabilites(RegisterCapabilitiesEvent event) {
+    event.register(IQuestCapability.class);
   }
 
   @SubscribeEvent

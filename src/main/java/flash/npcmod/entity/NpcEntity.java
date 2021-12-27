@@ -1,7 +1,7 @@
 package flash.npcmod.entity;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
@@ -238,7 +238,7 @@ public class NpcEntity extends AmbientCreature {
   public InteractionResult interactAt(Player player, Vec3 vec, InteractionHand hand) {
     if (hand.equals(InteractionHand.MAIN_HAND)) {
       if (player != null && player.isAlive()) {
-        IQuestCapability questCapability = QuestCapabilityAttacher.getCapability(player);
+        IQuestCapability questCapability = QuestCapabilityProvider.getCapability(player);
 
         List<QuestInstance> markedForCompletion = new ArrayList<>();
 

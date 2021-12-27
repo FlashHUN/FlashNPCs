@@ -4,7 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
@@ -93,7 +93,7 @@ public class QuestsCommand extends Command {
 
   private int completeObjective(CommandSourceStack source, Player player, String questName, String objectiveName) {
     if (player.isAlive()) {
-      IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
       QuestInstance instance = null;
       for (QuestInstance questInstance : capability.getAcceptedQuests()) {
         if (questInstance.getQuest().getName().equals(questName)) {
@@ -136,7 +136,7 @@ public class QuestsCommand extends Command {
     if (player != null && player.isAlive()) {
       Quest quest1 = CommonQuestUtil.fromName(quest);
       if (quest1 != null) {
-        IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
+        IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
         QuestInstance toRemoveInstance = null;
         for (QuestInstance questInstance : capability.getAcceptedQuests()) {
           if (questInstance.getQuest().equals(quest1)) {

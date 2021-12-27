@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SSendQuestInfo;
@@ -40,7 +40,7 @@ public class CommonQuestUtil {
 
   public static void syncPlayerQuests(ServerPlayer player) {
     if (player != null && player.isAlive()) {
-      IQuestCapability capability = QuestCapabilityAttacher.getCapability(player);
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
       List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       List<QuestInstance> markedForRemoval = new ArrayList<>();
       acceptedQuests.forEach(questInstance -> {

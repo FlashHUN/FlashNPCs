@@ -1,7 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
@@ -25,7 +25,7 @@ public class CRequestQuestCapabilitySync {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
       if (sender != null && sender.isAlive()) {
-        IQuestCapability capability = QuestCapabilityAttacher.getCapability(sender);
+        IQuestCapability capability = QuestCapabilityProvider.getCapability(sender);
 
         PacketDispatcher.sendTo(new SSyncQuestCapability(capability.getTrackedQuest()), sender);
         PacketDispatcher.sendTo(new SSyncQuestCapability(capability.getAcceptedQuests().toArray(new QuestInstance[0])), sender);

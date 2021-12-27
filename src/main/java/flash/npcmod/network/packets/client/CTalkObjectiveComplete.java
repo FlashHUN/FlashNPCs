@@ -1,7 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestObjective;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
@@ -28,7 +28,7 @@ public class CTalkObjectiveComplete {
   public static void handle(CTalkObjectiveComplete msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      IQuestCapability capability = QuestCapabilityAttacher.getCapability(sender);
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(sender);
 
       String[] split = msg.objective.split(":::");
       String questName = split[0];

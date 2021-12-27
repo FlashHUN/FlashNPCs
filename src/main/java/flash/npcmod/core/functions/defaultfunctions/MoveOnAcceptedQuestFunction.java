@@ -1,7 +1,7 @@
 package flash.npcmod.core.functions.defaultfunctions;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.capability.quests.QuestCapabilityAttacher;
+import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -20,7 +20,7 @@ public class MoveOnAcceptedQuestFunction extends AbstractFunction {
   @Override
   public void call(String[] params, ServerPlayer sender, NpcEntity npcEntity) {
     if (params.length == 3) {
-      IQuestCapability capability = QuestCapabilityAttacher.getCapability(sender);
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(sender);
       List<String> acceptedNames = new ArrayList<>();
       capability.getAcceptedQuests().forEach(questInstance -> acceptedNames.add(questInstance.getQuest().getName()));
       if (acceptedNames.contains(params[0]))
