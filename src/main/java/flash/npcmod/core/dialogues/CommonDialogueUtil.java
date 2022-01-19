@@ -8,7 +8,6 @@ import flash.npcmod.core.FileUtil;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-// FIXME org.json isn't loaded during runtime for some reason...
 public class CommonDialogueUtil {
 
   public static final String DEFAULT_DIALOGUE_JSON = "{\"name\":\"init\",\"text\":\"Hi @p!\",\"function\":\"\",\"children\":[{\"name\":\"hello\",\"text\":\"Hey @npc.\"}]}";

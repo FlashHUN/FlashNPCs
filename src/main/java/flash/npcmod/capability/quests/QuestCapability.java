@@ -1,5 +1,6 @@
 package flash.npcmod.capability.quests;
 
+import flash.npcmod.Main;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
@@ -80,6 +81,7 @@ public class QuestCapability implements IQuestCapability {
 
   @Override
   public void acceptQuest(QuestInstance quest) {
+    Main.LOGGER.info("Accepting quest");
     if (quest != null && quest.getQuest() != null && !acceptedQuests.contains(quest) && (quest.getQuest().isRepeatable() || !completedQuests.contains(quest.getQuest().getName()))) {
       acceptedQuests.add(quest);
       CommonQuestUtil.QUEST_INSTANCE_LIST.add(quest);
