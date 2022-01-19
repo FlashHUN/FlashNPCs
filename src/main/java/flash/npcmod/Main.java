@@ -33,7 +33,7 @@ public class Main {
   public static final Logger LOGGER = LogManager.getLogger("Flash's NPCs");
 
   // Proxies
-  public static final CommonProxy PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
+  public static CommonProxy PROXY;
 
   public static final CreativeModeTab NPC_ITEMGROUP = new CreativeModeTab(Main.MODID) {
     @Override
@@ -44,6 +44,9 @@ public class Main {
 
   public Main() {
     IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+    // Set up proxies
+    PROXY = DistExecutor.runForDist(() -> ClientProxy::new, () -> CommonProxy::new);
 
     // Register the setup method for modloading
     modEventBus.addListener(this::setup);
