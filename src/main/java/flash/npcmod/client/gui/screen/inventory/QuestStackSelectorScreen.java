@@ -21,6 +21,11 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public class QuestStackSelectorScreen extends AbstractContainerScreen<QuestStackSelectorContainer> {
 
+  /*
+  FIXME stack can be picked up from slots, but also stays in place. putting it down makes the selected slot empty and
+        the slot we put it down in has the item now. you can also throw the picked up stack out of your inventory
+   */
+
   private static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/item_selector_inventory.png");
 
   public QuestStackSelectorScreen(QuestStackSelectorContainer screenContainer, Inventory inv, Component titleIn) {

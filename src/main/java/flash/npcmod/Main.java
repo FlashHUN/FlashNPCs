@@ -28,10 +28,8 @@ import org.apache.logging.log4j.Logger;
 @Mod(Main.MODID)
 public class Main {
 
-  // The mod's id (namespace). The value here should match an entry in the META-INF/mods.toml file
   public static final String MODID = "flashnpcs";
 
-  // Directly reference a log4j logger.
   public static final Logger LOGGER = LogManager.getLogger("Flash's NPCs");
 
   // Proxies

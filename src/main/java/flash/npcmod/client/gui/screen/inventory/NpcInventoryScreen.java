@@ -18,8 +18,8 @@ import static net.minecraft.client.gui.screens.inventory.InventoryScreen.renderE
 @OnlyIn(Dist.CLIENT)
 public class NpcInventoryScreen extends AbstractContainerScreen<NpcInventoryContainer> {
 
-  private static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/npc_inventory.png");
   public static final ResourceLocation EMPTY_ARMOR_SLOT_SWORD = new ResourceLocation(Main.MODID, "textures/item/empty_armor_slot_sword.png");
+  private static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/npc_inventory.png");
 
   private NpcEntity npcEntity;
 
@@ -51,9 +51,11 @@ public class NpcInventoryScreen extends AbstractContainerScreen<NpcInventoryCont
     int i = this.leftPos;
     int j = this.topPos;
     this.blit(matrixStack, i, j, 0, 0, this.imageWidth, this.imageHeight);
-    renderEntityInInventory(i + 89, j + 75, 30, (float)(i + 89) - this.oldMouseX, (float)(j + 75 - 50) - this.oldMouseY, npcEntity);
-    RenderSystem.setShaderTexture(0, TEXTURE);
-    blit(matrixStack, i+115, j+44, 16, 16, 0, 0, 16, 16, 16, 16);
+    renderEntityInInventory(i + 89, j + 75, 30, (float) (i + 89) - this.oldMouseX, (float) (j + 75 - 50) - this.oldMouseY, npcEntity);
+    if (this.menu.slots.get(0).getItem().isEmpty()) { // have to do this because for some reason Slot#getNoItemIcon doesn't want to work
+      RenderSystem.setShaderTexture(0, EMPTY_ARMOR_SLOT_SWORD);
+      blit(matrixStack, i + 115, j + 44, 16, 16, 0, 0, 16, 16, 16, 16);
+    }
   }
 
   @Override

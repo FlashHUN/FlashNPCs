@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class QuestStackSelectorContainer extends AbstractContainerMenu {
 
@@ -36,18 +37,13 @@ public class QuestStackSelectorContainer extends AbstractContainerMenu {
       for(int j1 = 0; j1 < 9; ++j1) {
         this.addSlot(new Slot(inventory, j1 + (l + 1) * 9, 8 + j1 * 18, 84 + l * 18) {
           @Override
-          public void set(ItemStack stack) {
-            super.set(stack);
-          }
-
-          @Override
           public void onTake(Player thePlayer, ItemStack stack) {
             if (selectedSlots.contains(this))
               selectedSlots.remove(this);
             else
               selectedSlots.add(this);
-            this.set(stack);
-            thePlayer.inventoryMenu.setCarried(ItemStack.EMPTY);
+            set(stack);
+            setCarried(ItemStack.EMPTY);
           }
         });
       }
@@ -61,8 +57,8 @@ public class QuestStackSelectorContainer extends AbstractContainerMenu {
             selectedSlots.remove(this);
           else
             selectedSlots.add(this);
-          this.set(stack);
-          thePlayer.inventoryMenu.setCarried(ItemStack.EMPTY);
+          set(stack);
+          setCarried(ItemStack.EMPTY);
         }
       });
     }

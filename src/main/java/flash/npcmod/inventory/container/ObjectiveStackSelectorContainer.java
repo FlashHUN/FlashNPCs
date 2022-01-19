@@ -39,15 +39,10 @@ public class ObjectiveStackSelectorContainer extends AbstractContainerMenu {
       for(int j1 = 0; j1 < 9; ++j1) {
         this.addSlot(new Slot(inventory, j1 + (l + 1) * 9, 8 + j1 * 18, 84 + l * 18) {
           @Override
-          public void set(ItemStack stack) {
-            super.set(stack);
-          }
-
-          @Override
           public void onTake(Player thePlayer, ItemStack stack) {
             selectedSlot = this;
-            this.set(stack);
-            thePlayer.inventoryMenu.setCarried(ItemStack.EMPTY);
+            set(stack);
+            setCarried(ItemStack.EMPTY);
           }
         });
       }
@@ -58,8 +53,8 @@ public class ObjectiveStackSelectorContainer extends AbstractContainerMenu {
         @Override
         public void onTake(Player thePlayer, ItemStack stack) {
           selectedSlot = this;
-          this.set(stack);
-          thePlayer.inventoryMenu.setCarried(ItemStack.EMPTY);
+          set(stack);
+          setCarried(ItemStack.EMPTY);
         }
       });
     }

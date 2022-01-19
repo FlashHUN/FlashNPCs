@@ -1,6 +1,7 @@
 package flash.npcmod.inventory.container;
 
 import com.mojang.datafixers.util.Pair;
+import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.ContainerInit;
 import net.minecraft.world.entity.Entity;
@@ -32,20 +33,19 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
 
     SimpleContainer npcInventory = new SimpleContainer(getNpcItems(npcEntity));
 
+    // Main Hand Slot
     this.addSlot(new Slot(npcInventory, 0, 115, 44) {
       @Override
       public void set(ItemStack stack) {
         npcEntity.setItemSlot(EquipmentSlot.MAINHAND, stack);
         npcInventory.setChanged();
-        container.setChanged();
+        super.set(stack);
       }
 
       @Override
       public void onTake(Player thePlayer, ItemStack stack) {
         thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(EquipmentSlot.MAINHAND));
-        npcEntity.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-        npcInventory.setChanged();
-        this.setChanged();
+        this.set(ItemStack.EMPTY);
       }
 
       @Override
@@ -54,20 +54,19 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
       }
     });
 
+    // Offhand Slot
     this.addSlot(new Slot(npcInventory, 1, 115, 62) {
       @Override
       public void set(ItemStack stack) {
         npcEntity.setItemSlot(EquipmentSlot.OFFHAND, stack);
         npcInventory.setChanged();
-        container.setChanged();
+        super.set(stack);
       }
 
       @Override
       public void onTake(Player thePlayer, ItemStack stack) {
         thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(EquipmentSlot.OFFHAND));
-        npcEntity.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        npcInventory.setChanged();
-        this.setChanged();
+        this.set(ItemStack.EMPTY);
       }
 
       @Override
@@ -81,6 +80,7 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
       }
     });
 
+    // Armor Slots
     for(int k = 0; k < 4; ++k) {
       final EquipmentSlot equipmentslottype = VALID_EQUIPMENT_SLOTS[k];
       this.addSlot(new Slot(npcInventory, 2+k, 46, 8 + k * 18) {
@@ -103,15 +103,13 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
         public void set(ItemStack stack) {
           npcEntity.setItemSlot(equipmentslottype, stack);
           npcInventory.setChanged();
-          container.setChanged();
+          super.set(stack);
         }
 
         @Override
         public void onTake(Player thePlayer, ItemStack stack) {
           thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(equipmentslottype));
-          npcEntity.setItemSlot(equipmentslottype, ItemStack.EMPTY);
-          npcInventory.setChanged();
-          this.setChanged();
+          this.set(ItemStack.EMPTY);
         }
 
         @Override
@@ -125,6 +123,8 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
         }
       });
     }
+
+    // Player inventory
 
     for(int l = 0; l < 3; ++l) {
       for(int j1 = 0; j1 < 9; ++j1) {
