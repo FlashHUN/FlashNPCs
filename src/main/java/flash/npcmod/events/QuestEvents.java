@@ -37,8 +37,8 @@ public class QuestEvents {
 
   @SubscribeEvent
   public void playerClone(PlayerEvent.Clone event) {
-    final IQuestCapability oldCap = QuestCapabilityProvider.getCapability(event.getOriginal());
-    final IQuestCapability newCap = QuestCapabilityProvider.getCapability(event.getPlayer());
+    IQuestCapability oldCap = QuestCapabilityProvider.getCapability(event.getOriginal());
+    IQuestCapability newCap = QuestCapabilityProvider.getCapability(event.getPlayer());
 
     newCap.setTrackedQuest(oldCap.getTrackedQuest());
     newCap.setAcceptedQuests(oldCap.getAcceptedQuests());

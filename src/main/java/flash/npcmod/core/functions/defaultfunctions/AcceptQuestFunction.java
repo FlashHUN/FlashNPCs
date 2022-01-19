@@ -11,7 +11,6 @@ import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SAcceptQuest;
 import net.minecraft.server.level.ServerPlayer;
 
-// FIXME quest doesn't actually get accepted
 public class AcceptQuestFunction extends AbstractFunction {
 
   public AcceptQuestFunction() {

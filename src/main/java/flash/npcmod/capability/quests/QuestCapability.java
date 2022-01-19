@@ -81,11 +81,9 @@ public class QuestCapability implements IQuestCapability {
 
   @Override
   public void acceptQuest(QuestInstance quest) {
-    Main.LOGGER.info("Accepting quest");
     if (quest != null && quest.getQuest() != null && !acceptedQuests.contains(quest) && (quest.getQuest().isRepeatable() || !completedQuests.contains(quest.getQuest().getName()))) {
       acceptedQuests.add(quest);
       CommonQuestUtil.QUEST_INSTANCE_LIST.add(quest);
-
       quest.getQuest().getObjectives().forEach(objective -> {
         questProgressMap.put(objective, 0);
       });
@@ -145,7 +143,7 @@ public class QuestCapability implements IQuestCapability {
 
   @Override
   public CompoundTag serializeNBT() {
-    final CompoundTag tag = new CompoundTag();
+    CompoundTag tag = new CompoundTag();
 
     if (getTrackedQuest() != null)
       tag.putString("trackedQuest", getTrackedQuest());

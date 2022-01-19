@@ -16,25 +16,25 @@ public class QuestCapabilityProvider implements ICapabilitySerializable<Compound
 
   public static final ResourceLocation IDENTIFIER = new ResourceLocation(Main.MODID, "quests");
 
-  private IQuestCapability instance = new QuestCapability();
+  private LazyOptional<IQuestCapability> instance = LazyOptional.of(QuestCapability::new);
 
   @SuppressWarnings("unchecked")
   @Override
   public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
     if (cap == QUEST_CAPABILITY)
-      return (LazyOptional<T>) LazyOptional.of(QuestCapability::new);
+      return this.instance.cast();
 
     return LazyOptional.empty();
   }
 
   @Override
   public CompoundTag serializeNBT() {
-    return this.instance.serializeNBT();
+    return this.instance.map(IQuestCapability::serializeNBT).orElse(new CompoundTag());
   }
 
   @Override
   public void deserializeNBT(CompoundTag nbt) {
-    this.instance.deserializeNBT(nbt);
+    this.instance.ifPresent(capability -> capability.deserializeNBT(nbt));
   }
 
   public static IQuestCapability getCapability(Player player) {
