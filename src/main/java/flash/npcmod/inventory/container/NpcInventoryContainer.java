@@ -43,12 +43,6 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
       }
 
       @Override
-      public void onTake(Player thePlayer, ItemStack stack) {
-        thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(EquipmentSlot.MAINHAND));
-        this.set(ItemStack.EMPTY);
-      }
-
-      @Override
       public ItemStack getItem() {
         return npcEntity.getItemBySlot(EquipmentSlot.MAINHAND);
       }
@@ -61,12 +55,6 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
         npcEntity.setItemSlot(EquipmentSlot.OFFHAND, stack);
         npcInventory.setChanged();
         super.set(stack);
-      }
-
-      @Override
-      public void onTake(Player thePlayer, ItemStack stack) {
-        thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(EquipmentSlot.OFFHAND));
-        this.set(ItemStack.EMPTY);
       }
 
       @Override
@@ -104,12 +92,6 @@ public class NpcInventoryContainer extends AbstractContainerMenu {
           npcEntity.setItemSlot(equipmentslottype, stack);
           npcInventory.setChanged();
           super.set(stack);
-        }
-
-        @Override
-        public void onTake(Player thePlayer, ItemStack stack) {
-          thePlayer.inventoryMenu.setCarried(npcEntity.getItemBySlot(equipmentslottype));
-          this.set(ItemStack.EMPTY);
         }
 
         @Override

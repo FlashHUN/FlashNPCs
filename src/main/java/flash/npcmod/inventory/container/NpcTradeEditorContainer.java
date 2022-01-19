@@ -102,13 +102,7 @@ public class NpcTradeEditorContainer extends AbstractContainerMenu {
       @Override
       public void set(ItemStack stack) {
         setBuyingItem(rowIndex, itemIndex, stack);
-        container.setChanged();
-      }
-
-      @Override
-      public void onTake(Player thePlayer, ItemStack stack) {
-        thePlayer.inventoryMenu.setCarried(getBuyingItem(rowIndex, itemIndex));
-        setBuyingItem(rowIndex, itemIndex, ItemStack.EMPTY);
+        super.set(stack);
       }
 
       @Override
@@ -125,13 +119,7 @@ public class NpcTradeEditorContainer extends AbstractContainerMenu {
       @Override
       public void set(ItemStack stack) {
         setSellingItem(rowIndex, itemIndex, stack);
-        container.setChanged();
-      }
-
-      @Override
-      public void onTake(Player thePlayer, ItemStack stack) {
-        thePlayer.inventoryMenu.setCarried(getSellingItem(rowIndex, itemIndex));
-        setSellingItem(rowIndex, itemIndex, ItemStack.EMPTY);
+        super.set(stack);
       }
 
       @Override
