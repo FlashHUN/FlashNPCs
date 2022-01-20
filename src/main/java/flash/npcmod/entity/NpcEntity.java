@@ -1,5 +1,6 @@
 package flash.npcmod.entity;
 
+import com.google.common.collect.ImmutableMap;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
@@ -33,6 +34,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -50,18 +52,22 @@ import net.minecraft.world.entity.SpawnGroupData;
 
 public class NpcEntity extends AmbientCreature {
 
+  private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
+  private static final EntityDimensions SITTING_DIMENSIONS = EntityDimensions.scalable(0.6F, 1.2F);
   private static final EntityDataAccessor<String> DIALOGUE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
   private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
   private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
   private static final EntityDataAccessor<Boolean> SLIM = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
   private static final EntityDataAccessor<BlockPos> ORIGIN = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BLOCK_POS);
+  private static final EntityDataAccessor<Boolean> SITTING = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
+  private static final EntityDataAccessor<Boolean> CROUCHING = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
 
   @Nullable
   private TradeOffers tradeOffers;
   public static final int MAX_OFFERS = 12;
 
   private int teleportCounter;
-  private static final int MAX_TELEPORT_COUNTER = 20*20; // 20 ticks (1 second) * amount of seconds
+  private static final int MAX_TELEPORT_COUNTER = 20*15; // 20 ticks (1 second) * amount of seconds
 
   public NpcEntity(EntityType<? extends AmbientCreature> type, Level world) {
     super(type, world);
@@ -71,6 +77,16 @@ public class NpcEntity extends AmbientCreature {
 
   protected NpcEntity(Level world) {
     this(EntityInit.NPC_ENTITY.get(), world);
+  }
+
+  @Override
+  protected boolean canRide(Entity entity) {
+    return false; // TODO default riding mobs like horses in the future?
+  }
+
+  @Override
+  public EntityDimensions getDimensions(Pose pose) {
+    return isSitting() ? SITTING_DIMENSIONS : POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
   }
 
   @Override
@@ -87,6 +103,8 @@ public class NpcEntity extends AmbientCreature {
     this.entityData.define(TEXTURE, "");
     this.entityData.define(SLIM, false);
     this.entityData.define(ORIGIN, BlockPos.ZERO);
+    this.entityData.define(SITTING, false);
+    this.entityData.define(CROUCHING, false);
   }
 
   @Override
@@ -98,6 +116,8 @@ public class NpcEntity extends AmbientCreature {
     compound.putString("texture", getTexture());
     compound.putBoolean("slim", isSlim());
     compound.put("origin", NbtUtils.writeBlockPos(getOrigin()));
+    compound.putBoolean("sitting", isSitting());
+    compound.putBoolean("crouching", isCrouching());
 
     TradeOffers tradeOffers = this.getOffers();
     if (!tradeOffers.isEmpty()) {
@@ -114,6 +134,8 @@ public class NpcEntity extends AmbientCreature {
     setTexture(compound.getString("texture"));
     setSlim(compound.getBoolean("slim"));
     setOrigin(NbtUtils.readBlockPos(compound.getCompound("origin")));
+    setSitting(compound.getBoolean("sitting"));
+    setCrouching(compound.getBoolean("crouching"));
 
     if (compound.contains("Offers", 10)) {
       this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
@@ -176,6 +198,28 @@ public class NpcEntity extends AmbientCreature {
 
   public void setOrigin(BlockPos pos) {
     this.entityData.set(ORIGIN, pos);
+  }
+
+  public boolean isSitting() {
+    return this.entityData.get(SITTING);
+  }
+
+  public void setSitting(boolean b) {
+    this.entityData.set(SITTING, b);
+  }
+
+  public boolean isCrouching() {
+    return this.entityData.get(CROUCHING);
+  }
+
+  public void setCrouching(boolean b) {
+    this.entityData.set(CROUCHING, b);
+    if (b) {
+      this.setPose(Pose.CROUCHING);
+    }
+    else {
+      this.setPose(Pose.STANDING);
+    }
   }
 
   protected SoundEvent getSwimSound() {

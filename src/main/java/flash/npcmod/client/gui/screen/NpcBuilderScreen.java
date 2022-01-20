@@ -2,6 +2,7 @@ package flash.npcmod.client.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.client.gui.widget.ColorSliderWidget;
+import flash.npcmod.client.gui.widget.DropdownWidget;
 import flash.npcmod.core.ColorUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -39,10 +40,18 @@ public class NpcBuilderScreen extends Screen {
   private Checkbox slimCheckBox, nameVisibleCheckbox;
   private Button confirmButton, inventoryButton, tradesButton;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
+  private DropdownWidget<NPCPose> poseDropdown;
 
   private int r, g, b;
+  private NPCPose pose;
 
   private static int minX;
+
+  private enum NPCPose {
+    STANDING,
+    CROUCHING,
+    SITTING
+  }
 
   private final Predicate<String> textFilter = (text) -> {
     Pattern pattern = Pattern.compile("\\s");
@@ -72,6 +81,7 @@ public class NpcBuilderScreen extends Screen {
 
     this.npcEntity = npcEntity;
 
+    this.pose = npcEntity.isCrouching() ? NPCPose.CROUCHING : npcEntity.isSitting() ? NPCPose.SITTING : NPCPose.STANDING;
     this.name = npcEntity.getName().getString();
     this.isNameVisible = npcEntity.isCustomNameVisible();
     this.texture = npcEntity.getTexture();
@@ -147,6 +157,8 @@ public class NpcBuilderScreen extends Screen {
       PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.TRADE_EDITOR));
     }));
+
+    this.poseDropdown = this.addRenderableWidget(new DropdownWidget<>(this.pose, minX + 210, 5, 80));
   }
 
   private void setName(String s) {
@@ -234,6 +246,14 @@ public class NpcBuilderScreen extends Screen {
     npcEntity.setSlim(isSlim);
     this.isNameVisible = nameVisibleCheckbox.selected();
     npcEntity.setCustomNameVisible(isNameVisible);
+    if (poseDropdown.getSelectedOption() != this.pose) {
+      this.pose = poseDropdown.getSelectedOption();
+      switch (pose) {
+        case CROUCHING -> { npcEntity.setCrouching(true); npcEntity.setSitting(false); }
+        case SITTING -> { npcEntity.setCrouching(false); npcEntity.setSitting(true); }
+        case STANDING -> { npcEntity.setCrouching(false); npcEntity.setSitting(false); }
+      }
+    }
   }
 
   @Override
