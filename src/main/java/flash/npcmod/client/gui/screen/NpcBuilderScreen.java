@@ -40,18 +40,12 @@ public class NpcBuilderScreen extends Screen {
   private Checkbox slimCheckBox, nameVisibleCheckbox;
   private Button confirmButton, inventoryButton, tradesButton;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
-  private DropdownWidget<NPCPose> poseDropdown;
+  private DropdownWidget<CEditNpc.NPCPose> poseDropdown;
 
   private int r, g, b;
-  private NPCPose pose;
+  private CEditNpc.NPCPose pose;
 
   private static int minX;
-
-  private enum NPCPose {
-    STANDING,
-    CROUCHING,
-    SITTING
-  }
 
   private final Predicate<String> textFilter = (text) -> {
     Pattern pattern = Pattern.compile("\\s");
@@ -81,7 +75,7 @@ public class NpcBuilderScreen extends Screen {
 
     this.npcEntity = npcEntity;
 
-    this.pose = npcEntity.isCrouching() ? NPCPose.CROUCHING : npcEntity.isSitting() ? NPCPose.SITTING : NPCPose.STANDING;
+    this.pose = npcEntity.isCrouching() ? CEditNpc.NPCPose.CROUCHING : npcEntity.isSitting() ? CEditNpc.NPCPose.SITTING : CEditNpc.NPCPose.STANDING;
     this.name = npcEntity.getName().getString();
     this.isNameVisible = npcEntity.isCustomNameVisible();
     this.texture = npcEntity.getTexture();
@@ -144,17 +138,17 @@ public class NpcBuilderScreen extends Screen {
     this.blueField.setValue(String.valueOf(b));
 
     this.confirmButton = this.addRenderableWidget(new Button(width - 60, height - 20, 60, 20, new TextComponent("Confirm"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
       minecraft.setScreen(null);
     }));
 
     this.inventoryButton = this.addRenderableWidget(new Button(width - 60, height - 40, 60, 20, new TextComponent("Inventory"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.NPCINVENTORY));
     }));
 
     this.tradesButton = this.addRenderableWidget(new Button(width - 60, height - 60, 60, 20, new TextComponent("Trades"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.TRADE_EDITOR));
     }));
 

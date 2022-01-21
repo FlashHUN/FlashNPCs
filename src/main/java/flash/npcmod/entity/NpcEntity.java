@@ -52,8 +52,8 @@ import net.minecraft.world.entity.SpawnGroupData;
 
 public class NpcEntity extends AmbientCreature {
 
-  private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
-  private static final EntityDimensions SITTING_DIMENSIONS = EntityDimensions.scalable(0.6F, 1.2F);
+  private static final EntityDimensions SITTING_DIMENSIONS = EntityDimensions.scalable(0.6F, 1.3F);
+  private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_DIMENSIONS).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
   private static final EntityDataAccessor<String> DIALOGUE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
   private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
   private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
@@ -86,7 +86,7 @@ public class NpcEntity extends AmbientCreature {
 
   @Override
   public EntityDimensions getDimensions(Pose pose) {
-    return isSitting() ? SITTING_DIMENSIONS : POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
+    return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
   }
 
   @Override
@@ -206,6 +206,12 @@ public class NpcEntity extends AmbientCreature {
 
   public void setSitting(boolean b) {
     this.entityData.set(SITTING, b);
+    if (b) {
+      this.setPose(Pose.SPIN_ATTACK);
+    }
+    else {
+      this.setPose(isCrouching() ? Pose.CROUCHING : Pose.STANDING);
+    }
   }
 
   public boolean isCrouching() {
@@ -218,7 +224,7 @@ public class NpcEntity extends AmbientCreature {
       this.setPose(Pose.CROUCHING);
     }
     else {
-      this.setPose(Pose.STANDING);
+      this.setPose(isSitting() ? Pose.SPIN_ATTACK : Pose.STANDING);
     }
   }
 
@@ -258,7 +264,7 @@ public class NpcEntity extends AmbientCreature {
 
   @Override
   protected float getStandingEyeHeight(Pose poseIn, EntityDimensions sizeIn) {
-    return 1.8f * 0.85F;
+    return getDimensions(poseIn).height * 0.85F;
   }
 
   public static AttributeSupplier.Builder setCustomAttributes() {

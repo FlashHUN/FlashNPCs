@@ -4,6 +4,7 @@ import flash.npcmod.entity.NpcEntity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.TextComponent;
@@ -20,8 +21,9 @@ public class CEditNpc {
   boolean isSlim, isNameVisible;
   int textColor;
   ItemStack[] items;
+  NPCPose pose;
 
-  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue, int textColor, ItemStack[] items) {
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue, int textColor, ItemStack[] items, NPCPose pose) {
     this.entityid = entityid;
     this.isNameVisible = isNameVisible;
     this.name = name;
@@ -32,6 +34,7 @@ public class CEditNpc {
     if (items.length == 6) {
       this.items = items;
     }
+    this.pose = pose;
   }
 
   public static void encode(CEditNpc msg, FriendlyByteBuf buf) {
@@ -42,6 +45,7 @@ public class CEditNpc {
     buf.writeBoolean(msg.isSlim);
     buf.writeUtf(msg.dialogue);
     buf.writeInt(msg.textColor);
+    buf.writeInt(msg.pose.ordinal());
     if (msg.items != null) {
       for (int i = 0; i < 6; i++) {
         buf.writeItem(msg.items[i]);
@@ -61,11 +65,12 @@ public class CEditNpc {
     boolean isSlim = buf.readBoolean();
     String dialogue = buf.readUtf(201);
     int textColor = buf.readInt();
+    NPCPose pose = NPCPose.values()[buf.readInt()];
     List<ItemStack> items = new ArrayList<>();
     for (int i = 0; i < 6; i++) {
       items.add(buf.readItem());
     }
-    return new CEditNpc(entityid, isNameVisible, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]));
+    return new CEditNpc(entityid, isNameVisible, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]), pose);
   }
 
   public static void handle(CEditNpc msg, Supplier<NetworkEvent.Context> ctx) {
@@ -87,10 +92,22 @@ public class CEditNpc {
           npcEntity.setItemSlot(EquipmentSlot.CHEST, msg.items[3]);
           npcEntity.setItemSlot(EquipmentSlot.LEGS, msg.items[4]);
           npcEntity.setItemSlot(EquipmentSlot.FEET, msg.items[5]);
+
+          switch (msg.pose) {
+            case CROUCHING -> { npcEntity.setCrouching(true); npcEntity.setSitting(false); }
+            case SITTING -> { npcEntity.setCrouching(false); npcEntity.setSitting(true); }
+            case STANDING -> { npcEntity.setCrouching(false); npcEntity.setSitting(false); }
+          }
         }
       }
     });
     ctx.get().setPacketHandled(true);
+  }
+
+  public enum NPCPose {
+    STANDING,
+    CROUCHING,
+    SITTING
   }
 
 }
