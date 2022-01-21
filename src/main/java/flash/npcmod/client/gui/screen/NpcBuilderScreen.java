@@ -2,6 +2,7 @@ package flash.npcmod.client.gui.screen;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import flash.npcmod.client.gui.widget.ColorSliderWidget;
+import flash.npcmod.client.gui.widget.DropdownWidget;
 import flash.npcmod.core.ColorUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -39,8 +40,10 @@ public class NpcBuilderScreen extends Screen {
   private CheckboxButton slimCheckBox, nameVisibleCheckbox;
   private Button confirmButton, inventoryButton, tradesButton;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
+  private DropdownWidget<CEditNpc.NPCPose> poseDropdown;
 
   private int r, g, b;
+  private CEditNpc.NPCPose pose;
 
   private static int minX;
 
@@ -72,6 +75,7 @@ public class NpcBuilderScreen extends Screen {
 
     this.npcEntity = npcEntity;
 
+    this.pose = npcEntity.isCrouching() ? CEditNpc.NPCPose.CROUCHING : npcEntity.isSitting() ? CEditNpc.NPCPose.SITTING : CEditNpc.NPCPose.STANDING;
     this.name = npcEntity.getName().getString();
     this.isNameVisible = npcEntity.isCustomNameVisible();
     this.texture = npcEntity.getTexture();
@@ -134,19 +138,21 @@ public class NpcBuilderScreen extends Screen {
     this.blueField.setText(String.valueOf(b));
 
     this.confirmButton = this.addButton(new Button(width - 60, height - 20, 60, 20, new StringTextComponent("Confirm"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
       minecraft.displayGuiScreen(null);
     }));
 
     this.inventoryButton = this.addButton(new Button(width - 60, height - 40, 60, 20, new StringTextComponent("Inventory"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getEntityId(), CRequestContainer.ContainerType.NPCINVENTORY));
     }));
 
     this.tradesButton = this.addButton(new Button(width - 60, height - 60, 60, 20, new StringTextComponent("Trades"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items));
+      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getEntityId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getEntityId(), CRequestContainer.ContainerType.TRADE_EDITOR));
     }));
+
+    this.poseDropdown = this.addButton(new DropdownWidget<>(this.pose, minX + 210, 5, 80));
   }
 
   private void setName(String s) {
@@ -234,6 +240,14 @@ public class NpcBuilderScreen extends Screen {
     npcEntity.setSlim(isSlim);
     this.isNameVisible = nameVisibleCheckbox.isChecked();
     npcEntity.setCustomNameVisible(isNameVisible);
+    if (poseDropdown.getSelectedOption() != this.pose) {
+      this.pose = poseDropdown.getSelectedOption();
+      switch (pose) {
+        case CROUCHING: npcEntity.setCrouching(true); npcEntity.setSitting(false); break;
+        case SITTING: npcEntity.setCrouching(false); npcEntity.setSitting(true); break;
+        case STANDING: npcEntity.setCrouching(false); npcEntity.setSitting(false); break;
+      }
+    }
   }
 
   @Override

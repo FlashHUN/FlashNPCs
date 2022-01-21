@@ -20,8 +20,9 @@ public class CEditNpc {
   boolean isSlim, isNameVisible;
   int textColor;
   ItemStack[] items;
+  NPCPose pose;
 
-  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue, int textColor, ItemStack[] items) {
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue, int textColor, ItemStack[] items, NPCPose pose) {
     this.entityid = entityid;
     this.isNameVisible = isNameVisible;
     this.name = name;
@@ -32,6 +33,7 @@ public class CEditNpc {
     if (items.length == 6) {
       this.items = items;
     }
+    this.pose = pose;
   }
 
   public static void encode(CEditNpc msg, PacketBuffer buf) {
@@ -42,6 +44,7 @@ public class CEditNpc {
     buf.writeBoolean(msg.isSlim);
     buf.writeString(msg.dialogue);
     buf.writeInt(msg.textColor);
+    buf.writeInt(msg.pose.ordinal());
     if (msg.items != null) {
       for (int i = 0; i < 6; i++) {
         buf.writeItemStack(msg.items[i]);
@@ -61,11 +64,12 @@ public class CEditNpc {
     boolean isSlim = buf.readBoolean();
     String dialogue = buf.readString(201);
     int textColor = buf.readInt();
+    NPCPose pose = NPCPose.values()[buf.readInt()];
     List<ItemStack> items = new ArrayList<>();
     for (int i = 0; i < 6; i++) {
       items.add(buf.readItemStack());
     }
-    return new CEditNpc(entityid, isNameVisible, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]));
+    return new CEditNpc(entityid, isNameVisible, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]), pose);
   }
 
   public static void handle(CEditNpc msg, Supplier<NetworkEvent.Context> ctx) {
@@ -87,10 +91,22 @@ public class CEditNpc {
           npcEntity.setItemStackToSlot(EquipmentSlotType.CHEST, msg.items[3]);
           npcEntity.setItemStackToSlot(EquipmentSlotType.LEGS, msg.items[4]);
           npcEntity.setItemStackToSlot(EquipmentSlotType.FEET, msg.items[5]);
+
+          switch (msg.pose) {
+            case CROUCHING: npcEntity.setCrouching(true); npcEntity.setSitting(false); break;
+            case SITTING: npcEntity.setCrouching(false); npcEntity.setSitting(true); break;
+            case STANDING: npcEntity.setCrouching(false); npcEntity.setSitting(false); break;
+          }
         }
       }
     });
     ctx.get().setPacketHandled(true);
+  }
+
+  public enum NPCPose {
+    STANDING,
+    CROUCHING,
+    SITTING
   }
 
 }

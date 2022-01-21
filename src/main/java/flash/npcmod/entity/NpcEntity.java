@@ -1,6 +1,6 @@
 package flash.npcmod.entity;
 
-import flash.npcmod.Main;
+import com.google.common.collect.ImmutableMap;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
@@ -9,7 +9,6 @@ import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.item.NpcEditorItem;
 import flash.npcmod.network.PacketDispatcher;
-import flash.npcmod.network.packets.client.CRequestContainer;
 import flash.npcmod.network.packets.client.CRequestDialogue;
 import flash.npcmod.network.packets.client.CRequestDialogueEditor;
 import flash.npcmod.network.packets.client.CRequestTrades;
@@ -37,14 +36,19 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class NpcEntity extends AmbientEntity {
 
+  private static final EntitySize SITTING_SIZE = EntitySize.flexible(0.6f, 1.3f);
+  private static final Map<Pose, EntitySize> SIZE_BY_POSE = ImmutableMap.<Pose, EntitySize>builder().put(Pose.STANDING, PlayerEntity.STANDING_SIZE).put(Pose.SLEEPING, SLEEPING_SIZE).put(Pose.FALL_FLYING, EntitySize.flexible(0.6F, 0.6F)).put(Pose.SWIMMING, EntitySize.flexible(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_SIZE).put(Pose.CROUCHING, EntitySize.flexible(0.6F, 1.5F)).put(Pose.DYING, EntitySize.fixed(0.2F, 0.2F)).build();
   private static final DataParameter<String> DIALOGUE = EntityDataManager.createKey(NpcEntity.class, DataSerializers.STRING);
   private static final DataParameter<Integer> TEXTCOLOR = EntityDataManager.createKey(NpcEntity.class, DataSerializers.VARINT);
   private static final DataParameter<String> TEXTURE = EntityDataManager.createKey(NpcEntity.class, DataSerializers.STRING);
   private static final DataParameter<Boolean> SLIM = EntityDataManager.createKey(NpcEntity.class, DataSerializers.BOOLEAN);
   private static final DataParameter<BlockPos> ORIGIN = EntityDataManager.createKey(NpcEntity.class, DataSerializers.BLOCK_POS);
+  private static final DataParameter<Boolean> SITTING = EntityDataManager.createKey(NpcEntity.class, DataSerializers.BOOLEAN);
+  private static final DataParameter<Boolean> CROUCHING = EntityDataManager.createKey(NpcEntity.class, DataSerializers.BOOLEAN);
 
   @Nullable
   private TradeOffers tradeOffers;
@@ -64,6 +68,16 @@ public class NpcEntity extends AmbientEntity {
   }
 
   @Override
+  protected boolean canBeRidden(Entity entityIn) {
+    return false; // TODO default riding mobs like horses in the future?
+  }
+
+  @Override
+  public EntitySize getSize(Pose pose) {
+    return SIZE_BY_POSE.getOrDefault(pose, PlayerEntity.STANDING_SIZE);
+  }
+
+  @Override
   protected void registerGoals() {
     super.registerGoals();
     this.goalSelector.addGoal(10, new LookAtGoal(this, PlayerEntity.class, 8.0F));
@@ -77,6 +91,8 @@ public class NpcEntity extends AmbientEntity {
     this.dataManager.register(TEXTURE, "");
     this.dataManager.register(SLIM, false);
     this.dataManager.register(ORIGIN, BlockPos.ZERO);
+    this.dataManager.register(SITTING, false);
+    this.dataManager.register(CROUCHING, false);
   }
 
   @Override
@@ -88,6 +104,8 @@ public class NpcEntity extends AmbientEntity {
     compound.putString("texture", getTexture());
     compound.putBoolean("slim", isSlim());
     compound.put("origin", NBTUtil.writeBlockPos(getOrigin()));
+    compound.putBoolean("sitting", isSitting());
+    compound.putBoolean("crouching", isCrouching());
 
     TradeOffers tradeOffers = this.getOffers();
     if (!tradeOffers.isEmpty()) {
@@ -104,6 +122,8 @@ public class NpcEntity extends AmbientEntity {
     setTexture(compound.getString("texture"));
     setSlim(compound.getBoolean("slim"));
     setOrigin(NBTUtil.readBlockPos(compound.getCompound("origin")));
+    setSitting(compound.getBoolean("sitting"));
+    setCrouching(compound.getBoolean("crouching"));
 
     if (compound.contains("Offers", 10)) {
       this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
@@ -168,6 +188,34 @@ public class NpcEntity extends AmbientEntity {
     this.dataManager.set(ORIGIN, pos);
   }
 
+  public boolean isSitting() {
+    return this.dataManager.get(SITTING);
+  }
+
+  public void setSitting(boolean b) {
+    this.dataManager.set(SITTING, b);
+    if (b) {
+      this.setPose(Pose.SPIN_ATTACK);
+    }
+    else {
+      this.setPose(isCrouching() ? Pose.CROUCHING : Pose.STANDING);
+    }
+  }
+
+  public boolean isCrouching() {
+    return this.dataManager.get(CROUCHING);
+  }
+
+  public void setCrouching(boolean b) {
+    this.dataManager.set(CROUCHING, b);
+    if (b) {
+      this.setPose(Pose.CROUCHING);
+    }
+    else {
+      this.setPose(isSitting() ? Pose.SPIN_ATTACK : Pose.STANDING);
+    }
+  }
+
   protected SoundEvent getSwimSound() {
     return SoundEvents.ENTITY_PLAYER_SWIM;
   }
@@ -204,7 +252,7 @@ public class NpcEntity extends AmbientEntity {
 
   @Override
   protected float getStandingEyeHeight(Pose poseIn, EntitySize sizeIn) {
-    return 1.8f * 0.85F;
+    return getSize(poseIn).height * 0.85F;
   }
 
   public static AttributeModifierMap.MutableAttribute setCustomAttributes() {
