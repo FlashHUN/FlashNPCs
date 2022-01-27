@@ -52,7 +52,8 @@ public class ClientDialogueUtil {
       JSONObject object = new JSONObject(tokener);
 
       currentDialogue = object;
-    } catch (FileNotFoundException e) {
+      is.close();
+    } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestDialogue(name));
     }
   }
@@ -64,7 +65,8 @@ public class ClientDialogueUtil {
       JSONObject object = new JSONObject(tokener);
 
       currentDialogueEditor = object;
-    } catch (FileNotFoundException e) {
+      is.close();
+    } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestDialogueEditor(name));
     }
   }

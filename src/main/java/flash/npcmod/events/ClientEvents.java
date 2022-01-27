@@ -9,9 +9,11 @@ import flash.npcmod.client.gui.screen.quests.QuestLogScreen;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.item.NpcEditorItem;
+import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.item.QuestEditorItem;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CHandleNpcEditorRightClick;
+import flash.npcmod.network.packets.client.CHandleNpcSaveToolRightClick;
 import flash.npcmod.network.packets.client.CRequestQuestEditor;
 import flash.npcmod.network.packets.client.CTrackQuest;
 import net.minecraft.client.Minecraft;
@@ -108,6 +110,23 @@ public class ClientEvents {
             }
           } else if (stack.getItem() instanceof QuestEditorItem) {
             PacketDispatcher.sendToServer(new CRequestQuestEditor());
+          } else if (stack.getItem() instanceof NpcSaveToolItem) {
+            if (minecraft.player.isDiscrete()) {
+              RayTraceResult rayTraceResult = minecraft.objectMouseOver;
+              if (rayTraceResult.getType().equals(RayTraceResult.Type.ENTITY)) {
+                // If we right click on an NPC, save it
+                EntityRayTraceResult result = (EntityRayTraceResult) rayTraceResult;
+                Entity entity = result.getEntity();
+                if (entity instanceof NpcEntity) {
+                  PacketDispatcher.sendToServer(new CHandleNpcSaveToolRightClick(entity.getEntityId()));
+                }
+              } else if (rayTraceResult.getType().equals(RayTraceResult.Type.BLOCK)) {
+                // If we right click on a block, open our saved npcs gui
+                BlockRayTraceResult result = (BlockRayTraceResult) rayTraceResult;
+                BlockPos pos = result.getPos();
+                PacketDispatcher.sendToServer(new CHandleNpcSaveToolRightClick(pos));
+              }
+            }
           }
         }
       }

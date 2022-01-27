@@ -1,7 +1,10 @@
 package flash.npcmod.core.trades;
 
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.network.PacketBuffer;
 
@@ -66,6 +69,15 @@ public class TradeOffers extends ArrayList<TradeOffer> {
 
     compoundnbt.put("Recipes", listnbt);
     return compoundnbt;
+  }
+
+  public static TradeOffers read(String s) {
+    try {
+      CompoundNBT tag = new JsonToNBT(new StringReader(s)).readStruct();
+      return new TradeOffers(tag);
+    } catch (CommandSyntaxException e) {
+      return new TradeOffers();
+    }
   }
 
   @Override

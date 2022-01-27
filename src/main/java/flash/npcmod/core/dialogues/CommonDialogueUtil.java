@@ -2,11 +2,15 @@ package flash.npcmod.core.dialogues;
 
 import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
+import org.apache.commons.io.FilenameUtils;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class CommonDialogueUtil {
@@ -65,9 +69,9 @@ public class CommonDialogueUtil {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
-
+      is.close();
       return object;
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       Main.LOGGER.warn("Could not find dialogue file " + name + ".json, creating it now...");
     }
     return null;
@@ -78,12 +82,17 @@ public class CommonDialogueUtil {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
       JSONTokener tokener = new JSONTokener(is);
       JSONObject object = new JSONObject(tokener);
-
+      is.close();
       return object;
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       Main.LOGGER.warn("Could not find dialogue editor file " + name + ".json, creating it now...");
     }
     return null;
+  }
+
+  public static List<String> readAllDialogueFileNames() {
+    File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/dialogues");
+    return Arrays.stream(folder.listFiles()).map(file -> FilenameUtils.removeExtension(file.getName())).collect(Collectors.toList());
   }
 
 }

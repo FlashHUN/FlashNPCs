@@ -4,6 +4,7 @@ import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.screen.FunctionBuilderScreen;
 import flash.npcmod.client.gui.screen.NpcBuilderScreen;
+import flash.npcmod.client.gui.screen.SavedNpcsScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.client.gui.screen.quests.QuestEditorScreen;
@@ -33,6 +34,8 @@ import java.util.*;
 @OnlyIn(Dist.CLIENT)
 public class ClientProxy extends CommonProxy {
 
+  public static List<String> SAVED_NPCS = new ArrayList<>();
+
   Minecraft minecraft = Minecraft.getInstance();
 
   public void openScreen(SOpenScreen.EScreens screen, String data, int entityid) {
@@ -53,6 +56,7 @@ public class ClientProxy extends CommonProxy {
             toOpen = QuestEditorScreen.fromQuest(quest);
         }
         break;
+      case SAVEDNPCS: toOpen = new SavedNpcsScreen(data); break;
     }
     minecraft.displayGuiScreen(toOpen);
   }
@@ -248,6 +252,10 @@ public class ClientProxy extends CommonProxy {
     if (entity instanceof NpcEntity) {
       ((NpcEntity) entity).setTradeOffers(tradeOffers);
     }
+  }
+
+  public void loadSavedNpcs(List<String> savedNpcs) {
+    SAVED_NPCS = savedNpcs;
   }
 
 }
