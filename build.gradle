@@ -17,7 +17,7 @@ apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'org.spongepowered.mixin'
 
 group = 'flash'
-version = '1.1.3'
+version = '1.1.4'
 archivesBaseName = 'flashnpcs'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -82,7 +82,7 @@ dependencies {
 //    shadow 'org.json:json:20211205'
 }
 
-shadowJar {
+/*shadowJar {
     archiveBaseName.set('flashnpcs-shadow')
     archiveClassifier.set('')
     archiveVersion.set(project.version)
@@ -92,7 +92,7 @@ shadowJar {
     dependencies {
 //        include(dependency('org.json:json:20211205'))
     }
-}
+}*/
 
 jar {
     manifest {
@@ -113,7 +113,7 @@ repositories {
 
 }
 
-jar.dependsOn shadowJar
+//jar.dependsOn shadowJar
 //jar.enabled = false    Why was this here again?
 
 jar.finalizedBy('reobfJar')
