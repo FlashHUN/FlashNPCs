@@ -45,9 +45,9 @@ public class ClientQuestUtil {
         QUESTS.remove(quest);
 
       QUESTS.add(quest);
-
+      is.close();
       return quest;
-    } catch (FileNotFoundException e) {}
+    } catch (Exception ignored) {}
 
     return null;
   }

@@ -1,18 +1,25 @@
 package flash.npcmod.entity;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.core.ItemUtil;
 import flash.npcmod.core.quests.QuestInstance;
+import flash.npcmod.core.quests.QuestObjectiveTypes;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.item.NpcEditorItem;
+import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CRequestDialogue;
 import flash.npcmod.network.packets.client.CRequestDialogueEditor;
 import flash.npcmod.network.packets.client.CRequestTrades;
 import flash.npcmod.network.packets.server.SCompleteQuest;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
@@ -24,6 +31,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -42,13 +50,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.SpawnGroupData;
 
 public class NpcEntity extends AmbientCreature {
 
@@ -310,12 +311,12 @@ public class NpcEntity extends AmbientCreature {
           String name = getDialogue();
           // If we have a dialogue bound to the npc
           if (!name.isEmpty()) {
-            if (!(player.getItemInHand(hand).getItem() instanceof NpcEditorItem)) {
+            if (!(player.getItemInHand(hand).getItem() instanceof NpcEditorItem || player.getItemInHand(hand).getItem() instanceof NpcSaveToolItem)) {
               // If the player doesn't have an NpcEditorItem in their hand, send them the dialogue and open the screen for it
               if (player.level.isClientSide) {
                 PacketDispatcher.sendToServer(new CRequestDialogue(name, this.getId()));
               }
-            } else {
+            } else if (!(player.getItemInHand(hand).getItem() instanceof NpcSaveToolItem)) {
               // Otherwise if they're opped, in creative mode, and sneaking, send them the dialogue editor and open the screen for it
               if (player.hasPermissions(4) && player.isCreative() && player.isShiftKeyDown()) {
                 if (player.level.isClientSide) {
@@ -327,7 +328,7 @@ public class NpcEntity extends AmbientCreature {
           } else {
             // If the NPC has trades, they don't have any dialogue, and we don't have the requirements to edit the npc in any way,
             // open the trades gui for this npc
-            if (!(player.getItemInHand(hand).getItem() instanceof NpcEditorItem && player.hasPermissions(4) && player.isCreative())) {
+            if (!((player.getItemInHand(hand).getItem() instanceof NpcEditorItem || player.getItemInHand(hand).getItem() instanceof NpcSaveToolItem) && player.hasPermissions(4) && player.isCreative())) {
               if (player.level.isClientSide) {
                 PacketDispatcher.sendToServer(new CRequestTrades(this.getId()));
               }
@@ -369,5 +370,58 @@ public class NpcEntity extends AmbientCreature {
   @Override
   public boolean removeWhenFarAway(double distanceToClosestPlayer) {
     return false;
+  }
+
+  public JsonObject toJson() {
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.addProperty("name", getName().getString());
+    jsonObject.addProperty("nameVisibility", isCustomNameVisible());
+    jsonObject.addProperty("dialogue", getDialogue());
+    jsonObject.addProperty("texture", getTexture());
+    jsonObject.addProperty("textColor", getTextColor());
+    jsonObject.addProperty("slim", isSlim());
+    jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");
+    jsonObject.addProperty("trades", getOffers().write().getAsString());
+
+    jsonObject.add("inventory", inventoryToJson());
+
+    return jsonObject;
+  }
+
+  private JsonObject inventoryToJson() {
+    JsonObject inventory = new JsonObject();
+    inventory.addProperty("mainHand", ItemUtil.stackToString(getMainHandItem()));
+    inventory.addProperty("offHand", ItemUtil.stackToString(getOffhandItem()));
+    inventory.addProperty("head", ItemUtil.stackToString(getItemBySlot(EquipmentSlot.HEAD)));
+    inventory.addProperty("chest", ItemUtil.stackToString(getItemBySlot(EquipmentSlot.CHEST)));
+    inventory.addProperty("legs", ItemUtil.stackToString(getItemBySlot(EquipmentSlot.LEGS)));
+    inventory.addProperty("feet", ItemUtil.stackToString(getItemBySlot(EquipmentSlot.FEET)));
+    return inventory;
+  }
+
+  public static NpcEntity fromJson(Level level, JsonObject jsonObject) {
+    NpcEntity npcEntity = EntityInit.NPC_ENTITY.get().create(level);
+    npcEntity.setCustomName(new TextComponent(jsonObject.get("name").getAsString()));
+    npcEntity.setCustomNameVisible(jsonObject.get("nameVisibility").getAsBoolean());
+    npcEntity.setDialogue(jsonObject.get("dialogue").getAsString());
+    npcEntity.setTexture(jsonObject.get("texture").getAsString());
+    npcEntity.setTextColor(jsonObject.get("textColor").getAsInt());
+    npcEntity.setSlim(jsonObject.get("slim").getAsBoolean());
+    String pose = jsonObject.get("pose").getAsString();
+    switch (pose) {
+      case "sitting" -> npcEntity.setSitting(true);
+      case "crouching" -> npcEntity.setCrouching(true);
+    }
+    npcEntity.tradeOffers = TradeOffers.read(jsonObject.get("trades").getAsString());
+
+    JsonObject inventory = jsonObject.getAsJsonObject("inventory");
+    npcEntity.setItemSlot(EquipmentSlot.MAINHAND, ItemUtil.stackFromString(inventory.get("mainHand").getAsString()));
+    npcEntity.setItemSlot(EquipmentSlot.OFFHAND, ItemUtil.stackFromString(inventory.get("offHand").getAsString()));
+    npcEntity.setItemSlot(EquipmentSlot.HEAD, ItemUtil.stackFromString(inventory.get("head").getAsString()));
+    npcEntity.setItemSlot(EquipmentSlot.CHEST, ItemUtil.stackFromString(inventory.get("chest").getAsString()));
+    npcEntity.setItemSlot(EquipmentSlot.LEGS, ItemUtil.stackFromString(inventory.get("legs").getAsString()));
+    npcEntity.setItemSlot(EquipmentSlot.FEET, ItemUtil.stackFromString(inventory.get("feet").getAsString()));
+
+    return npcEntity;
   }
 }

@@ -50,7 +50,8 @@ public class ClientDialogueUtil {
       JsonObject object = new Gson().fromJson(is, JsonObject.class);
 
       currentDialogue = object;
-    } catch (FileNotFoundException e) {
+      is.close();
+    } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestDialogue(name));
     }
   }
@@ -61,7 +62,8 @@ public class ClientDialogueUtil {
       JsonObject object = new Gson().fromJson(is, JsonObject.class);
 
       currentDialogueEditor = object;
-    } catch (FileNotFoundException e) {
+      is.close();
+    } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestDialogueEditor(name));
     }
   }

@@ -4,9 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class CommonDialogueUtil {
 
@@ -68,9 +72,9 @@ public class CommonDialogueUtil {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
       JsonObject object = new Gson().fromJson(is, JsonObject.class);
-
+      is.close();
       return object;
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       Main.LOGGER.warn("Could not find dialogue file " + name + ".json, creating it now...");
     }
     return null;
@@ -80,12 +84,17 @@ public class CommonDialogueUtil {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
       JsonObject object = new Gson().fromJson(is, JsonObject.class);
-
+      is.close();
       return object;
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       Main.LOGGER.warn("Could not find dialogue editor file " + name + ".json, creating it now...");
     }
     return null;
+  }
+
+  public static List<String> readAllDialogueFileNames() {
+    File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/dialogues");
+    return Arrays.stream(folder.listFiles()).map(file -> FilenameUtils.removeExtension(file.getName())).toList();
   }
 
 }

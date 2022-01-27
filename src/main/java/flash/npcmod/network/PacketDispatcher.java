@@ -38,6 +38,8 @@ public class PacketDispatcher {
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CEditDialogue.class, CEditDialogue::encode, CEditDialogue::decode, CEditDialogue::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CEditNpc.class, CEditNpc::encode, CEditNpc::decode, CEditNpc::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CHandleNpcEditorRightClick.class, CHandleNpcEditorRightClick::encode, CHandleNpcEditorRightClick::decode, CHandleNpcEditorRightClick::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), CHandleNpcSaveToolRightClick.class, CHandleNpcSaveToolRightClick::encode, CHandleNpcSaveToolRightClick::decode, CHandleNpcSaveToolRightClick::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), CHandleSavedNpc.class, CHandleSavedNpc::encode, CHandleSavedNpc::decode, CHandleSavedNpc::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestContainer.class, CRequestContainer::encode, CRequestContainer::decode, CRequestContainer::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestDialogue.class, CRequestDialogue::encode, CRequestDialogue::decode, CRequestDialogue::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestDialogueEditor.class, CRequestDialogueEditor::encode, CRequestDialogueEditor::decode, CRequestDialogueEditor::handle);
@@ -61,6 +63,7 @@ public class PacketDispatcher {
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendFunctionName.class, SSendFunctionName::encode, SSendFunctionName::decode, SSendFunctionName::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendQuestInfo.class, SSendQuestInfo::encode, SSendQuestInfo::decode, SSendQuestInfo::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncQuestCapability.class, SSyncQuestCapability::encode, SSyncQuestCapability::decode, SSyncQuestCapability::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncSavedNpcs.class, SSyncSavedNpcs::encode, SSyncSavedNpcs::decode, SSyncSavedNpcs::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncTrades.class, SSyncTrades::encode, SSyncTrades::decode, SSyncTrades::handle);
   }
 

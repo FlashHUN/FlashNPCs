@@ -43,6 +43,7 @@ public class SOpenScreen {
     EDITDIALOGUE,
     FUNCTIONBUILDER,
     EDITNPC,
-    QUESTEDITOR
+    QUESTEDITOR,
+    SAVEDNPCS
   }
 }

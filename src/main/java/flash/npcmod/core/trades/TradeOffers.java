@@ -1,5 +1,9 @@
 package flash.npcmod.core.trades;
 
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.commands.arguments.CompoundTagArgument;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -66,6 +70,15 @@ public class TradeOffers extends ArrayList<TradeOffer> {
 
     compoundnbt.put("Recipes", listnbt);
     return compoundnbt;
+  }
+
+  public static TradeOffers read(String s) {
+    try {
+      CompoundTag tag = new TagParser(new StringReader(s)).readStruct();
+      return new TradeOffers(tag);
+    } catch (CommandSyntaxException e) {
+      return new TradeOffers();
+    }
   }
 
   @Override

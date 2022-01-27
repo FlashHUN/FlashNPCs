@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 import static net.minecraft.client.gui.GuiComponent.fill;
 
 @OnlyIn(Dist.CLIENT)
-public class FunctionListWidget{
+public class FunctionListWidget {
 
   private DialogueBuilderScreen screen;
   private Minecraft minecraft;

@@ -98,6 +98,7 @@ public class CommonQuestUtil {
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json")), StandardCharsets.UTF_8);
       JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      is.close();
 
       Quest quest = Quest.fromJson(object);
       if (QUESTS.contains(quest)) QUESTS.remove(quest);
@@ -105,7 +106,7 @@ public class CommonQuestUtil {
       QUESTS.add(quest);
 
       return quest;
-    } catch (FileNotFoundException e) {
+    } catch (Exception e) {
       if (!name.isEmpty())
         Main.LOGGER.warn("Could not find quests file " + name + ".json");
     }

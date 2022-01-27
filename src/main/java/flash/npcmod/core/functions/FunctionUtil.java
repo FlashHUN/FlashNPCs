@@ -111,7 +111,8 @@ public class FunctionUtil {
         FUNCTIONS.remove(function);
       }
       FUNCTIONS.add(function);
-
+      reader.close();
+      is.close();
       return true;
     }
     catch (FileNotFoundException e) {

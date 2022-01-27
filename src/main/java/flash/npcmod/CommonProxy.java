@@ -12,6 +12,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,5 +44,7 @@ public class CommonProxy {
 
   public SSyncQuestCapability decodeQuestCapabilitySync(FriendlyByteBuf buf) { return new SSyncQuestCapability(); }
   public void syncTrades(int entityid, TradeOffers tradeOffers) {}
+
+  public void loadSavedNpcs(List<String> savedNpcs) {}
 
 }

@@ -4,6 +4,7 @@ import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.screen.FunctionBuilderScreen;
 import flash.npcmod.client.gui.screen.NpcBuilderScreen;
+import flash.npcmod.client.gui.screen.SavedNpcsScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.client.gui.screen.quests.QuestEditorScreen;
@@ -33,17 +34,19 @@ import java.util.*;
 @OnlyIn(Dist.CLIENT)
 public class ClientProxy extends CommonProxy {
 
+  public static List<String> SAVED_NPCS = new ArrayList<>();
+
   Minecraft minecraft = Minecraft.getInstance();
 
   public void openScreen(SOpenScreen.EScreens screen, String data, int entityid) {
     Screen toOpen = null;
     NpcEntity npcEntity = (NpcEntity) minecraft.player.level.getEntity(entityid);
     switch (screen) {
-      case DIALOGUE: toOpen = new DialogueScreen(data, npcEntity); break;
-      case EDITDIALOGUE: toOpen = new DialogueBuilderScreen(data); break;
-      case FUNCTIONBUILDER: toOpen = new FunctionBuilderScreen(); break;
-      case EDITNPC: toOpen = new NpcBuilderScreen(npcEntity); break;
-      case QUESTEDITOR:
+      case DIALOGUE -> toOpen = new DialogueScreen(data, npcEntity);
+      case EDITDIALOGUE -> toOpen = new DialogueBuilderScreen(data);
+      case FUNCTIONBUILDER -> toOpen = new FunctionBuilderScreen();
+      case EDITNPC -> toOpen = new NpcBuilderScreen(npcEntity);
+      case QUESTEDITOR -> {
         if (data.isEmpty())
           toOpen = new QuestEditorScreen();
         else {
@@ -52,23 +55,20 @@ public class ClientProxy extends CommonProxy {
           if (quest != null)
             toOpen = QuestEditorScreen.fromQuest(quest);
         }
-        break;
+      }
+      case SAVEDNPCS -> toOpen = new SavedNpcsScreen(data);
     }
     minecraft.setScreen(toOpen);
   }
 
-
-
   public void randomDialogueOption() {
-    if (minecraft.screen instanceof DialogueScreen) {
-      DialogueScreen screen = (DialogueScreen)minecraft.screen;
+    if (minecraft.screen instanceof DialogueScreen screen) {
       screen.chooseRandomOption();
     }
   }
 
   public void moveToDialogue(String dialogueName, int entityid) {
-    if (minecraft.screen instanceof DialogueScreen) {
-      DialogueScreen screen = (DialogueScreen)minecraft.screen;
+    if (minecraft.screen instanceof DialogueScreen screen) {
       ClientDialogueUtil.loadDialogue(screen.getDialogueName());
       ClientDialogueUtil.loadDialogueOption(dialogueName);
       if (!ClientDialogueUtil.getCurrentResponse().isEmpty()) {
@@ -129,9 +129,7 @@ public class ClientProxy extends CommonProxy {
   public void syncQuestProgressMap(Map<QuestObjective, Integer> progressMap) {
     IQuestCapability questCapability = QuestCapabilityProvider.getCapability(minecraft.player);
     Map<QuestObjective, Integer> map = questCapability.getQuestProgressMap();
-    progressMap.forEach((objective, progress) -> {
-      map.put(objective, progress);
-    });
+    map.putAll(progressMap);
   }
 
 
@@ -178,7 +176,7 @@ public class ClientProxy extends CommonProxy {
     if (typeInt < 0 || typeInt >= SSyncQuestCapability.CapabilityType.values().length) return new SSyncQuestCapability();
     SSyncQuestCapability.CapabilityType type = SSyncQuestCapability.CapabilityType.values()[typeInt];
     switch (type) {
-      default:
+      default -> {
         String trackedName = buf.readUtf(51);
         if (!trackedName.isEmpty()) {
           Quest quest = ClientQuestUtil.fromName(trackedName);
@@ -188,7 +186,8 @@ public class ClientProxy extends CommonProxy {
             return new SSyncQuestCapability();
         } else
           return new SSyncQuestCapability();
-      case ACCEPTED_QUESTS:
+      }
+      case ACCEPTED_QUESTS -> {
         List<QuestInstance> acceptedQuests = new ArrayList<>();
         int acceptedAmount = buf.readInt();
         for (int i = 0; i < acceptedAmount; i++) {
@@ -215,7 +214,8 @@ public class ClientProxy extends CommonProxy {
           }
         }
         return new SSyncQuestCapability(acceptedQuests.toArray(new QuestInstance[0]));
-      case COMPLETED_QUESTS:
+      }
+      case COMPLETED_QUESTS -> {
         List<String> completedQuests = new ArrayList<>();
         int completedAmount = buf.readInt();
         for (int i = 0; i < completedAmount; i++) {
@@ -223,7 +223,8 @@ public class ClientProxy extends CommonProxy {
           completedQuests.add(name);
         }
         return new SSyncQuestCapability(completedQuests.toArray(new String[0]));
-      case PROGRESS_MAP:
+      }
+      case PROGRESS_MAP -> {
         Map<QuestObjective, Integer> objectiveProgressMap = new HashMap<>();
         int progressMapAmount = buf.readInt();
         for (int i = 0; i < progressMapAmount; i++) {
@@ -240,6 +241,7 @@ public class ClientProxy extends CommonProxy {
           }
         }
         return new SSyncQuestCapability(objectiveProgressMap);
+      }
     }
   }
 
@@ -250,4 +252,7 @@ public class ClientProxy extends CommonProxy {
     }
   }
 
+  public void loadSavedNpcs(List<String> savedNpcs) {
+    SAVED_NPCS = savedNpcs;
+  }
 }
