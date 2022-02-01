@@ -1,9 +1,9 @@
 # Flash's NPCs
- My NPC mod for Minecraft 1.16.5.
 
+NPCs for Minecraft 1.16 and above!
 
- CurseForge: https://www.curseforge.com/minecraft/mc-mods/flashs-npcs
- 
- Discord: https://discord.gg/tkn6vxPEMg
- 
- Patreon:https://www.patreon.com/flashhun
+Links:
+[CurseForge](https://www.curseforge.com/minecraft/mc-mods/flashs-npcs)
+[Discord](https://discord.gg/tkn6vxPEMg)
+[YouTube](https://www.youtube.com/channel/UCXfTTknJ7p9YgxiVniqRszQ)
+[Patreon](https://www.patreon.com/flashhun)
