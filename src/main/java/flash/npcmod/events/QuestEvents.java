@@ -37,6 +37,7 @@ public class QuestEvents {
 
   @SubscribeEvent
   public void playerClone(PlayerEvent.Clone event) {
+    event.getOriginal().reviveCaps();
     IQuestCapability oldCap = QuestCapabilityProvider.getCapability(event.getOriginal());
     IQuestCapability newCap = QuestCapabilityProvider.getCapability(event.getPlayer());
 
@@ -44,6 +45,7 @@ public class QuestEvents {
     newCap.setAcceptedQuests(oldCap.getAcceptedQuests());
     newCap.setCompletedQuests(oldCap.getCompletedQuests());
     newCap.setQuestProgressMap(oldCap.getQuestProgressMap());
+    event.getOriginal().invalidateCaps();
   }
 
   @SubscribeEvent
