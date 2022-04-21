@@ -22,6 +22,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static flash.npcmod.core.ItemUtil.*;
@@ -32,12 +33,13 @@ public class QuestEvents {
   public void playerTick(TickEvent.PlayerTickEvent event) {
     PlayerEntity player = event.player;
     if (player != null && player.isAlive()) {
-      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
-      ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       if (event.side.isServer()) {
+        IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+        ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
         Map<QuestObjective, Integer> progressMap = capability.getQuestProgressMap();
-        acceptedQuests.forEach(questInstance -> {
-          questInstance.getQuest().getObjectives().forEach(objective -> {
+        for (QuestInstance questInstance : acceptedQuests) {
+          List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+          for(QuestObjective objective : objectives) {
             if (!objective.isHidden()) {
               QuestObjective.ObjectiveType type = objective.getType();
               switch (type) {
@@ -72,8 +74,8 @@ public class QuestEvents {
                 objective.onComplete(player);
             }
             progressMap.put(objective, objective.getProgress());
-          });
-        });
+          }
+        }
         PacketDispatcher.sendTo(new SSyncQuestCapability(capability.getAcceptedQuests().toArray(new QuestInstance[0])), player);
       }
     }
@@ -86,14 +88,14 @@ public class QuestEvents {
       if (player != null && player.isAlive() && !player.world.isRemote) {
         IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
         Map<QuestObjective, Integer> progressMap = capability.getQuestProgressMap();
-        progressMap.forEach((objective, integer) -> {
+        for (QuestObjective objective : progressMap.keySet()) {
           if (!objective.isHidden()) {
             if (objective.getType().equals(QuestObjective.ObjectiveType.Kill)) {
               if (EntityType.getKey(event.getEntityLiving().getType()).toString().equals(objective.getObjective()))
                 objective.setProgress(objective.getProgress() + 1);
             }
           }
-        });
+        }
       }
     }
   }
@@ -102,11 +104,12 @@ public class QuestEvents {
   public void interact(PlayerInteractEvent.EntityInteractSpecific event) {
     PlayerEntity player = event.getPlayer();
     if (player != null && player.isAlive()) {
-      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
-      ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       if (event.getSide().isServer()) {
-        acceptedQuests.forEach(questInstance -> {
-          questInstance.getQuest().getObjectives().forEach(objective -> {
+        IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+        ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
+        for (QuestInstance questInstance : acceptedQuests) {
+          List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+          for (QuestObjective objective : objectives) {
             if (!objective.isHidden()) {
               QuestObjective.ObjectiveType type = objective.getType();
               switch (type) {
@@ -129,8 +132,8 @@ public class QuestEvents {
                   }
               }
             }
-          });
-        });
+          }
+        }
       }
     }
   }
@@ -141,8 +144,9 @@ public class QuestEvents {
     if (player != null && player.isAlive() && event.getSide().isServer()) {
       IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
       ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
-      acceptedQuests.forEach(questInstance -> {
-        questInstance.getQuest().getObjectives().forEach(objective -> {
+      for (QuestInstance questInstance : acceptedQuests) {
+        List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+        for (QuestObjective objective : objectives) {
           if (!objective.isHidden()) {
             if (objective.getType().equals(QuestObjective.ObjectiveType.UseOnBlock)) {
               if (matches(objective.getObjective(), event.getItemStack()) && event.getWorld().getBlockState(event.getHitVec().getPos()).equals(objective.getSecondaryObjective()))
@@ -152,8 +156,8 @@ public class QuestEvents {
                 objective.setProgress(objective.getProgress() + 1);
             }
           }
-        });
-      });
+        }
+      }
     }
   }
 
@@ -168,16 +172,17 @@ public class QuestEvents {
         if (itemStack.getUseDuration() == 0) {
           IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
           ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
-          acceptedQuests.forEach(questInstance -> {
-            questInstance.getQuest().getObjectives().forEach(objective -> {
+          for (QuestInstance questInstance : acceptedQuests) {
+            List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+            for (QuestObjective objective : objectives) {
               if (!objective.isHidden()) {
                 if (objective.getType().equals(QuestObjective.ObjectiveType.Use)) {
                   if (matches(objective.getObjective(), itemStack))
                     objective.setProgress(objective.getProgress() + 1);
                 }
               }
-            });
-          });
+            }
+          }
         }
       }
     }
@@ -193,16 +198,17 @@ public class QuestEvents {
         if (itemStack.getUseDuration() > 0) {
           IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
           ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
-          acceptedQuests.forEach(questInstance -> {
-            questInstance.getQuest().getObjectives().forEach(objective -> {
+          for (QuestInstance questInstance : acceptedQuests) {
+            List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+            for (QuestObjective objective : objectives) {
               if (!objective.isHidden()) {
                 if (objective.getType().equals(QuestObjective.ObjectiveType.Use)) {
                   if (matches(objective.getObjective(), itemStack))
                     objective.setProgress(objective.getProgress() + 1);
                 }
               }
-            });
-          });
+            }
+          }
         }
       }
     }
