@@ -31,10 +31,6 @@ public class QuestCapabilityProvider  implements ICapabilitySerializable<INBT> {
   }
 
   public static IQuestCapability getCapability(PlayerEntity playerEntity) {
-    try {
-      return playerEntity.getCapability(QuestCapabilityProvider.QUEST_CAPABILITY).orElse(new QuestCapability());
-    } catch (RuntimeException e) { // if the capability is null, this is thrown...
-      return new QuestCapability();
-    }
+    return playerEntity.getCapability(QuestCapabilityProvider.QUEST_CAPABILITY).orElse(new QuestCapability());
   }
 }
