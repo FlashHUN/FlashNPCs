@@ -1,5 +1,6 @@
 package flash.npcmod.commands;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -11,24 +12,18 @@ import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.Commands.argument;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.ComponentUtils;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
+import static net.minecraft.commands.Commands.literal;
 
 public class QuestsCommand extends Command {
   @Override
@@ -55,6 +50,12 @@ public class QuestsCommand extends Command {
         .then(argument("quest", StringArgumentType.string())
         .then(argument("objective", StringArgumentType.greedyString())
             .executes(context -> completeObjective(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest"), StringArgumentType.getString(context, "objective")))))));
+  
+    builder.then(literal("completeQuest")
+            .then(argument("player", EntityArgument.player())
+                    .then(argument("quest", StringArgumentType.string())
+                            .then(argument("completeAllObjetives", BoolArgumentType.bool())
+                                    .executes(context -> completeQuest(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest"), BoolArgumentType.getBool(context, "completeAllObjetives")))))));
 
     builder.then(literal("reload").executes(context -> reloadAllQuests(context.getSource())));
 
@@ -116,6 +117,45 @@ public class QuestsCommand extends Command {
         }
         else
           source.sendSuccess(new TextComponent("The Quest " + questName + " doesn't have an Objective named " + objectiveName).withStyle(ChatFormatting.RED), true);
+      } else
+        source.sendSuccess(new TextComponent(player.getName().getString() + " doesn't have the Quest " + questName).withStyle(ChatFormatting.RED), true);
+    }
+    return 0;
+  }
+  
+  /**
+   * These command will finish the quest.
+   * 1st Will complete all the pending objetives (only if its flagged)
+   * 2nd Will give to the player the reward
+   * @param source
+   * @param player
+   * @param questName
+   * @param completeAllObjetives true -> Complete all objetives BEFORE ending the quest
+   * @param
+   * @return
+   */
+  private int completeQuest(CommandSourceStack source, Player player, String questName, boolean completeAllObjetives) {
+    if (player.isAlive()) {
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+      QuestInstance instance = null;
+      for (QuestInstance questInstance : capability.getAcceptedQuests()) {
+        if (questInstance.getQuest().getName().equals(questName)) {
+          instance = questInstance;
+          break;
+        }
+      }
+      if (instance != null) {
+        Quest quest = instance.getQuest();
+        if(completeAllObjetives){
+          for (QuestObjective questObjective : quest.getObjectives()) {
+            if (!questObjective.isComplete()) {
+              questObjective.forceComplete();
+            }
+          }
+        }
+        //completamos la mision
+        capability.completeQuest(instance);
+        
       } else
         source.sendSuccess(new TextComponent(player.getName().getString() + " doesn't have the Quest " + questName).withStyle(ChatFormatting.RED), true);
     }
