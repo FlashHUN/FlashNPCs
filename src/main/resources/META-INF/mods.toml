@@ -3,7 +3,7 @@ loaderVersion = "[39,)"
 license = "All rights reserved"
 [[mods]]
 modId = "flashnpcs"
-version = "1.1.4v2"
+version = "1.1.5"
 displayName = "Flash's NPCs"
 authors = "FlashHUN"
 description = '''
