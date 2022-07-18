@@ -123,17 +123,6 @@ public class QuestsCommand extends Command {
     return 0;
   }
   
-  /**
-   * These command will finish the quest.
-   * 1st Will complete all the pending objetives (only if its flagged)
-   * 2nd Will give to the player the reward
-   * @param source
-   * @param player
-   * @param questName
-   * @param completeAllObjetives true -> Complete all objetives BEFORE ending the quest
-   * @param
-   * @return
-   */
   private int completeQuest(CommandSourceStack source, Player player, String questName, boolean completeAllObjetives) {
     if (player.isAlive()) {
       IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
