@@ -123,7 +123,7 @@ public class QuestsCommand extends Command {
     return 0;
   }
   
-  private int completeQuest(CommandSourceStack source, Player player, String questName, boolean completeAllObjetives) {
+  private int completeQuest(CommandSourceStack source, Player player, String questName, boolean completeAllObjectives) {
     if (player.isAlive()) {
       IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
       QuestInstance instance = null;
@@ -135,7 +135,7 @@ public class QuestsCommand extends Command {
       }
       if (instance != null) {
         Quest quest = instance.getQuest();
-        if(completeAllObjetives){
+        if(completeAllObjectives){
           for (QuestObjective questObjective : quest.getObjectives()) {
             if (!questObjective.isComplete()) {
               questObjective.forceComplete();
