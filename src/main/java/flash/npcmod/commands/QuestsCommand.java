@@ -54,7 +54,7 @@ public class QuestsCommand extends Command {
     builder.then(literal("completeQuest")
             .then(argument("player", EntityArgument.player())
                     .then(argument("quest", StringArgumentType.string())
-                            .then(argument("completeAllObjetives", BoolArgumentType.bool())
+                            .then(argument("completeAllObjectives", BoolArgumentType.bool())
                                     .executes(context -> completeQuest(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest"), BoolArgumentType.getBool(context, "completeAllObjetives")))))));
 
     builder.then(literal("reload").executes(context -> reloadAllQuests(context.getSource())));
