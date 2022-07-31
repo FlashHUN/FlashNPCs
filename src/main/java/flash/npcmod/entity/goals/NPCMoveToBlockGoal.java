@@ -12,9 +12,9 @@ public class NPCMoveToBlockGoal  extends Goal {
     public final double speedModifier;
     protected int nextStartTick;
     protected int tryTicks;
-    private boolean reachedTarget;
+    protected boolean reachedTarget;
 
-    private final NpcEntity npc;
+    protected final NpcEntity npc;
     public NPCMoveToBlockGoal(NpcEntity npc, double speedModifier) {
         this.npc = npc;
         this.speedModifier = speedModifier;
@@ -76,7 +76,6 @@ public class NPCMoveToBlockGoal  extends Goal {
         } else {
             stop();
             --this.tryTicks;
-            Main.LOGGER.info("Reached " + blockpos);
             this.npc.setOrigin(this.npc.blockPosition());
             this.npc.setGoalReached(true);
             this.reachedTarget = true;

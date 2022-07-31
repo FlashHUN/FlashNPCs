@@ -169,6 +169,13 @@ public class NpcEntity extends PathfinderMob {
             case MOVE_TO_BLOCK -> this.goalSelector.addGoal(1, new NPCMoveToBlockGoal(this, 1.0D));
             case WANDER -> this.goalSelector.addGoal(0, new NPCWanderGoal(this, 300));
             case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
+            case STANDSTILL -> {
+                if (!action.getTargetBlockPos().equals(BlockPos.ZERO)) {
+                    BlockPos pos = action.getTargetBlockPos();
+                    this.setOrigin(pos);
+                    this.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                }
+            }
         }
 
         this.setCurrentBehavior(behavior.toCompoundTag());
@@ -851,7 +858,7 @@ public class NpcEntity extends PathfinderMob {
                     if (teleportCounter > MAX_TELEPORT_COUNTER) {
                         this.teleportCounter = 0;
                         BlockPos origin = getOrigin();
-                        if (!this.blockPosition().equals(origin)) {
+                        if (!this.blockPosition().closerThan(origin, 1.0D)) {
                             this.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
                         }
                     }

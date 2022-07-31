@@ -10,18 +10,15 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import org.jetbrains.annotations.NotNull;
 
-public class NPCInteractWithBlockGoal extends MoveToBlockGoal {
-    private final NpcEntity npc;
-    private static final int DEFAULT_SEARCH_RANGE = 8;
+public class NPCInteractWithBlockGoal extends NPCMoveToBlockGoal {
 
-    private boolean runOnce;
-
+    private boolean interactOnce;
     public NPCInteractWithBlockGoal(NpcEntity npc, double speed_modifier) {
-        super(npc, speed_modifier, DEFAULT_SEARCH_RANGE);
-        this.npc = npc;
-        this.runOnce = false;
+        super(npc, speed_modifier);
+        this.interactOnce = true;
     }
 
     /**
@@ -29,31 +26,12 @@ public class NPCInteractWithBlockGoal extends MoveToBlockGoal {
      * @return Boolean.
      */
     public boolean canUse() {
-        if(super.canUse() && runOnce){
+        if(super.canUse()){
             if (this.npc.isNotMovingToBlock())
                 stop();
             else return true;
         }
         return false;
-    }
-
-    /**
-     * Check if the block is a valid target.
-     * @param level The level.
-     * @param blockPos The block position.
-     * @return Boolean.
-     */
-    protected boolean isValidTarget(@NotNull LevelReader level, BlockPos blockPos) {
-        return blockPos.equals(this.npc.getTargetBlock());
-    }
-
-    public boolean shouldRecalculatePath() {
-        return canUse() && this.tryTicks % 40 == 0;
-    }
-
-    public void start() {
-        super.start();
-        this.runOnce = true;
     }
 
     public double acceptedDistance() {
@@ -65,17 +43,19 @@ public class NPCInteractWithBlockGoal extends MoveToBlockGoal {
      */
     public void tick() {
         super.tick();
-        if (this.runOnce && this.npc.getTargetBlock().closerThan(new BlockPos(this.mob.position()), this.acceptedDistance())) {
+        if (this.reachedTarget && interactOnce) {
+
             BlockState blockState = this.npc.level.getBlockState(this.npc.getTargetBlock());
             if (blockState.is(BlockTags.BUTTONS) || blockState.is(BlockTags.WOODEN_BUTTONS)) {
                 ((ButtonBlock)blockState.getBlock()).press(blockState, this.npc.level, this.npc.getTargetBlock());
+                this.npc.gameEvent(GameEvent.BLOCK_PRESS);
             } else if (blockState.is(Blocks.LEVER)) {
                 ((LeverBlock)blockState.getBlock()).pull(blockState, this.npc.level, this.npc.getTargetBlock());
+                this.npc.gameEvent(GameEvent.BLOCK_SWITCH, this.npc.getTargetBlock());
             }
+            interactOnce = false;
             this.npc.setOrigin(this.npc.blockPosition());
             this.npc.setGoalReached(true);
-            this.runOnce = false;
-            this.stop();
         }
     }
 }

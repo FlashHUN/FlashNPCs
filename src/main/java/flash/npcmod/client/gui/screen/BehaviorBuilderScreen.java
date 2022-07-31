@@ -33,7 +33,6 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
 public class BehaviorBuilderScreen extends TreeBuilderScreen {
@@ -349,7 +348,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         colWidths = new int[numCols];
         Arrays.fill(colWidths, 32);
         int indexWidth = (numCols / 2) - 1;
-        colWidths[indexWidth + 1] = 22; //Reserve space for the block pos text.
+        colWidths[indexWidth + 1] = 32; //Reserve space for the block pos text.
         indexHeight = (numRows / 2) - 1;
         EditBox targetBlockXField = this.addRenderableWidget(
                 new EditBox(
@@ -410,6 +409,13 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         targetBlockZField.setVisible(false);
         targetBlockZField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockZField);
+
+        if (npcEntity != null) {
+            BlockPos blockPos = npcEntity.getOrigin();
+            actionFields.get(0).setValue(String.valueOf(blockPos.getX()));
+            actionFields.get(1).setValue(String.valueOf(blockPos.getX()));
+            actionFields.get(2).setValue(String.valueOf(blockPos.getX()));
+        }
 
         // Set up the radius field.
 
@@ -553,7 +559,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             int numCols = getNumWidgetCols(this.width, 30);
             int[] colWidths = new int[numCols];
             Arrays.fill(colWidths, 32);
-            colWidths[(numCols / 2) - 1] = 20;
+            colWidths[(numCols / 2) - 1] = 18;
             int numRows = getNumWidgetRows(this.height);
             numRows = (numRows / 2);
             int textHeightOffset = 5; // This lines up the text with the edit boxes a little better.
@@ -657,6 +663,9 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         super.setNodeBeingEdited(node, editType);
         boolean isActionType = editType == EditType.ACTION;
+        this.poseDropdownWidget.visible = isActionType;
+        this.actionTypeDropdownWidget.visible = isActionType;
+        for (EditBox editBox : actionFields) editBox.setVisible(isActionType);
         if (node != null) {
             this.allFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
             Trigger trigger = ((BehaviorNode) node).getEditTrigger();
@@ -686,15 +695,22 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         } else {
             this.triggerChildField.setValue("");
             this.triggerTimerField.setValue("0");
-            actionFields.get(0).setValue("0");
-            actionFields.get(1).setValue("0");
-            actionFields.get(2).setValue("0");
+            if (npcEntity != null) {
+                //TODO Change Action defaults to initialize to entity position instead of 0,0,0. Below doesnt work
+
+                Main.LOGGER.info("Setting to npc position " + this.npcEntity.blockPosition());
+                actionFields.get(0).setValue(String.valueOf(this.npcEntity.getBlockX()));
+                actionFields.get(1).setValue(String.valueOf(this.npcEntity.getBlockY()));
+                actionFields.get(2).setValue(String.valueOf(this.npcEntity.getBlockZ()));
+            } else {
+                Main.LOGGER.info("No npc position");
+                actionFields.get(0).setValue("0");
+                actionFields.get(1).setValue("0");
+                actionFields.get(2).setValue("0");
+            }
+
             actionFields.get(3).setValue("0");
         }
-
-        this.poseDropdownWidget.visible = isActionType;
-        this.actionTypeDropdownWidget.visible = isActionType;
-        for (EditBox editBox : actionFields) editBox.setVisible(isActionType);
 
         boolean isTriggerType = editType == EditType.TRIGGER;
         this.triggerTypeDropdownWidget.visible = isTriggerType;
@@ -724,5 +740,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Override
     public void tick() {
         super.tick();
+        for (EditBox editBox : actionFields) editBox.tick();
     }
 }
