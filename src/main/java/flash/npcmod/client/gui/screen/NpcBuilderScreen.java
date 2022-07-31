@@ -27,18 +27,17 @@ import java.util.regex.Pattern;
 @OnlyIn(Dist.CLIENT)
 public class NpcBuilderScreen extends Screen {
 
-  private NpcEntity npcEntity;
+  private final NpcEntity npcEntity;
   private String name;
   private String dialogue;
+  private String behavior;
   private int textColor;
   private String texture;
   private boolean isSlim, isNameVisible;
-  private ItemStack[] items;
+  private final ItemStack[] items;
 
-  private EditBox nameField, dialogueField, textureField;
   public EditBox redField, greenField, blueField;
   private Checkbox slimCheckBox, nameVisibleCheckbox;
-  private Button confirmButton, inventoryButton, tradesButton;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
   private DropdownWidget<CEditNpc.NPCPose> poseDropdown;
 
@@ -59,11 +58,7 @@ public class NpcBuilderScreen extends Screen {
     } else {
       try {
         int i = Integer.parseInt(text);
-        if (i >= 0 && i <= 255) {
-          return true;
-        } else {
-          return false;
-        }
+        return i >= 0 && i <= 255;
       } catch (NumberFormatException e) {
         return false;
       }
@@ -81,6 +76,7 @@ public class NpcBuilderScreen extends Screen {
     this.texture = npcEntity.getTexture();
     this.isSlim = npcEntity.isSlim();
     this.dialogue = npcEntity.getDialogue();
+    this.behavior = npcEntity.getBehaviorFile();
     this.textColor = npcEntity.getTextColor();
     this.items = new ItemStack[]{npcEntity.getMainHandItem(), npcEntity.getOffhandItem(),
         npcEntity.getItemBySlot(EquipmentSlot.HEAD), npcEntity.getItemBySlot(EquipmentSlot.CHEST),
@@ -93,63 +89,89 @@ public class NpcBuilderScreen extends Screen {
 
   @Override
   protected void init() {
-    minX = 5 + Math.max(Math.max(font.width("Name: "), font.width("Texture: ")), Math.max(font.width("Dialogue: "), font.width("Text Color: ")));
-    this.nameField = this.addRenderableWidget(new EditBox(font, minX, 5, 120, 20, TextComponent.EMPTY));
-    this.nameField.setResponder(this::setName);
-    this.nameField.setMaxLength(200);
-    this.nameField.setValue(this.name);
+    minX = 5 + Math.max(
+        Math.max(
+            Math.max(font.width("Name: "), font.width("Texture: ")),
+            Math.max(font.width("Dialogue: "), font.width("Text Color: "))),
+        font.width("Behavior: ")    );
+    EditBox nameField = this.addRenderableWidget(new EditBox(font, minX, 5, 120, 20, TextComponent.EMPTY));
+    nameField.setResponder(this::setName);
+    nameField.setMaxLength(200);
+    nameField.setValue(this.name);
 
     this.nameVisibleCheckbox = this.addRenderableWidget(new Checkbox(minX + 130 + font.width("Visible? "), 5, 20, 20, TextComponent.EMPTY, isNameVisible));
 
-    this.textureField = this.addRenderableWidget(new EditBox(font, minX, 30, 120, 20, TextComponent.EMPTY));
-    this.textureField.setResponder(this::setTexture);
-    this.textureField.setFilter(textFilter);
-    this.textureField.setMaxLength(200);
-    this.textureField.setValue(this.texture);
+    EditBox textureField = this.addRenderableWidget(new EditBox(font, minX, 30, 120, 20, TextComponent.EMPTY));
+    textureField.setResponder(this::setTexture);
+    textureField.setFilter(textFilter);
+    textureField.setMaxLength(200);
+    textureField.setValue(this.texture);
 
-    this.dialogueField = this.addRenderableWidget(new EditBox(font, minX, 55, 120, 20, TextComponent.EMPTY));
-    this.dialogueField.setResponder(this::setDialogue);
-    this.dialogueField.setFilter(textFilter);
-    this.dialogueField.setMaxLength(200);
-    this.dialogueField.setValue(this.dialogue);
+    EditBox dialogueField = this.addRenderableWidget(new EditBox(font, minX, 55, 120, 20, TextComponent.EMPTY));
+    dialogueField.setResponder(this::setDialogue);
+    dialogueField.setFilter(textFilter);
+    dialogueField.setMaxLength(200);
+    dialogueField.setValue(this.dialogue);
+
+    EditBox behaviorField = this.addRenderableWidget(new EditBox(font, minX, 80, 120, 20, TextComponent.EMPTY));
+    behaviorField.setResponder(this::setBehavior);
+    behaviorField.setFilter(textFilter);
+    behaviorField.setMaxLength(200);
+    behaviorField.setValue(this.behavior);
 
     this.slimCheckBox = this.addRenderableWidget(new Checkbox(minX + 130 + font.width("Slim? "), 30, 20, 20, TextComponent.EMPTY, isSlim));
 
-    this.redSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX, 85, 20, 100, ColorSliderWidget.Color.RED));
-    this.greenSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX + 30, 85, 20, 100, ColorSliderWidget.Color.GREEN));
-    this.blueSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX + 60, 85, 20, 100, ColorSliderWidget.Color.BLUE));
+    this.redSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX, 105, 20, 100, ColorSliderWidget.Color.RED));
+    this.greenSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX + 30, 105, 20, 100, ColorSliderWidget.Color.GREEN));
+    this.blueSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX + 60, 105, 20, 100, ColorSliderWidget.Color.BLUE));
 
-    this.redField = this.addRenderableWidget(new EditBox(font, minX - 5, 190, 30, 20, TextComponent.EMPTY));
+    this.redField = this.addRenderableWidget(new EditBox(font, minX - 5, 210, 30, 20, TextComponent.EMPTY));
     this.redField.setResponder(this::setRFromString);
     this.redField.setFilter(colorFilter);
     this.redField.setMaxLength(3);
     this.redField.setValue(String.valueOf(r));
 
-    this.greenField = this.addRenderableWidget(new EditBox(font, minX + 25, 190, 30, 20, TextComponent.EMPTY));
+    this.greenField = this.addRenderableWidget(new EditBox(font, minX + 25, 210, 30, 20, TextComponent.EMPTY));
     this.greenField.setResponder(this::setGFromString);
     this.greenField.setFilter(colorFilter);
     this.greenField.setMaxLength(3);
     this.greenField.setValue(String.valueOf(g));
 
-    this.blueField = this.addRenderableWidget(new EditBox(font, minX + 55, 190, 30, 20, TextComponent.EMPTY));
+    this.blueField = this.addRenderableWidget(new EditBox(font, minX + 55, 210, 30, 20, TextComponent.EMPTY));
     this.blueField.setResponder(this::setBFromString);
     this.blueField.setFilter(colorFilter);
     this.blueField.setMaxLength(3);
     this.blueField.setValue(String.valueOf(b));
 
-    this.confirmButton = this.addRenderableWidget(new Button(width - 60, height - 20, 60, 20, new TextComponent("Confirm"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
+    // Confirm Button
+    this.addRenderableWidget(new Button(width - 60, height - 20, 60, 20, new TextComponent("Confirm"), btn -> {
+      PacketDispatcher.sendToServer(
+              new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
+                      this.behavior, this.textColor, this.items, this.pose));
       minecraft.setScreen(null);
     }));
 
-    this.inventoryButton = this.addRenderableWidget(new Button(width - 60, height - 40, 60, 20, new TextComponent("Inventory"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
+    // Inventory Button
+    this.addRenderableWidget(new Button(width - 60, height - 40, 60, 20, new TextComponent("Inventory"), btn -> {
+      PacketDispatcher.sendToServer(
+              new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
+                      this.behavior, this.textColor, this.items, this.pose));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.NPCINVENTORY));
     }));
 
-    this.tradesButton = this.addRenderableWidget(new Button(width - 60, height - 60, 60, 20, new TextComponent("Trades"), btn -> {
-      PacketDispatcher.sendToServer(new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue, this.textColor, this.items, this.pose));
+    // Trades Button
+    this.addRenderableWidget(new Button(width - 60, height - 60, 60, 20, new TextComponent("Trades"), btn -> {
+      PacketDispatcher.sendToServer(
+              new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
+                      this.behavior, this.textColor, this.items, this.pose));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.TRADE_EDITOR));
+    }));
+
+    // Reset Behavior Button
+    this.addRenderableWidget(new Button(width - 60, height - 80, 60, 20, new TextComponent("Reset AI"), btn -> {
+      PacketDispatcher.sendToServer(
+              new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
+                      this.behavior, this.textColor, this.items, this.pose, true));
     }));
 
     this.poseDropdown = this.addRenderableWidget(new DropdownWidget<>(this.pose, minX + 210, 5, 80));
@@ -166,6 +188,10 @@ public class NpcBuilderScreen extends Screen {
 
   private void setDialogue(String s) {
     this.dialogue = s;
+  }
+
+  private void setBehavior(String s) {
+    this.behavior = s;
   }
 
   public int getR() {
@@ -236,10 +262,18 @@ public class NpcBuilderScreen extends Screen {
 
   @Override
   public void tick() {
+//    this.nameField.tick();
+//    this.textureField.tick();
+//    this.dialogueField.tick();
+//    this.behaviorField.tick();
+//    this.redField.tick();
+//    this.greenField.tick();
+//    this.blueField.tick();
     this.isSlim = slimCheckBox.selected();
     npcEntity.setSlim(isSlim);
     this.isNameVisible = nameVisibleCheckbox.selected();
     npcEntity.setCustomNameVisible(isNameVisible);
+
     if (poseDropdown.getSelectedOption() != this.pose) {
       this.pose = poseDropdown.getSelectedOption();
       switch (pose) {
@@ -269,8 +303,9 @@ public class NpcBuilderScreen extends Screen {
     drawString(matrixStack, font, "Slim? ", minX + 130, 30 + center, 0xFFFFFF);
 
     drawString(matrixStack, font, "Dialogue: ", 5, 55 + center, 0xFFFFFF);
+    drawString(matrixStack, font, "Behavior: ", 5, 80 + center, 0xFFFFFF);
 
-    drawString(matrixStack, font, "Text Color: ", 5, 85 + (100 - font.lineHeight) / 2, 0xFFFFFF);
+    drawString(matrixStack, font, "Text Color: ", 5, 105 + (100 - font.lineHeight) / 2, 0xFFFFFF);
 
     fill(matrixStack, minX + 99, 121, minX + 126, 147, 0xFF000000);
     fill(matrixStack, minX + 100, 122, minX + 125, 146, ColorUtil.hexToHexA(textColor));

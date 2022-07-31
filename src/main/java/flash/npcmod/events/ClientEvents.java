@@ -97,18 +97,23 @@ public class ClientEvents {
         if (minecraft.player.hasPermissions(4) && minecraft.player.isCreative()) {
           if (stack.getItem() instanceof NpcEditorItem) {
             HitResult rayTraceResult = minecraft.hitResult;
-            if (rayTraceResult.getType().equals(HitResult.Type.MISS) && minecraft.player.isDiscrete()) {
-              // If we right click on the air while sneaking, open the function builder
-              PacketDispatcher.sendToServer(new CHandleNpcEditorRightClick());
+            if (rayTraceResult.getType().equals(HitResult.Type.MISS)) {
+              if (minecraft.player.isDiscrete()) {
+                // If we right-click on the air while sneaking, open the function builder
+                PacketDispatcher.sendToServer(new CHandleNpcEditorRightClick());
+              }  else {
+                // Otherwise open the dialogue builder.
+                PacketDispatcher.sendToServer(new CHandleNpcEditorRightClick(""));
+              }
             } else if (rayTraceResult.getType().equals(HitResult.Type.ENTITY)) {
-              // If we right click on an entity and it is an NPC, edit it
+              // If we right-click on an entity and if it is an NPC, edit it
               EntityHitResult result = (EntityHitResult) rayTraceResult;
               Entity entity = result.getEntity();
               if (entity instanceof NpcEntity) {
                 PacketDispatcher.sendToServer(new CHandleNpcEditorRightClick(entity.getId()));
               }
             } else if (rayTraceResult.getType().equals(HitResult.Type.BLOCK)) {
-              // If we right click on a block, create a new npc and edit it
+              // If we right-click on a block, create a new npc and edit it
               BlockHitResult result = (BlockHitResult) rayTraceResult;
               BlockPos pos = result.getBlockPos();
               PacketDispatcher.sendToServer(new CHandleNpcEditorRightClick(pos));
@@ -119,14 +124,14 @@ public class ClientEvents {
             if (minecraft.player.isDiscrete()) {
               HitResult rayTraceResult = minecraft.hitResult;
               if (rayTraceResult.getType().equals(HitResult.Type.ENTITY)) {
-                // If we right click on an NPC, save it
+                // If we right-click on an NPC, save it
                 EntityHitResult result = (EntityHitResult) rayTraceResult;
                 Entity entity = result.getEntity();
                 if (entity instanceof NpcEntity) {
                   PacketDispatcher.sendToServer(new CHandleNpcSaveToolRightClick(entity.getId()));
                 }
               } else if (rayTraceResult.getType().equals(HitResult.Type.BLOCK)) {
-                // If we right click on a block, open our saved npcs gui
+                // If we right-click on a block, open our saved npcs gui
                 BlockHitResult result = (BlockHitResult) rayTraceResult;
                 BlockPos pos = result.getBlockPos();
                 PacketDispatcher.sendToServer(new CHandleNpcSaveToolRightClick(pos));

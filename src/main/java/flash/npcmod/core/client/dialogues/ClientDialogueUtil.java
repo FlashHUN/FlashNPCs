@@ -21,7 +21,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,9 +41,14 @@ public class ClientDialogueUtil {
   private static String currentText = "";
   private static String currentResponse = "";
   private static String currentFunction = "";
+  private static String currentTrigger = "";
   private static JsonArray currentChildren = new JsonArray();
 
   public static void loadDialogue(String name) {
+    if (name == null || name.isEmpty()) {
+      currentDialogue = null;
+      return;
+    }
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
       JsonObject object = new Gson().fromJson(is, JsonObject.class);
@@ -57,6 +61,10 @@ public class ClientDialogueUtil {
   }
 
   public static void loadDialogueEditor(String name) {
+    if (name == null || name.isEmpty()) {
+      currentDialogue = null;
+      return;
+    }
     try {
       InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
       JsonObject object = new Gson().fromJson(is, JsonObject.class);
@@ -119,10 +127,12 @@ public class ClientDialogueUtil {
     currentText = "";
     currentResponse = "";
     currentFunction = "";
+    currentTrigger = "";
     currentChildren = new JsonArray();
   }
 
   private static void setVars(JsonObject object) {
+
     currentText = object.get("text").getAsString();
     if (object.has("response")) {
       currentResponse = object.get("response").getAsString();
@@ -134,6 +144,12 @@ public class ClientDialogueUtil {
     } else {
       currentFunction = "";
     }
+    if (object.has("trigger")) {
+      currentTrigger = object.get("trigger").getAsString();
+    } else {
+      currentTrigger = "";
+    }
+    Main.LOGGER.info("current trigger is " + currentTrigger);
     if (object.has("children")) {
       currentChildren = object.getAsJsonArray("children");
     } else {
@@ -174,6 +190,10 @@ public class ClientDialogueUtil {
     return currentFunction;
   }
 
+  public static String getCurrentTrigger() {
+    return currentTrigger;
+  }
+
   public static String[] getDialogueOptionNamesFromChildren() {
     int childrenAmount = currentChildren.size();
     if (childrenAmount > 0) {
@@ -191,7 +211,8 @@ public class ClientDialogueUtil {
     if (childrenAmount > 0) {
       String[] options = new String[childrenAmount];
       for (int i = 0; i < childrenAmount; i++) {
-        options[i] = currentChildren.get(i).getAsJsonObject().get("text").getAsString();
+        JsonObject childJson = currentChildren.get(i).getAsJsonObject();
+        options[i] = childJson.get("text").getAsString();
       }
       return options;
     }

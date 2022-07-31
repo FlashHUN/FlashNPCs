@@ -1,21 +1,17 @@
 package flash.npcmod.core.client;
 
 import com.google.common.hash.Hashing;
-import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import flash.npcmod.core.FileUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.HttpTexture;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.client.resources.SkinManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import javax.annotation.Nullable;
 import java.io.File;
-import java.io.FileNotFoundException;
 
 @OnlyIn(Dist.CLIENT)
 public class SkinUtil {
@@ -29,7 +25,8 @@ public class SkinUtil {
   }
 
   public static ResourceLocation loadSkin(String url) {
-    String s = Hashing.sha1().hashUnencodedChars(url).toString();
+
+    String s = Hashing.sha256().hashUnencodedChars(url).toString();
     ResourceLocation resourcelocation = new ResourceLocation("loaded_skins/" + s);
     AbstractTexture abstracttexture = minecraft.textureManager.getTexture(resourcelocation, MissingTextureAtlasSprite.getTexture());
     if (abstracttexture == MissingTextureAtlasSprite.getTexture()) {

@@ -104,6 +104,14 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
     this.setShowOptions(false);
   }
 
+  /**
+   * Change the selected option to the new one.
+   * @param option The enum to choose.
+   */
+  public void selectOption(T option) {
+    this.selectOption(option.ordinal());
+  }
+
   public T getSelectedOption() {
     return (T) Enum.valueOf(myEnum.getClass(), selectedOption.name());
   }

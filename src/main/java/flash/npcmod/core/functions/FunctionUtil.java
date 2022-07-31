@@ -4,6 +4,7 @@ import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.core.functions.defaultfunctions.*;
 import flash.npcmod.entity.NpcEntity;
+import flash.npcmod.core.functions.defaultfunctions.*;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.io.FilenameUtils;
 

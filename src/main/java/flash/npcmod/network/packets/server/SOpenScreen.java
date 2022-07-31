@@ -41,6 +41,7 @@ public class SOpenScreen {
   public enum EScreens {
     DIALOGUE,
     EDITDIALOGUE,
+    EDITBEHAVIOR,
     FUNCTIONBUILDER,
     EDITNPC,
     QUESTEDITOR,

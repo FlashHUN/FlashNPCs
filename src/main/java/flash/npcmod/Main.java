@@ -24,20 +24,21 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 @Mod(Main.MODID)
 public class Main {
 
   public static final String MODID = "flashnpcs";
 
-  public static final Logger LOGGER = LogManager.getLogger("Flash's NPCs");
+  public static final Logger LOGGER = LogManager.getLogger("Flashs NPCs");
 
   // Proxies
   public static CommonProxy PROXY;
 
   public static final CreativeModeTab NPC_ITEMGROUP = new CreativeModeTab(Main.MODID) {
     @Override
-    public ItemStack makeIcon() {
+    public @NotNull ItemStack makeIcon() {
       return new ItemStack(ItemInit.NPC_EDITOR.get());
     }
   };
@@ -46,7 +47,7 @@ public class Main {
     IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
     // Set up proxies
-    PROXY = DistExecutor.runForDist(() -> ClientProxy::new, () -> CommonProxy::new);
+    PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
 
     // Register the setup method for modloading
     modEventBus.addListener(this::setup);

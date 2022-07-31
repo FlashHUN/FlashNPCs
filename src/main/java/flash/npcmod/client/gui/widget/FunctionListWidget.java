@@ -1,8 +1,8 @@
 package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.client.gui.dialogue.DialogueNode;
-import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
+import flash.npcmod.client.gui.node.BuilderNode;
+import flash.npcmod.client.gui.screen.TreeBuilderScreen;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
@@ -14,12 +14,12 @@ import javax.annotation.Nullable;
 import static net.minecraft.client.gui.GuiComponent.fill;
 
 @OnlyIn(Dist.CLIENT)
-public class FunctionListWidget {
+public class FunctionListWidget<T extends BuilderNode, S extends TreeBuilderScreen> {
 
-  private DialogueBuilderScreen screen;
+  private S screen;
   private Minecraft minecraft;
   @Nullable
-  private DialogueNode editingNode;
+  private T editingNode;
 
   private int x, y, width, height;
   private boolean visible;
@@ -31,7 +31,7 @@ public class FunctionListWidget {
 
   private static final int lineHeight = 2+Minecraft.getInstance().font.lineHeight;
 
-  public FunctionListWidget(DialogueBuilderScreen screen, Minecraft minecraft) {
+  public FunctionListWidget(S screen, Minecraft minecraft) {
     this.screen = screen;
     this.minecraft = minecraft;
 
@@ -42,7 +42,7 @@ public class FunctionListWidget {
     calculatePositionAndDimensions();
   }
 
-  public void setEditingNode(@Nullable DialogueNode editingNode) {
+  public void setEditingNode(@Nullable T editingNode) {
     this.editingNode = editingNode;
   }
 
@@ -161,7 +161,7 @@ public class FunctionListWidget {
     if (!screen.getNewFunctionParams().isEmpty()) {
       function += "::"+screen.getNewFunctionParams();
     }
-    this.editingNode.getDialogue().setFunction(function);
+    this.editingNode.getNodeData().setFunction(function);
     this.selectedFunction = "";
   }
 

@@ -5,6 +5,7 @@
 
   "itemGroup.flashnpcs": "Flash's NPCs",
 
+  "item.flashnpcs.behavior_editor": "Behavior Editor",
   "item.flashnpcs.npc_editor": "Npc Editor",
   "item.flashnpcs.quest_editor": "Quest Editor",
   "item.flashnpcs.npc_save_tool": "Save Tool",

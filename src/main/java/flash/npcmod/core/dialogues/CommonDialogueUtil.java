@@ -8,11 +8,13 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CommonDialogueUtil {
+
 
   public static final String DEFAULT_DIALOGUE_JSON = "{\"name\":\"init\",\"text\":\"Hi @p!\",\"function\":\"\",\"children\":[{\"name\":\"hello\",\"text\":\"Hey @npc.\"}]}";
   public static final String DEFAULT_DIALOGUE_EDITOR_JSON = "{\"entries\":[{\"name\":\"init\",\"x\":10,\"y\":10},{\"name\":\"hello\",\"x\":150,\"y\":10}]}";
@@ -94,7 +96,8 @@ public class CommonDialogueUtil {
 
   public static List<String> readAllDialogueFileNames() {
     File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/dialogues");
-    return Arrays.stream(folder.listFiles()).map(file -> FilenameUtils.removeExtension(file.getName())).toList();
+    Stream<String> files = Arrays.stream(folder.listFiles()).map(file -> FilenameUtils.removeExtension(file.getName()));
+    return files.collect(Collectors.toList());
   }
 
 }

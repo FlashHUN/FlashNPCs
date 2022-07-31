@@ -1,6 +1,5 @@
 package flash.npcmod.capability.quests;
 
-import flash.npcmod.Main;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;

@@ -20,7 +20,7 @@ public class QuestCapabilityProvider implements ICapabilitySerializable<Compound
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+  public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
     if (cap == QUEST_CAPABILITY)
       return this.instance.cast();
 

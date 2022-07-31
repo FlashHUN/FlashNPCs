@@ -1,8 +1,6 @@
 package flash.npcmod.core.quests;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.core.pathing.Path;

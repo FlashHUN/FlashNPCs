@@ -1,0 +1,5 @@
+<root>
+    <item name='net.minecraftforge.common.util.INBTSerializable T serializeNBT()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+</root>

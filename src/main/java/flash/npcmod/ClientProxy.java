@@ -2,9 +2,7 @@ package flash.npcmod;
 
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
-import flash.npcmod.client.gui.screen.FunctionBuilderScreen;
-import flash.npcmod.client.gui.screen.NpcBuilderScreen;
-import flash.npcmod.client.gui.screen.SavedNpcsScreen;
+import flash.npcmod.client.gui.screen.*;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.client.gui.screen.quests.QuestEditorScreen;
@@ -43,6 +41,7 @@ public class ClientProxy extends CommonProxy {
     NpcEntity npcEntity = (NpcEntity) minecraft.player.level.getEntity(entityid);
     switch (screen) {
       case DIALOGUE -> toOpen = new DialogueScreen(data, npcEntity);
+      case EDITBEHAVIOR -> toOpen = new BehaviorBuilderScreen(data, npcEntity);
       case EDITDIALOGUE -> toOpen = new DialogueBuilderScreen(data);
       case FUNCTIONBUILDER -> toOpen = new FunctionBuilderScreen();
       case EDITNPC -> toOpen = new NpcBuilderScreen(npcEntity);

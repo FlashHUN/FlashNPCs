@@ -1,12 +1,14 @@
 package flash.npcmod.client.gui.screen.dialogue;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import flash.npcmod.Main;
 import flash.npcmod.client.gui.widget.DialogueDisplayWidget;
 import flash.npcmod.client.gui.widget.TextButton;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CCallFunction;
+import flash.npcmod.network.packets.client.CCallTrigger;
 import flash.npcmod.network.packets.client.CRequestQuestCapabilitySync;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -105,10 +107,15 @@ public class DialogueScreen extends Screen {
           if (!ClientDialogueUtil.getCurrentResponse().isEmpty()) {
             addDisplayedNPCText(ClientDialogueUtil.getCurrentResponse());
           }
+          if (!ClientDialogueUtil.getCurrentTrigger().isEmpty()) {
+            Main.LOGGER.info("Sending Call trigger");
+            PacketDispatcher.sendToServer(new CCallTrigger(ClientDialogueUtil.getCurrentTrigger(), this.npcEntity.getId()));
+          }
           this.dialogueDisplayWidget.clampScroll(0);
           if (!ClientDialogueUtil.getCurrentFunction().isEmpty()) {
             PacketDispatcher.sendToServer(new CCallFunction(ClientDialogueUtil.getCurrentFunction(), this.npcEntity.getId()));
           }
+
           resetOptionButtons();
         }));
         y += optionHeights[i]+2;

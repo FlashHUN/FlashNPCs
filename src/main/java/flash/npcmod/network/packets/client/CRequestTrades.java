@@ -1,11 +1,7 @@
 package flash.npcmod.network.packets.client;
 
-import flash.npcmod.Main;
 import flash.npcmod.core.functions.FunctionUtil;
-import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.entity.NpcEntity;
-import flash.npcmod.network.PacketDispatcher;
-import flash.npcmod.network.packets.server.SSyncTrades;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;

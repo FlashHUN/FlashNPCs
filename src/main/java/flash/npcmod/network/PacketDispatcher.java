@@ -35,11 +35,15 @@ public class PacketDispatcher {
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CBuildFunction.class, CBuildFunction::encode, CBuildFunction::decode, CBuildFunction::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CBuildQuest.class, CBuildQuest::encode, CBuildQuest::decode, CBuildQuest::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CCallFunction.class, CCallFunction::encode, CCallFunction::decode, CCallFunction::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), CCallTrigger.class, CCallTrigger::encode, CCallTrigger::decode, CCallTrigger::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), CEditBehavior.class, CEditBehavior::encode, CEditBehavior::decode, CEditBehavior::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CEditDialogue.class, CEditDialogue::encode, CEditDialogue::decode, CEditDialogue::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CEditNpc.class, CEditNpc::encode, CEditNpc::decode, CEditNpc::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CHandleNpcEditorRightClick.class, CHandleNpcEditorRightClick::encode, CHandleNpcEditorRightClick::decode, CHandleNpcEditorRightClick::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CHandleNpcSaveToolRightClick.class, CHandleNpcSaveToolRightClick::encode, CHandleNpcSaveToolRightClick::decode, CHandleNpcSaveToolRightClick::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CHandleSavedNpc.class, CHandleSavedNpc::encode, CHandleSavedNpc::decode, CHandleSavedNpc::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestBehavior.class, CRequestBehavior::encode, CRequestBehavior::decode, CRequestBehavior::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestBehaviorEditor.class, CRequestBehaviorEditor::encode, CRequestBehaviorEditor::decode, CRequestBehaviorEditor::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestContainer.class, CRequestContainer::encode, CRequestContainer::decode, CRequestContainer::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestDialogue.class, CRequestDialogue::encode, CRequestDialogue::decode, CRequestDialogue::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), CRequestDialogueEditor.class, CRequestDialogueEditor::encode, CRequestDialogueEditor::decode, CRequestDialogueEditor::handle);
@@ -58,6 +62,8 @@ public class PacketDispatcher {
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SOpenScreen.class, SOpenScreen::encode, SOpenScreen::decode, SOpenScreen::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SRandomOptionFunction.class, SRandomOptionFunction::encode, SRandomOptionFunction::decode, SRandomOptionFunction::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SResetFunctionNames.class, SResetFunctionNames::encode, SResetFunctionNames::decode, SResetFunctionNames::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendBehavior.class, SSendBehavior::encode, SSendBehavior::decode, SSendBehavior::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendBehaviorEditor.class, SSendBehaviorEditor::encode, SSendBehaviorEditor::decode, SSendBehaviorEditor::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendDialogue.class, SSendDialogue::encode, SSendDialogue::decode, SSendDialogue::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendDialogueEditor.class, SSendDialogueEditor::encode, SSendDialogueEditor::decode, SSendDialogueEditor::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendFunctionName.class, SSendFunctionName::encode, SSendFunctionName::decode, SSendFunctionName::handle);

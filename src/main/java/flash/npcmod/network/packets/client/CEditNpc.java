@@ -4,7 +4,6 @@ import flash.npcmod.entity.NpcEntity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.TextComponent;
@@ -17,24 +16,44 @@ import java.util.function.Supplier;
 public class CEditNpc {
 
   int entityid;
-  String name, texture, dialogue;
-  boolean isSlim, isNameVisible;
+  String name, texture, dialogue, behavior;
+  boolean isSlim, isNameVisible, resetAI;
   int textColor;
   ItemStack[] items;
   NPCPose pose;
 
-  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue, int textColor, ItemStack[] items, NPCPose pose) {
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose) {
     this.entityid = entityid;
     this.isNameVisible = isNameVisible;
     this.name = name;
     this.texture = texture;
     this.isSlim = isSlim;
     this.dialogue = dialogue;
+    this.behavior = behavior;
     this.textColor = textColor;
     if (items.length == 6) {
       this.items = items;
     }
     this.pose = pose;
+    this.resetAI = false;
+  }
+
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI) {
+    this.entityid = entityid;
+    this.isNameVisible = isNameVisible;
+    this.name = name;
+    this.texture = texture;
+    this.isSlim = isSlim;
+    this.dialogue = dialogue;
+    this.behavior = behavior;
+    this.textColor = textColor;
+    if (items.length == 6) {
+      this.items = items;
+    }
+    this.pose = pose;
+    this.resetAI = resetAI;
   }
 
   public static void encode(CEditNpc msg, FriendlyByteBuf buf) {
@@ -43,7 +62,9 @@ public class CEditNpc {
     buf.writeUtf(msg.name);
     buf.writeUtf(msg.texture);
     buf.writeBoolean(msg.isSlim);
+    buf.writeBoolean(msg.resetAI);
     buf.writeUtf(msg.dialogue);
+    buf.writeUtf(msg.behavior);
     buf.writeInt(msg.textColor);
     buf.writeInt(msg.pose.ordinal());
     if (msg.items != null) {
@@ -63,14 +84,19 @@ public class CEditNpc {
     String name = buf.readUtf(201);
     String texture = buf.readUtf(201);
     boolean isSlim = buf.readBoolean();
+    boolean resetAI = buf.readBoolean();
     String dialogue = buf.readUtf(201);
+    String behavior = buf.readUtf(201);
     int textColor = buf.readInt();
     NPCPose pose = NPCPose.values()[buf.readInt()];
     List<ItemStack> items = new ArrayList<>();
     for (int i = 0; i < 6; i++) {
       items.add(buf.readItem());
     }
-    return new CEditNpc(entityid, isNameVisible, name, texture, isSlim, dialogue, textColor, items.toArray(new ItemStack[0]), pose);
+    return new CEditNpc(
+            entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items.toArray(new ItemStack[0]), pose,
+            resetAI
+    );
   }
 
   public static void handle(CEditNpc msg, Supplier<NetworkEvent.Context> ctx) {
@@ -85,6 +111,7 @@ public class CEditNpc {
           npcEntity.setTexture(msg.texture);
           npcEntity.setSlim(msg.isSlim);
           npcEntity.setDialogue(msg.dialogue);
+          npcEntity.setBehaviorFile(msg.behavior);
           npcEntity.setTextColor(msg.textColor);
           npcEntity.setItemSlot(EquipmentSlot.MAINHAND, msg.items[0]);
           npcEntity.setItemSlot(EquipmentSlot.OFFHAND, msg.items[1]);
@@ -98,6 +125,9 @@ public class CEditNpc {
             case SITTING -> { npcEntity.setCrouching(false); npcEntity.setSitting(true); }
             case STANDING -> { npcEntity.setCrouching(false); npcEntity.setSitting(false); }
           }
+
+          if(msg.resetAI) npcEntity.resetBehavior();
+          npcEntity.refreshGoals();
         }
       }
     });

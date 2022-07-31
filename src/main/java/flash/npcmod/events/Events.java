@@ -1,14 +1,11 @@
 package flash.npcmod.events;
 
-import flash.npcmod.Main;
 import flash.npcmod.core.EntityUtil;
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.entity.NpcEntity;
-import flash.npcmod.init.EntityInit;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
 import net.minecraftforge.event.world.WorldEvent;
