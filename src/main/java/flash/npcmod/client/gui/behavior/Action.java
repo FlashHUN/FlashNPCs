@@ -20,12 +20,12 @@ public class Action {
    * The type of action.
    */
   public enum ActionType {
-      FOLLOW_PLAYER,
+      //FOLLOW_PLAYER,
       MOVE_TO_BLOCK,
       STANDSTILL,
       WANDER,
-      INTERACT_WITH,
-      LOOK_AT
+      //INTERACT_WITH,
+      //LOOK_AT
   }
 
   /**

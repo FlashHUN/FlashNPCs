@@ -9,13 +9,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class Trigger {
     private String name;
     private String nextBehaviorName;
-    private int timer;
+    private final int timer;
 
     public enum TriggerType {
         DIALOGUE_TRIGGER,
         ACTION_FINISH_TRIGGER,
         TIMER_TRIGGER,
-        DAYTIME_TRIGGER
+        //DAYTIME_TRIGGER
     }
 
     private final TriggerType type;

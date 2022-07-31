@@ -168,7 +168,7 @@ public class NpcEntity extends PathfinderMob {
         switch (action.getActionType()) {
             case MOVE_TO_BLOCK -> this.goalSelector.addGoal(1, new NPCMoveToBlockGoal(this, 1.0D));
             case WANDER -> this.goalSelector.addGoal(0, new NPCWanderGoal(this, 300));
-            case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
+            //case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
             case STANDSTILL -> {
                 if (!action.getTargetBlockPos().equals(BlockPos.ZERO)) {
                     BlockPos pos = action.getTargetBlockPos();
@@ -551,7 +551,7 @@ public class NpcEntity extends PathfinderMob {
         Behavior behavior = Behavior.fromCompoundTag(getCurrentBehavior());
         Action action = behavior.getAction();
         switch (action.getActionType()) {
-            case MOVE_TO_BLOCK, INTERACT_WITH -> {
+            case MOVE_TO_BLOCK -> {//, INTERACT_WITH -> {
                 return false;
             }
             case WANDER -> {

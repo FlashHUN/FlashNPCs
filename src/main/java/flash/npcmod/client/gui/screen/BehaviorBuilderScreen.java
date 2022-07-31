@@ -262,7 +262,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.triggerTypeDropdownWidget = this.addRenderableWidget(
                 new DropdownWidget<>(
                         Trigger.TriggerType.DIALOGUE_TRIGGER,
-                        getWidgetWidth(0, this.width, null, 20),
+                        getWidgetWidth(-1, this.width, null, 20),
                         getWidgetHeight((numRows / 2)-1, this.height, null),
                         120
                 )

@@ -328,6 +328,7 @@ abstract public class TreeBuilderScreen extends Screen {
             }
             if (this.getEditingNode() == null) {
                 if (conflictingNodeDataNames.size() == 0) {
+                    // This overwrites the npc's dialogue even if there is no npc attached.
                     sendCEdit();
                 }
             }

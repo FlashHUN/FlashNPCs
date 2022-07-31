@@ -199,7 +199,7 @@ public class BehaviorNode extends BuilderNode {
                 // Otherwise set the child's parent to null
                 Trigger trigger = this.nodeData.getTriggers()[optionIndex];
                 for (BuilderNode child : this.builderScreen.allNodes) {
-                    if (child.getName() == trigger.getNextBehaviorName()) {
+                    if (child.getName().equals(trigger.getNextBehaviorName())) {
                         child.setParent(null);
                         break;
                     }
@@ -516,8 +516,10 @@ public class BehaviorNode extends BuilderNode {
                 if (this.builderScreen.getSelectedNode() == null) {
                     node.addChild(this.getNodeData());
                 } else {
-                    Main.LOGGER.info("Setting index " + (this.builderScreen.getSelectedNodeIndex()-1));
-                    node.addChild(this.getNodeData(), this.builderScreen.getSelectedNodeIndex()-1);
+                    if (this.builderScreen.getSelectedNodeIndex() > 0)
+                        node.addChild(this.getNodeData(), this.builderScreen.getSelectedNodeIndex()-1);
+                    else
+                        node.addChild(this.getNodeData(), this.builderScreen.getSelectedNodeIndex());
                 }
             }
             this.parent = node;
