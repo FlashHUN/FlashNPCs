@@ -19,8 +19,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.opengl.GL11;
 
@@ -226,8 +224,8 @@ abstract public class TreeBuilderScreen extends Screen {
         if (getSelectedNode() != null) {
             int index = getSelectedNodeIndex();
             BuilderNode selectedNode = getSelectedNode();
-            if (index >= 0 && index < selectedNode.getOptionsNames().length + 2) {
-                int[] nodeXY = index == 0 ? selectedNode.getEndPointLocation() : selectedNode.getStartPointLocation(index - 1);
+            if (index >= -2 && index < selectedNode.getConnectionNames().length + 1) {
+                int[] nodeXY = index == -2 ? selectedNode.getEndPointLocation() : selectedNode.getStartPointLocation(index);
 
                 int nodeX = selectedNode.getX() + nodeXY[0];
                 int nodeY = selectedNode.getY() + nodeXY[1];

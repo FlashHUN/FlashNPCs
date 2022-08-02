@@ -33,7 +33,7 @@ abstract public class BuilderNode {
 
     protected int x, y, width;
     protected int nameBarHeight, functionBarHeight;
-    protected int[] optionsBarHeight, extraFieldsHeight;
+    protected int[] connectionBarsHeights, extraFieldsHeight;
     protected int actualHeight;
 
     protected static final int maxWidth = 120;
@@ -55,7 +55,7 @@ abstract public class BuilderNode {
     }
 
     /**
-     * Add a child to the node data.
+     * Add a child to this node and create a new trigger for it.
      * @param nodeData The child data.
      */
     public void addChild(NodeData nodeData) {
@@ -66,9 +66,9 @@ abstract public class BuilderNode {
     }
 
     /**
-     * Add a child to the node data.
+     * Add a child to the node data. The index
      * @param nodeData The child data.
-     * @param index The option index.
+     * @param index The index of the associated trigger.
      */
     public void addChild(NodeData nodeData, int index) {
         if (!this.getNodeData().isChild(nodeData)) {
@@ -78,7 +78,7 @@ abstract public class BuilderNode {
     }
 
     /**
-     * Calculate the width of the node.
+     * Adjust the width of this node to fit this text.
      * @param text The text to adjust width to.
      */
     protected void adjustWidth(String text) {
@@ -105,18 +105,16 @@ abstract public class BuilderNode {
         this.functionBarHeight = defaultTextHeight * numOfFunctionLines;
 
         // Setting options bar height
-        this.optionsBarHeight = new int[getOptionsNames().length+1];
-        for (int i = 0; i < getOptionsNames().length; i++) {
-            List<FormattedCharSequence> trimmedOption = minecraft.font.split(new TextComponent(getOptionsNames()[i]), this.width-4);
-            optionsBarHeight[i] = defaultTextHeight*trimmedOption.size();
+        String[] connectionNames = getConnectionNames();
+        this.connectionBarsHeights = new int[connectionNames.length+1];
+        this.actualHeight = 0;
+        for (int i = 0; i < connectionNames.length; i++) {
+            List<FormattedCharSequence> trimmedOption = minecraft.font.split(new TextComponent(connectionNames[i]), this.width-4);
+            connectionBarsHeights[i] = defaultTextHeight * Math.max(trimmedOption.size(), 1);
+            actualHeight += connectionBarsHeights[i] + 1;
         }
-        optionsBarHeight[getOptionsNames().length] = defaultTextHeight;
-
-        this.actualHeight = 1+nameBarHeight+1+functionBarHeight+1;
-        for (int optionHeight : optionsBarHeight) {
-            actualHeight += optionHeight + 1;
-        }
-        actualHeight += 1;
+        connectionBarsHeights[getConnectionNames().length] = defaultTextHeight;
+        this.actualHeight += 1+nameBarHeight+1+functionBarHeight+1+defaultTextHeight+1;
     }
 
     /**
@@ -124,35 +122,30 @@ abstract public class BuilderNode {
      * @return True if connecting nodes.
      */
     public boolean checkIfConnectingNodes() {
-        if (this.builderScreen.getSelectedNode() != null) {
-            if (builderScreen.getSelectedNodeIndex() > 0) {
-                // With a selection index of -1 in the dialogue builder screen,
-                // that means we are setting this as its new option
-                this.setParent(builderScreen.getSelectedNode());
-                builderScreen.setSelectedNode(null, 0);
-                return true;
+        BuilderNode selectedNode = this.builderScreen.getSelectedNode();
+        if (selectedNode != null) {
+            int index = this.builderScreen.getSelectedNodeIndex();
+            if (index >= 0 || index == -1) {
+                // If the index is -1, then set the selected node as the parent of the original node.
+                if (index == -1) {
+                    this.builderScreen.setSelectedNode(selectedNode, selectedNode.getConnectionNames().length);
+                }
+                this.setParent(selectedNode);
             }
-            else if (builderScreen.getSelectedNodeIndex() == 0) {
-                // Otherwise if the selection index is 0,
+            else if (index == -2){
+                if (selectedNode.isInit())
+                    return false;
+                // if the index is -2,
                 // we need to set the selected node's parent to this.
-                builderScreen.getSelectedNode().setParent(this);
-                builderScreen.setSelectedNode(null, 0);
-                return true;
+                this.builderScreen.setSelectedNode(selectedNode, selectedNode.getConnectionNames().length);
+                selectedNode.setParent(this);
             }
+            builderScreen.setSelectedNode(null, 0);
+            return true;
         }
         return false;
     }
 
-    /**
-     * Check if nodes are clicked on.
-     * @param mouseX The mouse x position.
-     * @param mouseY The mouse y position.
-     * @param button The mouse button.
-     * @param offsetX The x offset.
-     * @param offsetY The y offset.
-     * @param scrollX The scroll x position.
-     * @param scrollY The scroll y position.
-     */
     abstract public void clickedOn(double mouseX, double mouseY, int button, int offsetX, int offsetY, double scrollX, double scrollY);
 
 
@@ -176,9 +169,6 @@ abstract public class BuilderNode {
         }
     }
 
-    /**
-     * Edit Function.
-     */
     public void clickedOnFunctionBar() {
         builderScreen.setNodeBeingEdited(this, TreeBuilderScreen.EditType.FUNCTION);
     }
@@ -209,19 +199,19 @@ abstract public class BuilderNode {
      */
     public void clickedOnSelectIcon(int index) {
         if (builderScreen.allNodes.contains(this)) {
-            if (index == 0) {
+            if (index == -2) {
                 this.builderScreen.setSelectedNode(this, index);
                 this.setParent(null);
             }
             else if (index == -1) {
-                this.builderScreen.setSelectedNode(this, getOptionsNames().length+1);
+                this.builderScreen.setSelectedNode(this, getConnectionNames().length);
             }
             else {
                 for (BuilderNode builderNode : builderScreen.allNodes) {
-                    if (builderNode.getName().equals(this.getOptionsNames()[index - 1])) {
+                    if (builderNode.getName().equals(this.getConnectionNames()[index - 1])) {
                         if (builderNode.parent != null && builderNode.parent.equals(this)) {
                             builderNode.setParent(null);
-                            this.builderScreen.setSelectedNode(this, getOptionsNames().length + 1);
+                            this.builderScreen.setSelectedNode(this, getConnectionNames().length);
                             break;
                         }
                     }
@@ -230,12 +220,6 @@ abstract public class BuilderNode {
         }
     }
 
-    /**
-     * Draw the node.
-     * @param matrixStack The PoseStack.
-     * @param scrollX The scroll x position.
-     * @param scrollY The scroll y position.
-     */
     public void draw(PoseStack matrixStack, double scrollX, double scrollY) {
         matrixStack.pushPose();
         matrixStack.translate(scrollX, scrollY, 0);
@@ -268,7 +252,7 @@ abstract public class BuilderNode {
     }
 
     /**
-     * Draw the extra rectangles.
+     * Draw the extra rectangles for a specific subclass.
      * @param matrixStack The PoseStack.
      * @param minY The minimal y point.
      * @return The new minY.
@@ -276,7 +260,7 @@ abstract public class BuilderNode {
     abstract protected int drawExtraRectangles(PoseStack matrixStack, int minY);
 
     /**
-     * Draw the extra text lines.
+     * Draw the extra text lines for a subclass.
      * @param matrixStack The PoseStack.
      * @param minY The minimal y point.
      * @return The new minY.
@@ -316,13 +300,13 @@ abstract public class BuilderNode {
      * @param minY The height to start drawing from.
      */
     protected void drawOptionsText(PoseStack matrixStack, int minY) {
-        for (int i = 0; i < getOptionsNames().length; i++) {
-            minY += (i > 0 ? optionsBarHeight[i - 1] : 0) + 1;
+        for (int i = 0; i < getConnectionNames().length; i++) {
+            minY += (i > 0 ? connectionBarsHeights[i - 1] : 0) + 1;
 
-            drawMultilineText(matrixStack, getOptionsNames()[i], minY, false);
+            drawMultilineText(matrixStack, getConnectionNames()[i], minY, false);
         }
-        if (getOptionsNames().length > 0) {
-            minY += optionsBarHeight[optionsBarHeight.length - 1] + 1;
+        if (getConnectionNames().length > 0) {
+            minY += connectionBarsHeights[connectionBarsHeights.length - 1] + 1;
         } else {
             minY += 1;
         }
@@ -360,8 +344,8 @@ abstract public class BuilderNode {
         fill(matrixStack, 1, minY, width-1, minY+1, black);
 
         // Options bars
-        for (int i = 0; i < getOptionsNames().length; i++) {
-            minY += 1+optionsBarHeight[i];
+        for (int i = 0; i < getConnectionNames().length; i++) {
+            minY += 1+ connectionBarsHeights[i];
             fill(matrixStack, 1, minY,
                     width-1, minY+1, black);
         }
@@ -374,23 +358,13 @@ abstract public class BuilderNode {
      * @param y The y position.
      * @param isEmpty If the text is empty.
      */
-    protected void drawSinglelineText(PoseStack matrixStack, String text, int y, boolean isEmpty) {
+    protected void drawSingleLineText(PoseStack matrixStack, String text, int y, boolean isEmpty) {
         minecraft.font.draw(matrixStack, text, 3, y+2, isEmpty ? 0xFFBBBBBB : 0x000000);
     }
 
-    /**
-     * Test for equality.
-     * @param o The object to compare to.
-     * @return boolean.
-     */
     @Override
     abstract public boolean equals(Object o);
 
-    /**
-     * Find the child at index.
-     * @param index The index of the child node.
-     * @return The child node.
-     */
     @Nullable
     protected BuilderNode findChild(int index){
         NodeData child = this.getNodeData().getChildren()[index];
@@ -400,6 +374,24 @@ abstract public class BuilderNode {
             }
         }
         return null;
+    }
+
+    public int[] getConnectionBarsHeights() {
+        return this.connectionBarsHeights;
+    }
+
+    /**
+     * The connection bars are the last bars in a node. Each one represents the connection name to another
+     * node. In Dialogues, the name of the connection matches the name of the child dialogue. In Behaviors,
+     * the name of the connection is entirely separate, as not each connection requires a behavior.
+     * @return The string array of connection names.
+     */
+    public String[] getConnectionNames() {
+        String[] options = new String[this.getNodeData().getChildren().length];
+        for (int i = 0; i < options.length; i++) {
+            options[i] = this.getNodeData().getChildren()[i].getName();
+        }
+        return options;
     }
 
     /**
@@ -415,103 +407,51 @@ abstract public class BuilderNode {
         return new int[]{x, y};
     }
 
-    /**
-     * Get the function of the node.
-     * @return The function.
-     */
     public String getFunction() {
         return this.getNodeData().getFunction();
     }
 
-    /**
-     * Get the height of the node.
-     * @return The height.
-     */
     public int getHeight() {
         return actualHeight;
     }
 
-    /**
-     * Get the name of the node.
-     * @return The name.
-     */
     public String getName() {
         return this.getNodeData().getName();
     }
 
-    /**
-     * Get the node data of the node.
-     * @return The node data.
-     */
     abstract public NodeData getNodeData();
 
-    /**
-     * Get the number of extra fields in this node.
-     * @return the number of fields.
-     */
     abstract public int getNumExtraFields();
 
     /**
-     * Get the options bar height.
-     * @return The height.
-     */
-    public int[] getOptionsBarHeight() {
-        return this.optionsBarHeight;
-    }
-
-    /**
-     * The displayed text for an option.
-     * @return The string array of options.
-     */
-    public String[] getOptionsNames() {
-        String[] options = new String[this.getNodeData().getChildren().length];
-        for (int i = 0; i < options.length; i++) {
-            options[i] = this.getNodeData().getChildren()[i].getName();
-        }
-        return options;
-    }
-
-    /**
      * Calculate the point for this Node's nth start point icon.
-     * @return the starting point to the right of the option index.
+     * @param index the index of the connection.
+     * @return the starting point to the right of the connection index.
      */
-    public int[] getStartPointLocation(int option) {
+    public int[] getStartPointLocation(int index) {
         int x = width+4;
         int minY = 2+nameBarHeight+1+functionBarHeight;
         for (int height : extraFieldsHeight) {
             minY += height + 1;
         }
-        for (int i = 0; i < option; i++) {
-            minY += 1+optionsBarHeight[i];
+        for (int i = 0; i < index; i++) {
+            minY += 1+ connectionBarsHeights[i];
         }
-        int y = minY+1+(optionsBarHeight[option]/2)-4;
+        int y = minY+1+(connectionBarsHeights[index]/2)-4;
         return new int[]{x, y};
     }
 
-    /**
-     * Get the width of the node.
-     * @return The width.
-     */
     public int getWidth() {
         return width;
     }
 
-    /**
-     * Get the x position of the node.
-     * @return The x position.
-     */
     public int getX() {
         return x;
     }
 
-    /**
-     * Get the y position of the node.
-     * @return The y position.
-     */
     public int getY() {
         return y;
     }
-
 
     public boolean isDragging() {
         return dragging;
@@ -551,7 +491,6 @@ abstract public class BuilderNode {
     public void remove() {
         if (builderScreen.allNodes.contains(this)) {
             setParent(null);
-
             builderScreen.allNodes.remove(this);
         }
     }
@@ -577,31 +516,16 @@ abstract public class BuilderNode {
         this.y = Mth.clamp(y, 0, builderScreen.maxY);
     }
 
-    /**
-     * Set the width of the node.
-     * @param width The width.
-     */
     private void setWidth(int width) {
         this.width = Math.min(Math.max(50, width), maxWidth);
     }
 
-    /**
-     * Set the parent of this node.
-     * @param node The new parent.
-     */
     abstract public void setParent(@Nullable BuilderNode node);
-    /**
-     * Stop the dragging.
-     */
+
     public void stopDragging() {
         dragging = false;
     }
 
-
-    /**
-     * Convert the node to a string.
-     * @return The string.
-     */
     @Override
     public String toString() {
         return "BuilderNode{" +

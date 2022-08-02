@@ -33,7 +33,6 @@ public class CCallTrigger {
       ServerPlayer sender = ctx.get().getSender();
       Entity entity  = sender.level.getEntity(msg.entityid);
       if (entity instanceof NpcEntity){
-        Main.LOGGER.info("Triggering");
         NpcEntity npcEntity = (NpcEntity) entity;
         npcEntity.trigger(msg.triggerName);
       }

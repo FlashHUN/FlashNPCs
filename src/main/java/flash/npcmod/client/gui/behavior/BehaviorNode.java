@@ -10,11 +10,14 @@ import flash.npcmod.client.gui.screen.TreeBuilderScreen;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static net.minecraft.client.gui.GuiComponent.blit;
 import static net.minecraft.client.gui.GuiComponent.fill;
@@ -46,9 +49,6 @@ public class BehaviorNode extends BuilderNode {
         setParent(parent);
     }
 
-    /**
-     * Calculate the width and height of the background color.
-     */
     public void calculateDimensions() {
         String dialogueName = getDialogueName();
         adjustWidth(dialogueName);
@@ -61,17 +61,6 @@ public class BehaviorNode extends BuilderNode {
         actualHeight += this.extraFieldsHeight[1] + 1;
     }
 
-    /**
-     * Check if this node was clicked on.
-     *
-     * @param mouseX  Mouse position.
-     * @param mouseY  Mouse position.
-     * @param button  The mouse button.
-     * @param offsetX The screen offset.
-     * @param offsetY The screen offset.
-     * @param scrollX The screen scroll.
-     * @param scrollY The screen scroll.
-     */
     public void clickedOn(double mouseX, double mouseY, int button, int offsetX, int offsetY, double scrollX, double scrollY) {
         if (isVisible(scrollX, scrollY)) {
             double minX = offsetX + 9 + (scrollX + x);
@@ -105,23 +94,23 @@ public class BehaviorNode extends BuilderNode {
                     return;
                 } else {
                     double optionMinY = minY + functionBarHeight + 1;
-                    if (getOptionsNames().length > 0) {
+                    if (getConnectionNames().length > 0) {
                         int optionIndex = -2;
-                        for (int i = 0; i < getOptionsNames().length + 1; i++) {
-                            if (optionsBarHeight.length > i) {
-                                if (mouseY >= optionMinY && mouseY <= optionMinY + optionsBarHeight[i] + (i == 0 ? 0 : 2)) {
+                        for (int i = 0; i < getConnectionNames().length + 1; i++) {
+                            if (connectionBarsHeights.length > i) {
+                                if (mouseY >= optionMinY && mouseY <= optionMinY + connectionBarsHeights[i] + (i == 0 ? 0 : 2)) {
                                     optionIndex = i;
                                     break;
                                 }
-                                optionMinY += optionsBarHeight[i] + 1;
+                                optionMinY += connectionBarsHeights[i] + 1;
                             }
                         }
 
-                        if (optionIndex == getOptionsNames().length) {
+                        if (optionIndex == getConnectionNames().length) {
                             optionIndex = -1;
                         }
 
-                        if (optionIndex >= -1 && optionIndex < getOptionsNames().length) {
+                        if (optionIndex >= -1 && optionIndex < getConnectionNames().length) {
                             clickedOnOptionBar(optionIndex, button);
                             return;
                         }
@@ -138,22 +127,22 @@ public class BehaviorNode extends BuilderNode {
                     int[] xy = getEndPointLocation();
                     minY = offsetY + 18 + 1 + (scrollY + y);
                     if (mouseY >= minY + xy[1] && mouseY <= minY + xy[1] + 8) {
-                        clickedOnSelectIcon(0);
+                        clickedOnSelectIcon(-2);
                         return;
                     }
                 }
                 if (mouseX >= maxX + 4 && mouseX <= maxX + 4 + 8) {
                     minY = offsetY + 18 + 1 + (scrollY + y);
                     // Select current option
-                    for (int i = 0; i < getOptionsNames().length; i++) {
+                    for (int i = 0; i < getConnectionNames().length; i++) {
                         int[] xy = getStartPointLocation(i);
                         if (mouseY >= minY + xy[1] && mouseY <= minY + xy[1] + 8) {
-                            clickedOnSelectIcon(i + 1);
+                            clickedOnSelectIcon(i);
                             return;
                         }
                     }
                     // Select new option
-                    int[] xy = getStartPointLocation(getOptionsNames().length);
+                    int[] xy = getStartPointLocation(getConnectionNames().length);
                     if (mouseY >= minY + xy[1] && mouseY <= minY + xy[1] + 8) {
                         clickedOnSelectIcon(-1);
                         return;
@@ -212,30 +201,41 @@ public class BehaviorNode extends BuilderNode {
 
     /**
      * When clicked on a select icon (the icon in front of the text or the icons next to the children options),
-     * select this node in the dialogue builder screen,
+     * select this node in the behavior builder screen,
      */
     @Override
     public void clickedOnSelectIcon(int index) {
         if (builderScreen.allNodes.contains(this)) {
-            if (index == 0) {
-                this.builderScreen.setSelectedNode(this, index);
-                this.setParent(null);
+            if (index == -2) { // end point select icon
+                if (this.builderScreen.getSelectedNode() != null) {
+                    this.setParent(this.builderScreen.getSelectedNode(), this.builderScreen.getSelectedNodeIndex());
+                    this.builderScreen.setSelectedNode(null, 0);
+                } else {
+                    this.builderScreen.setSelectedNode(this, index);
+                    this.setParent(null);
+
+                }
             }
-            else if (index == -1) {
-                this.builderScreen.setSelectedNode(this, getOptionsNames().length+1);
+            else if (index == -1) { // last select icon
+                if (this.builderScreen.getSelectedNode() != null) {
+                    ((BehaviorNode) this.builderScreen.getSelectedNode()).setParent(this, this.nodeData.getTriggers().length);
+                    this.builderScreen.setSelectedNode(null, 0);
+                } else {
+                    this.builderScreen.setSelectedNode(this, getConnectionNames().length);
+                }
             }
             else {
+                // Disconnect the child and avoid using setParent otherwise the trigger being edited will be removed.
                 for (BuilderNode builderNode : builderScreen.allNodes) {
-                    if (builderNode.getName().equals(this.getOptionsNames()[index - 1])) {
+                    if (builderNode.getName().equals(this.getConnectionNames()[index])) {
                         if (builderNode.parent != null && builderNode.parent.equals(this)) {
                             builderNode.setParent(null);
                             break;
                         }
                     }
                 }
-                // if connecting nodes, set the parent. Otherwise, select that trigger.
                 if (this.builderScreen.getSelectedNode() != null) {
-                    ((BehaviorNode) this.builderScreen.getSelectedNode()).setParent(this, index-1);
+                    ((BehaviorNode) this.builderScreen.getSelectedNode()).setParent(this, index);
                     this.builderScreen.setSelectedNode(null, 0);
                 } else {
                     this.builderScreen.setSelectedNode(this, index);
@@ -245,7 +245,7 @@ public class BehaviorNode extends BuilderNode {
     }
 
     /**
-     * Draw the extra text lines.
+     * Draw the extra texts added by this subclass.
      * @param matrixStack The PoseStack.
      * @param minY The minimal y point.
      * @return The new minY.
@@ -254,18 +254,18 @@ public class BehaviorNode extends BuilderNode {
     protected int drawExtraTexts(PoseStack matrixStack, int minY) {
         // Draw File
         String file = getDialogueName();
-        drawSinglelineText(matrixStack, file.isEmpty() ? "Dialogue" : file, minY, file.isEmpty());
+        drawSingleLineText(matrixStack, file.isEmpty() ? "Dialogue" : file, minY, file.isEmpty());
         minY += extraFieldsHeight[0] + 1;
         // Draw Action
         String action = getActionName();
-        drawSinglelineText(matrixStack, action.isEmpty() ? "Action" : action, minY, action.isEmpty());
+        drawSingleLineText(matrixStack, action.isEmpty() ? "Action" : action, minY, action.isEmpty());
         minY += extraFieldsHeight[1] + 1;
 
         return minY;
     }
 
     /**
-     * Draw the extra rectangles.
+     * Draw the rectangles for the extra texts added by this subclass.
      * @param matrixStack The PoseStack.
      * @param minY The minimal y point.
      * @return The new minY.
@@ -283,10 +283,6 @@ public class BehaviorNode extends BuilderNode {
         return minY;
     }
 
-    /**
-     * Draw the end and start point icons.
-     * @param matrixStack PoseStack
-     */
     @Override
     protected void drawIcons(PoseStack matrixStack) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -297,7 +293,7 @@ public class BehaviorNode extends BuilderNode {
         blit(matrixStack, -9, -9, 7, 7, 8, 0, 7, 7, 256, 256);
 
         // Text icon
-        if (!isStart() || (this.equals(builderScreen.getSelectedNode()) && builderScreen.getSelectedNodeIndex() == 0)) {
+        if (!isStart() || (this.equals(builderScreen.getSelectedNode()) && builderScreen.getSelectedNodeIndex() == -2)) {
             int[] xy = getEndPointLocation();
             blit(matrixStack, xy[0], xy[1], 8, 8, 0, 0, 8, 8, 256, 256);
         }
@@ -311,8 +307,10 @@ public class BehaviorNode extends BuilderNode {
 
             matrixStack.translate(-x, -y, 0);
 
-            int index = Arrays.asList(parent.getNodeData().getChildren()).indexOf(this.getNodeData());
-            if (index >= 0 && index < parent.getOptionsBarHeight().length) {
+            Trigger[] triggers = ((Behavior) parent.getNodeData()).getTriggers();
+
+            int index = Arrays.stream(triggers).map(Trigger::getNextBehaviorName).collect(Collectors.toList()).indexOf(this.getNodeData());
+            if (index >= 0 && index < parent.getConnectionBarsHeights().length) {
                 int[] xy = parent.getStartPointLocation(index);
                 blit(matrixStack, xy[0], xy[1], 8, 8, 0, 0, 8, 8, 256, 256);
             }
@@ -322,7 +320,7 @@ public class BehaviorNode extends BuilderNode {
         // Option Icons on this
         matrixStack.pushPose();
         {
-            for (int i = 0; i < optionsBarHeight.length; i++) {
+            for (int i = 0; i < connectionBarsHeights.length; i++) {
                 int[] xy = getStartPointLocation(i);
                 blit(matrixStack, xy[0], xy[1], 8, 8, 0, 0, 8, 8, 256, 256);
             }
@@ -338,14 +336,14 @@ public class BehaviorNode extends BuilderNode {
     protected void drawLinesToParent(PoseStack matrixStack) {
         if (parent != null) {
             int index = 0;
-            for (int i = 0; i < parent.getOptionsNames().length; i++) {
-                if (parent.getOptionsNames()[i].equals(getName())) {
+            for (int i = 0; i < parent.getConnectionNames().length; i++) {
+                if (parent.getConnectionNames()[i].equals(getName())) {
                     index = i + 1;
                     break;
                 }
             }
 
-            if (index > 0 && index < parent.getOptionsNames().length + 1) {
+            if (index > 0 && index < parent.getConnectionNames().length + 1) {
                 int[] thisXY = getEndPointLocation();
                 int[] parentXY = parent.getStartPointLocation(index - 1);
 
@@ -382,16 +380,14 @@ public class BehaviorNode extends BuilderNode {
     @Override
     protected void drawOptionsText(PoseStack matrixStack, int minY) {
         Trigger[] triggers = this.getNodeData().getTriggers();
-        String[] triggerNames = new String[triggers.length];
-        for (int i = 0; i < triggers.length; i++) triggerNames[i] = triggers[i].getName();
+        List<String> triggerNames = Arrays.stream(triggers).map(Trigger::getName).collect(Collectors.toList());
 
-        for (int i = 0; i < triggerNames.length; i++) {
-            minY += (i > 0 ? optionsBarHeight[i - 1] : 0) + 1;
-
-            drawMultilineText(matrixStack, triggerNames[i], minY, false);
+        for (int i = 0; i < triggerNames.size(); i++) {
+            minY += (i > 0 ? connectionBarsHeights[i - 1] : 0) + 1;
+            drawMultilineText(matrixStack, triggerNames.get(i), minY, false);
         }
-        if (triggerNames.length > 0) {
-            minY += optionsBarHeight[optionsBarHeight.length - 1] + 1;
+        if (triggerNames.size() > 0) {
+            minY += connectionBarsHeights[connectionBarsHeights.length - 1] + 1;
         } else {
             minY += 1;
         }
@@ -412,83 +408,44 @@ public class BehaviorNode extends BuilderNode {
         return x == that.x && y == that.y && width == that.width && actualHeight == that.actualHeight && nodeData.equals(that.nodeData);
     }
 
-    /**
-     * Get the action name.
-     * @return Action name.
-     */
     public String getActionName() {
         return nodeData.getAction().getName();
     }
 
-    /**
-     * Get the dialogue name.
-     * @return The dialogue name.
-     */
     public String getDialogueName() {
         return nodeData.getDialogueName();
     }
 
-    /**
-     * Get the trigger currently being edited.
-     * @return The trigger.
-     */
     public Trigger getEditTrigger() {
         if (this.editTriggerIndex == -1) return null;
         return nodeData.getTriggers()[this.editTriggerIndex];
     }
 
-    /**
-     * Get the node data of the node.
-     * @return The node data.
-     */
     @Override
     public Behavior getNodeData() {
         return nodeData;
     }
 
-    /**
-     * The number of extra fields.
-     * @return int.
-     */
     public int getNumExtraFields() {
         return NUM_EXTRA_FIELDS;
     }
 
-    /**
-     * The displayed text for an option.
-     *
-     * @return The string array of options.
-     */
     @Override
-    public String[] getOptionsNames() {
+    public String[] getConnectionNames() {
         Trigger[] triggers = this.getNodeData().getTriggers();
-        String[] options = new String[triggers.length];
-        for (int i = 0; i < triggers.length; i++) options[i] = triggers[i].getNextBehaviorName();
+        String [] options = new String[triggers.length];
+        Arrays.stream(triggers).map(Trigger::getNextBehaviorName).collect(Collectors.toList()).toArray(options);
         return options;
     }
 
-    /**
-     * Check if this node is a top level node.
-     * @return True if name is init.
-     */
     public boolean isStart() {
         return getName().equals(ClientBehaviorUtil.INIT_BEHAVIOR_NAME);
     }
 
-
-    /**
-     * Test if this node is currently editing a trigger.
-     * @return boolean.
-     */
     public boolean isEditingTrigger() {
         return this.editTriggerIndex != -1;
     }
 
-    /**
-     * Remove child from this node.
-     *
-     * @param childData The child data.
-     */
     @Override
     public void removeChild(NodeData childData) {
         if (this.nodeData.isChild(childData)) {
@@ -498,14 +455,10 @@ public class BehaviorNode extends BuilderNode {
                     trigger.setNextBehaviorName("");
                 }
             }
-            calculateDimensions();
         }
+        calculateDimensions();
     }
 
-    /**
-     * Set the parent to a new node.
-     * @param node The new parent.
-     */
     @Override
     public void setParent(@Nullable BuilderNode node) {
         if (!this.equals(node)) {
@@ -516,10 +469,7 @@ public class BehaviorNode extends BuilderNode {
                 if (this.builderScreen.getSelectedNode() == null) {
                     node.addChild(this.getNodeData());
                 } else {
-                    if (this.builderScreen.getSelectedNodeIndex() > 0)
-                        node.addChild(this.getNodeData(), this.builderScreen.getSelectedNodeIndex()-1);
-                    else
-                        node.addChild(this.getNodeData(), this.builderScreen.getSelectedNodeIndex());
+                    node.addChild(this.getNodeData(), this.builderScreen.getSelectedNodeIndex());
                 }
             }
             this.parent = node;
@@ -527,10 +477,6 @@ public class BehaviorNode extends BuilderNode {
         }
     }
 
-    /**
-     * Set the parent to a new node.
-     * @param node The new parent.
-     */
     public void setParent(@Nullable BuilderNode node, int index) {
         if (!this.equals(node)) {
             if (parent != null) {
@@ -544,26 +490,14 @@ public class BehaviorNode extends BuilderNode {
         }
     }
 
-    /**
-     * Replace the currently edited trigger.
-     * @param newTrigger The new trigger.
-     */
     public void setEditTrigger(Trigger newTrigger) {
         this.getNodeData().setTrigger(this.editTriggerIndex, newTrigger);
     }
 
-    /**
-     * Replace the currently edited index.
-     * @param index the new index.
-     */
     public void setEditTriggerIndex(int index) {
         this.editTriggerIndex = index;
     }
 
-    /**
-     * Update the Trigger's nextBehaviorName.
-     * @param newName The new name.
-     */
     public void updateTriggerChild(String oldName, String newName) {
         for (Trigger trigger: this.getNodeData().getTriggers()) {
             if (trigger.getNextBehaviorName().equals(oldName)) {

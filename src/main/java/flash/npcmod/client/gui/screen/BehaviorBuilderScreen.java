@@ -262,9 +262,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.triggerTypeDropdownWidget = this.addRenderableWidget(
                 new DropdownWidget<>(
                         Trigger.TriggerType.DIALOGUE_TRIGGER,
-                        getWidgetWidth(-1, this.width, null, 20),
-                        getWidgetHeight((numRows / 2)-1, this.height, null),
-                        120
+                        getWidgetWidth(0, this.width, null, 20),
+                        getWidgetHeight(-2, this.height, null),
+                        120,
+                        3
                 )
         );
         this.triggerTypeDropdownWidget.visible = false;
@@ -347,9 +348,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         int numCols = getNumWidgetCols(this.width, 30);
         colWidths = new int[numCols];
         Arrays.fill(colWidths, 32);
-        int indexWidth = (numCols / 2) - 1;
-        colWidths[indexWidth + 1] = 32; //Reserve space for the block pos text.
+        int indexWidth = (numCols / 2);
+        colWidths[indexWidth] = 34; //Reserve space for the block pos text.
         indexHeight = (numRows / 2) - 1;
+        indexWidth -= 2;
         EditBox targetBlockXField = this.addRenderableWidget(
                 new EditBox(
                         this.font,
@@ -410,8 +412,8 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         targetBlockZField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockZField);
 
-        if (npcEntity != null) {
-            BlockPos blockPos = npcEntity.getOrigin();
+        if (this.npcEntity != null) {
+            BlockPos blockPos = this.npcEntity.getOrigin();
             actionFields.get(0).setValue(String.valueOf(blockPos.getX()));
             actionFields.get(1).setValue(String.valueOf(blockPos.getX()));
             actionFields.get(2).setValue(String.valueOf(blockPos.getX()));
@@ -419,7 +421,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
 
         // Set up the radius field.
 
-        indexWidth = (numCols / 2) - 1;
+        indexWidth = (numCols / 2) - 2;
         EditBox radiusField = this.addRenderableWidget(
                 new EditBox(
                         this.font,
@@ -489,13 +491,20 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                         while (allNames.contains(name)) {
                             name = "newBehaviorNode" + count++;
                         }
-                        if (getSelectedNode() != null && getSelectedNodeIndex() == 0) {
-                            newNode = new BehaviorNode(null, this, this.minecraft, Behavior.newBehavior());
+                        BlockPos blockPos = BlockPos.ZERO;
+                        if (this.npcEntity != null) {
+                            blockPos = this.npcEntity.blockPosition();
+                        }
+                        if (getSelectedNode() != null && getSelectedNodeIndex() == -2) {
+                            newNode = new BehaviorNode(null, this, this.minecraft, Behavior.newBehavior(blockPos));
+                            newNode.getNodeData().setName(name);
                             newNode.addChild(getSelectedNode().getNodeData());
                             getSelectedNode().setParent(newNode);
                         } else {
-                            newNode = new BehaviorNode(this.selectedNode, this, this.minecraft, Behavior.newBehavior());
+                            newNode = new BehaviorNode(this.selectedNode, this, this.minecraft, Behavior.newBehavior(blockPos));
+                            newNode.getNodeData().setName(name);
                         }
+
                         newNode.setPosition((int) (-this.scrollX + mouseX - 9), (int) (-this.scrollY + mouseY - 18));
                         if (getSelectedNode() == null || !getSelectedNode().getName().equals(newNode.getName())) {
                             this.allNodes.add(newNode);
@@ -559,7 +568,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             int numCols = getNumWidgetCols(this.width, 30);
             int[] colWidths = new int[numCols];
             Arrays.fill(colWidths, 32);
-            colWidths[(numCols / 2) - 1] = 18;
+            colWidths[(numCols / 2) - 1] = 28;
             int numRows = getNumWidgetRows(this.height);
             numRows = (numRows / 2);
             int textHeightOffset = 5; // This lines up the text with the edit boxes a little better.
@@ -567,7 +576,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                     matrixStack,
                     font,
                     "Block Pos:",
-                    getWidgetWidth(numCols / 2, this.width, colWidths, 0),
+                    getWidgetWidth((numCols / 2)-1, this.width, colWidths, 0),
                     getWidgetHeight(numRows - 1, this.height, null) + textHeightOffset,
                     0xFFFFFF
             );
@@ -575,7 +584,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                     matrixStack,
                     font,
                     "Radius:",
-                    getWidgetWidth(numCols / 2, this.width, colWidths, 0),
+                    getWidgetWidth((numCols / 2)-1, this.width, colWidths, 0),
                     getWidgetHeight(numRows - 2, this.height, null) + textHeightOffset,
                     0xFFFFFF
             );
@@ -584,6 +593,33 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                     matrixStack,
                     font,
                     "Name:",
+                    getWidgetWidth(1, this.width, colWidths, 0),
+                    getWidgetHeight(0, this.height, null) + textHeightOffset,
+                    0xFFFFFF
+            );
+        } else if (triggerChildField.isVisible()) {
+            int[] colWidths = {120,22};
+            int textHeightOffset = 5; // This lines up the text with the edit boxes a little better.
+            drawString(
+                    matrixStack,
+                    font,
+                    "Name:",
+                    getWidgetWidth(1, this.width, colWidths, 0),
+                    getWidgetHeight(2, this.height, null) + textHeightOffset,
+                    0xFFFFFF
+            );
+            drawString(
+                    matrixStack,
+                    font,
+                    "Timer:",
+                    getWidgetWidth(1, this.width, colWidths, 0),
+                    getWidgetHeight(1, this.height, null) + textHeightOffset,
+                    0xFFFFFF
+            );
+            drawString(
+                    matrixStack,
+                    font,
+                    "Node:",
                     getWidgetWidth(1, this.width, colWidths, 0),
                     getWidgetHeight(0, this.height, null) + textHeightOffset,
                     0xFFFFFF
@@ -598,23 +634,19 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     protected void sendCEdit() {
         JsonObject behaviorJson = buildNodeDataJSON();
         JsonObject behaviorEditorJSON = buildEditorJSON();
+        int id = -1000;
+        if (this.npcEntity != null) {
+            id = this.npcEntity.getId();
+        }
         PacketDispatcher.sendToServer(new CEditBehavior(
-                this.fileName, this.npcEntity.getId(), behaviorJson.toString(), behaviorEditorJSON.toString()));
+                this.fileName, id, behaviorJson.toString(), behaviorEditorJSON.toString()));
     }
 
-    /**
-     * Set the editing node.
-     * @param node The editing node.
-     */
     @Override
     protected void setEditingNode(BuilderNode node) {
         this.editingNode = (BehaviorNode) node;
     }
 
-    /**
-     * Set a new Action name.
-     * @param s The new name.
-     */
     protected void setNewActionName(String s) {
         if (!s.isEmpty()) {
             this.newActionName = s;
@@ -622,10 +654,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         } else this.confirmButton.active = false;
     }
 
-    /**
-     * Set a new Dialogue name.
-     * @param s The new dialogue name.
-     */
     protected void setNewDialogueName(String s) {
         if (!s.isEmpty()) {
             this.newDialogueName = s;
@@ -633,20 +661,12 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         } else this.confirmButton.active = false;
     }
 
-    /**
-     * Set a new Trigger child.
-     * @param s The new trigger child.
-     */
     protected void setNewTriggerChild(String s) {
         if (!s.isEmpty()) {
             this.newTriggerChild = s;
         }
     }
 
-    /**
-     * Set a new Trigger name.
-     * @param s The new trigger name.
-     */
     protected void setNewTriggerName(String s) {
         if (!s.isEmpty()) {
             this.newTriggerName = s;
@@ -654,11 +674,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         } else this.confirmButton.active = false;
     }
 
-    /**
-     * Set `node` as being edited and set the edit type.
-     * @param node The node.
-     * @param editType The edit type.
-     */
     @Override
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         super.setNodeBeingEdited(node, editType);
@@ -695,20 +710,9 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         } else {
             this.triggerChildField.setValue("");
             this.triggerTimerField.setValue("0");
-            if (npcEntity != null) {
-                //TODO Change Action defaults to initialize to entity position instead of 0,0,0. Below doesnt work
-
-                Main.LOGGER.info("Setting to npc position " + this.npcEntity.blockPosition());
-                actionFields.get(0).setValue(String.valueOf(this.npcEntity.getBlockX()));
-                actionFields.get(1).setValue(String.valueOf(this.npcEntity.getBlockY()));
-                actionFields.get(2).setValue(String.valueOf(this.npcEntity.getBlockZ()));
-            } else {
-                Main.LOGGER.info("No npc position");
-                actionFields.get(0).setValue("0");
-                actionFields.get(1).setValue("0");
-                actionFields.get(2).setValue("0");
-            }
-
+            actionFields.get(0).setValue("0");
+            actionFields.get(1).setValue("0");
+            actionFields.get(2).setValue("0");
             actionFields.get(3).setValue("0");
         }
 
@@ -721,22 +725,13 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.confirmButton.active = true;
         }
     }
-    /**
-     * Set the selected node and the selected option index of it.
-     *
-     * @param node              The node to select.
-     * @param selectedNodeIndex The index of it.
-     */
+
+
     public void setSelectedNode(@Nullable BuilderNode node, int selectedNodeIndex) {
         this.selectedNode = (BehaviorNode) node;
         this.selectedNodeIndex = selectedNodeIndex;
     }
 
-
-    /**
-     * Called every `tick`. Updates the screen and all fields. Clears the queued for removal nodes, and checks for
-     * conflicting names.
-     */
     @Override
     public void tick() {
         super.tick();

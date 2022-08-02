@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.node.NodeData;
 import flash.npcmod.network.packets.client.CEditNpc;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -12,6 +13,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
 public class Behavior extends NodeData {
@@ -27,17 +30,13 @@ public class Behavior extends NodeData {
         Collections.addAll(this.triggers, triggers);
     }
 
-    /**
-     * Adds the Child to the list and prevents adding itself.
-     *
-     * @param nodeData The nodeData to add.
-     */
     @Override
     public void addChild(NodeData nodeData) {
         if (!nodeData.equals(this)) {
             if (!this.children.contains(nodeData)) {
                 this.children.add(nodeData);
-                this.triggers.add(new Trigger("Trigger", Trigger.TriggerType.DIALOGUE_TRIGGER, 0, nodeData.getName()));
+
+                this.triggers.add(new Trigger(getNextTriggerName(), Trigger.TriggerType.DIALOGUE_TRIGGER, 0, nodeData.getName()));
             }
         }
     }
@@ -55,19 +54,12 @@ public class Behavior extends NodeData {
                 if (index < this.triggers.size()) {
                     this.triggers.get(index).setNextBehaviorName(nodeData.getName());
                 } else {
-                    Main.LOGGER.info("adding new trigger");
-                    this.triggers.add(new Trigger("Trigger", Trigger.TriggerType.DIALOGUE_TRIGGER, 0, nodeData.getName()));
+                    this.triggers.add(new Trigger(getNextTriggerName(), Trigger.TriggerType.DIALOGUE_TRIGGER, 0, nodeData.getName()));
                 }
             }
         }
     }
 
-    /**
-     * Check the equality of these objects.
-     *
-     * @param o The object to compare with.
-     * @return boolean.
-     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -105,12 +97,6 @@ public class Behavior extends NodeData {
         );
     }
 
-    /**
-     * Create the Behavior from a Json.
-     *
-     * @param object The json object.
-     * @return The behavior node.
-     */
     public static Behavior fromJSONObject(JsonObject object) {
         Behavior[] children = new Behavior[0];
         if (object.has("children")) {
@@ -152,20 +138,10 @@ public class Behavior extends NodeData {
         return new Behavior(name, dialogueName, action, function, triggers, children);
     }
 
-    /**
-     * Get the action of this behavior.
-     *
-     * @return The action.
-     */
     public Action getAction() {
         return action;
     }
 
-    /**
-     * Get the children of this behavior.
-     *
-     * @return Behavior array.
-     */
     public Behavior[] getChildren() {
         Behavior[] children = new Behavior[this.children.size()];
         int i = 0;
@@ -174,30 +150,29 @@ public class Behavior extends NodeData {
         return children;
     }
 
-    /**
-     * Get the dialogue of this behavior.
-     *
-     * @return Dialogue name.
-     */
     public String getDialogueName() {
         return dialogueName;
     }
 
+
     /**
-     * Get the triggers of this behavior.
-     *
-     * @return Trigger array.
+     * Generate a unique trigger name.
+     * @return A unique String.
      */
+    public String getNextTriggerName() {
+        String name = "Trigger";
+        List<String> names = this.triggers.stream().map(Trigger::getName).collect(Collectors.toList());
+        int count = 2;
+        while (names.contains(name)) {
+            name = "Trigger " + count++;
+        }
+        return name;
+    }
+
     public Trigger[] getTriggers() {
         return this.triggers.toArray(new Trigger[0]);
     }
 
-    /**
-     * Create the Behaviors from the json entries encapsulation.
-     *
-     * @param object The json object.
-     * @return The array of behaviors.
-     */
     public static Behavior[] multipleFromJSONObject(JsonObject object) {
         if (object.has("entries")) {
             JsonArray entries = object.getAsJsonArray("entries");
@@ -212,21 +187,11 @@ public class Behavior extends NodeData {
 
     }
 
-    /**
-     * Create a blank Behavior.
-     *
-     * @return The new behavior.
-     */
-    public static Behavior newBehavior() {
-        return new Behavior("newBehaviorNode", "", new Action(), "", new Trigger[0], new Behavior[0]);
+    public static Behavior newBehavior(BlockPos blockPos) {
+        return new Behavior("newBehaviorNode", "", new Action(blockPos), "", new Trigger[0], new Behavior[0]);
     }
 
 
-    /**
-     * Remove the nodeData from the list of children.
-     *
-     * @param nodeData The data of the child.
-     */
     @Override
     public void removeChild(NodeData nodeData) {
         if (isChild(nodeData)) {
@@ -234,40 +199,19 @@ public class Behavior extends NodeData {
         }
     }
 
-    /**
-     * Remove the trigger at `index`.
-     *
-     * @param index The index to remove the trigger.
-     */
     public void removeTrigger(int index) {
         if (index < 0 || index > this.triggers.size()) return;
         this.triggers.remove(index);
     }
 
-    /**
-     * Set the action of this behavior.
-     *
-     * @param action The action.
-     */
     public void setAction(Action action) {
         this.action = action;
     }
 
-    /**
-     * Set the dialogue name of this behavior.
-     *
-     * @param dialogueName The new dialogue name.
-     */
     public void setDialogueName(String dialogueName) {
         this.dialogueName = dialogueName;
     }
 
-    /**
-     * Set the trigger at index `i`.
-     *
-     * @param i       The index.
-     * @param trigger The trigger.
-     */
     public void setTrigger(int i, Trigger trigger) {
         this.triggers.set(i, trigger);
     }
@@ -294,11 +238,6 @@ public class Behavior extends NodeData {
         return behaviorTag;
     }
 
-    /**
-     * Build a Json object of the NodeData.
-     *
-     * @return The json version of that nodeData
-     */
     public JsonObject toJSON() {
         Trigger[] triggers = this.getTriggers();
         JsonArray triggersJson = new JsonArray();

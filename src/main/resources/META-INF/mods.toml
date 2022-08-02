@@ -3,9 +3,9 @@ loaderVersion = "[39,)"
 license = "All rights reserved"
 [[mods]]
 modId = "flashnpcs"
-version = "1.1.5"
+version = "1.2.0"
 displayName = "Flash's NPCs"
-authors = "FlashHUN"
+authors = "FlashHUN and Theirown"
 description = '''
 Flash's NPC Mod
 '''

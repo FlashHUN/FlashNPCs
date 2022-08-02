@@ -49,7 +49,9 @@ public class CEditBehavior {
         savedData.setBehaviors(Behavior.multipleFromJSONObject(new Gson().fromJson(msg.behaviorJson, JsonObject.class)));
         savedData.setDirty();
         // refresh the current npc ai.
-        ((NpcEntity) sender.level.getEntity(msg.entityId)).refreshGoals();
+        if (msg.entityId != -1000) {
+          ((NpcEntity) sender.level.getEntity(msg.entityId)).refreshGoals();
+        }
         CommonBehaviorUtil.buildBehavior(msg.name, msg.behaviorJson);
         CommonBehaviorUtil.buildBehaviorEditor(msg.name, msg.behaviorEditor);
       }

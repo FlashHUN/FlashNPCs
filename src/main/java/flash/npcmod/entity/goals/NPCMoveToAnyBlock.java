@@ -121,7 +121,6 @@ public class NPCMoveToAnyBlock extends Goal{
         exactSearch = (xDist < this.searchRange && yDist < this.searchRange && zDist < this.searchRange);
 
         if (exactSearch) {
-            Main.LOGGER.info("Close enough to find" + targetPos);
             this.blockPos = targetPos;
             return true;
         } else {
@@ -136,9 +135,7 @@ public class NPCMoveToAnyBlock extends Goal{
                         mutableBlockPos.setWithOffset(blockpos, i1, k - 1, j1);
                         if (this.npc.isWithinRestriction(mutableBlockPos) && this.isValidTarget(mutableBlockPos, currentDist)) {
                             currentDist = Mth.sqrt((float) mutableBlockPos.distToCenterSqr(targetPos.getX(), targetPos.getY(), targetPos.getZ()));
-                            Main.LOGGER.info("Found " + mutableBlockPos + " dist: " + currentDist);
                             this.blockPos = mutableBlockPos.immutable();
-                            Main.LOGGER.info("Set to " + this.blockPos);
                             blockFound = true;
                         }
                     }

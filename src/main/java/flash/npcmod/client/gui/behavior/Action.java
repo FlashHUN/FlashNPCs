@@ -32,11 +32,15 @@ public class Action {
    * Create a default action.
    */
   public Action() {
+    this(BlockPos.ZERO);
+  }
+
+  public Action(BlockPos blockPos) {
     this.name = "";
     this.pose = CEditNpc.NPCPose.STANDING;
     this.actionType = ActionType.STANDSTILL;
-    this.targetBlockPos = BlockPos.ZERO;
     this.radius = 0;
+    this.targetBlockPos = blockPos;
   }
 
   /**

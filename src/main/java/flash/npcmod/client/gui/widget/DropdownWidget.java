@@ -35,6 +35,7 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
     myEnum = defaultOption;
     selectedOption = defaultOption;
     enumConstants = myEnum.getClass().getEnumConstants();
+    // TODO There is a bug where the scaled height will cause dropdowns to be cutoff earlier than necessary.
     this.maxDisplayedOptions = maxDisplayedOptions == 0 ? (minecraft.getWindow().getGuiScaledHeight() - (y + 13 + enumConstants.length*13)) / 13 : Math.abs(maxDisplayedOptions);
   }
 

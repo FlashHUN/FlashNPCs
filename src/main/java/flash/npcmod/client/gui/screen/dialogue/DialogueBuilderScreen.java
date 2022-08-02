@@ -56,9 +56,9 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
      * @param mouseX The mouse x position.
      * @param mouseY The mouse y position.
      */
-    private void  createNode(double mouseX, double mouseY) {
+    private void createNode(double mouseX, double mouseY) {
         DialogueNode newNode;
-        if (getSelectedNode() != null && getSelectedNodeIndex() == 0) {
+        if (getSelectedNode() != null && getSelectedNodeIndex() == -2) {
             newNode = new DialogueNode(null, this, this.minecraft, Dialogue.newDialogue());
             newNode.addChild(getSelectedNode().getNodeData());
             getSelectedNode().setParent(newNode);

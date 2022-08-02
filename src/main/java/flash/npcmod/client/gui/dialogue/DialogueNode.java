@@ -49,8 +49,8 @@ public class DialogueNode extends BuilderNode {
         adjustWidth(text);
         String response = getResponse();
         adjustWidth(response);
-        for (int i = 0; i < getOptionsNames().length; i++) {
-            adjustWidth(getOptionsNames()[i]);
+        for (int i = 0; i < getConnectionNames().length; i++) {
+            adjustWidth(getConnectionNames()[i]);
         }
 
         super.calculateDimensions();
@@ -122,12 +122,12 @@ public class DialogueNode extends BuilderNode {
                     if (getOptionsText().length > 0) {
                         int optionIndex = -2;
                         for (int i = 0; i < getOptionsText().length + 1; i++) {
-                            if (optionsBarHeight.length > i) {
-                                if (mouseY >= optionMinY && mouseY <= optionMinY + optionsBarHeight[i] + (i == 0 ? 0 : 2)) {
+                            if (connectionBarsHeights.length > i) {
+                                if (mouseY >= optionMinY && mouseY <= optionMinY + connectionBarsHeights[i] + (i == 0 ? 0 : 2)) {
                                     optionIndex = i;
                                     break;
                                 }
-                                optionMinY += optionsBarHeight[i] + 1;
+                                optionMinY += connectionBarsHeights[i] + 1;
                             }
                         }
 
@@ -152,22 +152,22 @@ public class DialogueNode extends BuilderNode {
                     int[] xy = getEndPointLocation();
                     minY = offsetY + 18 + 1 + (scrollY + y);
                     if (mouseY >= minY + xy[1] && mouseY <= minY + xy[1] + 8) {
-                        clickedOnSelectIcon(0);
+                        clickedOnSelectIcon(-2);
                         return;
                     }
                 }
                 if (mouseX >= maxX + 4 && mouseX <= maxX + 4 + 8) {
                     minY = offsetY + 18 + 1 + (scrollY + y);
                     // Select current option
-                    for (int i = 0; i < getOptionsNames().length; i++) {
+                    for (int i = 0; i < getConnectionNames().length; i++) {
                         int[] xy = getStartPointLocation(i);
                         if (mouseY >= minY + xy[1] && mouseY <= minY + xy[1] + 8) {
-                            clickedOnSelectIcon(i + 1);
+                            clickedOnSelectIcon(i);
                             return;
                         }
                     }
                     // Select new option
-                    int[] xy = getStartPointLocation(getOptionsNames().length);
+                    int[] xy = getStartPointLocation(getConnectionNames().length);
                     if (mouseY >= minY + xy[1] && mouseY <= minY + xy[1] + 8) {
                         clickedOnSelectIcon(-1);
                         return;
@@ -253,7 +253,7 @@ public class DialogueNode extends BuilderNode {
         }
         minY += extraFieldsHeight[1] + 1;
 
-        drawSinglelineText(matrixStack, trigger.isEmpty() ? "Trigger" : trigger, minY, trigger.isEmpty());
+        drawSingleLineText(matrixStack, trigger.isEmpty() ? "Trigger" : trigger, minY, trigger.isEmpty());
         minY += extraFieldsHeight[2] + 1;
 
         return minY;
@@ -288,7 +288,7 @@ public class DialogueNode extends BuilderNode {
             matrixStack.translate(-x, -y, 0);
 
             int index = Arrays.asList(parent.getNodeData().getChildren()).indexOf(this.getNodeData());
-            if (index >= 0 && index < parent.getOptionsBarHeight().length) {
+            if (index >= 0 && index < parent.getConnectionBarsHeights().length) {
                 int[] xy = parent.getStartPointLocation(index);
                 blit(matrixStack, xy[0], xy[1], 8, 8, 0, 0, 8, 8, 256, 256);
             }
@@ -298,7 +298,7 @@ public class DialogueNode extends BuilderNode {
         // Option Icons on this
         matrixStack.pushPose();
         {
-            for (int i = 0; i < optionsBarHeight.length; i++) {
+            for (int i = 0; i < connectionBarsHeights.length; i++) {
                 int[] xy = getStartPointLocation(i);
                 blit(matrixStack, xy[0], xy[1], 8, 8, 0, 0, 8, 8, 256, 256);
             }
@@ -314,14 +314,14 @@ public class DialogueNode extends BuilderNode {
     protected void drawLinesToParent(PoseStack matrixStack) {
         if (parent != null) {
             int index = 0;
-            for (int i = 0; i < parent.getOptionsNames().length; i++) {
-                if (parent.getOptionsNames()[i].equals(getName())) {
+            for (int i = 0; i < parent.getConnectionNames().length; i++) {
+                if (parent.getConnectionNames()[i].equals(getName())) {
                     index = i + 1;
                     break;
                 }
             }
 
-            if (index > 0 && index < parent.getOptionsNames().length + 1) {
+            if (index > 0 && index < parent.getConnectionNames().length + 1) {
                 int[] thisXY = getEndPointLocation();
                 int[] parentXY = parent.getStartPointLocation(index - 1);
 
