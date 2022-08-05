@@ -36,12 +36,11 @@ public class ClientQuestUtil {
   public static Quest loadQuest(String name) {
     PacketDispatcher.sendToServer(new CRequestQuestInfo(name));
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("quests", name)), StandardCharsets.UTF_8);
+      JsonObject object = FileUtil.GSON.fromJson(is, JsonObject.class);
 
       Quest quest = Quest.fromJson(object);
-      if (QUESTS.contains(quest))
-        QUESTS.remove(quest);
+      QUESTS.remove(quest);
 
       QUESTS.add(quest);
       is.close();

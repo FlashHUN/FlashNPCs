@@ -4,7 +4,6 @@ import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.core.functions.defaultfunctions.*;
 import flash.npcmod.entity.NpcEntity;
-import flash.npcmod.core.functions.defaultfunctions.*;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.commons.io.FilenameUtils;
 
@@ -40,20 +39,19 @@ public class FunctionUtil {
   }
 
   public static void build(String name, String function) {
-    File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/functions");
     try {
       String[] lines = function.split("\n");
 
       String[] paramNames = lines[0].split(",");
       List<String> callables = new ArrayList<>();
 
-      File newFunctionFile = new File(folder.getCanonicalPath(), name+".npcfunction");
+      File functionFile = FileUtil.getFunctionFileForWriting("functions", name);
 
-      if (newFunctionFile.exists()) {
-        newFunctionFile.delete();
+      if (functionFile.exists()) {
+        functionFile.delete();
       }
 
-      Writer writer = new OutputStreamWriter(new FileOutputStream(newFunctionFile), StandardCharsets.UTF_8);
+      Writer writer = new OutputStreamWriter(new FileOutputStream(functionFile), StandardCharsets.UTF_8);
 
       for (int i = 0; i < lines.length; i++) {
         String line = lines[i];
@@ -69,9 +67,8 @@ public class FunctionUtil {
       writer.close();
 
       AbstractFunction newFunction = new Function(name, paramNames, callables.toArray(new String[0]));
-      if (FUNCTIONS.contains(newFunction)) {
-        FUNCTIONS.remove(newFunction);
-      }
+      FUNCTIONS.remove(newFunction);
+
       FUNCTIONS.add(newFunction);
 
     } catch (IOException e) {
@@ -83,8 +80,8 @@ public class FunctionUtil {
     FUNCTIONS.clear();
     addDefaultFunctions();
 
-    File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/functions");
-    for (File entry : folder.listFiles()) {
+    File[] files = FileUtil.getAllFiles("functions");
+    for (File entry : files) {
       if (!entry.isDirectory()) {
         loadFunctionFile(FilenameUtils.removeExtension(entry.getName()));
       }
@@ -93,7 +90,7 @@ public class FunctionUtil {
 
   public static boolean loadFunctionFile(String name) {
     try {
-      InputStream is = new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/functions", name + ".npcfunction"));
+      InputStream is = new FileInputStream(FileUtil.getFunctionFile("functions", name));
       BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 
       List<String> lines = new ArrayList<>();
@@ -108,9 +105,8 @@ public class FunctionUtil {
       }
 
       AbstractFunction function = new Function(name, paramNames, lines.toArray(new String[0]));
-      if (FUNCTIONS.contains(function)) {
-        FUNCTIONS.remove(function);
-      }
+      FUNCTIONS.remove(function);
+
       FUNCTIONS.add(function);
       reader.close();
       is.close();
@@ -151,8 +147,9 @@ public class FunctionUtil {
     }
   }
 
-  public static String replaceSelectors(String s, ServerPlayer sender) {
-    return s.replaceAll("@p", sender.getName().getString());
+  public static String replaceSelectors(String s, ServerPlayer sender, NpcEntity npcEntity) {
+    return s.replaceAll("@p", sender.getName().getString())
+            .replaceAll("@npc", npcEntity.getStringUUID());
   }
 
   public static String replaceParameters(String s, String paramName, String param) {

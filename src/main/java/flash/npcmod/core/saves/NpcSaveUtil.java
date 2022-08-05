@@ -24,19 +24,19 @@ public class NpcSaveUtil {
 
   public static BuildResult build(String uuid, String npcJson) {
     Writer fw = null;
-    JsonObject jsonObject = new Gson().fromJson(npcJson, JsonObject.class);
+    JsonObject jsonObject = FileUtil.GSON.fromJson(npcJson, JsonObject.class);
     String name = jsonObject.get("name").getAsString();
     try {
-      File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/saves/"+uuid);
+      File directory = FileUtil.getOrCreateDirectory(FileUtil.getWorldDirectory()+"/"+Main.MODID+"/saves/"+uuid);
       String path = "saves/"+uuid;
       try {
-        if (folder.listFiles().length + 1 > MAX_SAVED_NPCS) {
+        if (directory.listFiles().length + 1 > MAX_SAVED_NPCS) {
           return BuildResult.TOOMANY;
         }
       } catch (Exception ignored) {}
       jsonObject.addProperty("internalName", name);
 
-      File jsonFile = FileUtil.getJsonFile(path, name);
+      File jsonFile = FileUtil.getJsonFileForWriting(path, name);
       if (jsonFile.exists()) {
         return BuildResult.EXISTS;
       }
@@ -64,16 +64,16 @@ public class NpcSaveUtil {
 
   public static boolean rename(String uuid, String previousName, String newName) {
     String path = "saves/"+uuid;
-    File jsonFile = FileUtil.getJsonFile(path, previousName);
+    File jsonFile = FileUtil.getJsonFileForWriting(path, previousName);
     Writer fw = null;
     if (jsonFile.exists()) {
       try {
-        File newFile = FileUtil.getJsonFile(path, newName);
+        File newFile = FileUtil.getJsonFileForWriting(path, newName);
         boolean success = jsonFile.renameTo(newFile);
 
         if (success) {
           InputStreamReader is = new InputStreamReader(new FileInputStream(newFile), StandardCharsets.UTF_8);
-          JsonObject jsonObject = new Gson().fromJson(is, JsonObject.class);
+          JsonObject jsonObject = FileUtil.GSON.fromJson(is, JsonObject.class);
           jsonObject.addProperty("internalName", newName);
           is.close();
 
@@ -102,19 +102,19 @@ public class NpcSaveUtil {
 
   public static boolean delete(ServerPlayer sender, String name) {
     String path = "saves/"+sender.getStringUUID();
-    File file = FileUtil.getJsonFile(path, name);
+    File file = FileUtil.getJsonFileForWriting(path, name);
     return file.exists() && file.delete();
   }
 
   public static List<String> load(String uuid) {
     List<String> savedNpcs = new ArrayList<>();
-    File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/saves/"+uuid);
-    File[] files = folder.listFiles();
+    File directory = FileUtil.getOrCreateDirectory(FileUtil.getWorldDirectory()+"/"+Main.MODID+"/saves/"+uuid);
+    File[] files = directory.listFiles();
     if (files != null) {
       for (File file : files) {
         try {
           InputStreamReader is = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
-          String jsonString = new Gson().fromJson(is, JsonObject.class).toString();
+          String jsonString = FileUtil.GSON.fromJson(is, JsonObject.class).toString();
           savedNpcs.add(jsonString);
           is.close();
         } catch (Exception ignored) {
