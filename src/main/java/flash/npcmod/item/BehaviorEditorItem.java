@@ -33,7 +33,11 @@ public class BehaviorEditorItem extends Item {
             if (itemStack.hasTag()) {
                 nbt = itemStack.getTag();
                 List<Long> pathList= Arrays.stream(nbt.getLongArray("Path")).boxed().collect(Collectors.toList());
-                pathList.add(pos.asLong());
+                if (pathList.size() > 0 && pathList.get(pathList.size() - 1) == pos.asLong()){
+                    pathList.remove(pathList.size() - 1);
+                } else {
+                    pathList.add(pos.asLong());
+                }
                 path = pathList.toArray(new Long[0]);
             } else {
                 nbt = new CompoundTag();
@@ -42,7 +46,6 @@ public class BehaviorEditorItem extends Item {
             nbt.putLongArray("Path", List.of(path));
 
             itemStack.setTag(nbt);
-            Main.LOGGER.info(nbt);
         }
         return super.useOn(context);
     }
