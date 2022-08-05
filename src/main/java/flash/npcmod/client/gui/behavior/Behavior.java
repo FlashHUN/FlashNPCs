@@ -16,11 +16,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static flash.npcmod.core.behaviors.CommonBehaviorUtil.INVALID_BEHAVIOR;
+
 @OnlyIn(Dist.CLIENT)
 public class Behavior extends NodeData {
     public String dialogueName;
     private Action action;
     private final List<Trigger> triggers;
+
+    public Behavior() {
+        super(INVALID_BEHAVIOR, "", new Behavior[0]);
+        this.dialogueName = "";
+        this.action = new Action();
+        this.triggers = new ArrayList<>();
+    }
 
     public Behavior(String name, String dialogueName, Action action, String function, Trigger[] triggers, Behavior[] children) {
         super(name, function, children);
@@ -172,6 +181,12 @@ public class Behavior extends NodeData {
     public Trigger[] getTriggers() {
         return this.triggers.toArray(new Trigger[0]);
     }
+
+    /**
+     * Check if this behavior is invalid by checking the name.
+     * @return True if invalid.
+     */
+    public boolean isInvalid() { return this.name.equals(INVALID_BEHAVIOR); }
 
     public static Behavior[] multipleFromJSONObject(JsonObject object) {
         if (object.has("entries")) {

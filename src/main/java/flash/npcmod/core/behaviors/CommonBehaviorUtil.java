@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CommonBehaviorUtil {
+  public static final String INVALID_BEHAVIOR = "_invalid";
   public static final String DEFAULT_BEHAVIOR_JSON = "{\"name\":\"init\",\"dialogueName\":\"\",\"function\":\"\"}";
   public static final String DEFAULT_BEHAVIOR_EDITOR_JSON = "{\"entries\":[{\"name\":\"init\",\"x\":10,\"y\":10}]}";
 

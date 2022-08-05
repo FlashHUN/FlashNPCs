@@ -266,36 +266,38 @@ abstract public class TreeBuilderScreen extends Screen {
         matrixStack.popPose();
     }
 
-    /**
-     * Get the background to draw.
-     * @return The background.
-     */
     abstract protected ResourceLocation getBackground();
 
-    /**
-     * Get the editing node.
-     * @return The editing node.
-     */
     abstract protected BuilderNode getEditingNode();
 
-    /**
-     * Get the `entries` value from the current editor JSON.
-     *
-     * @return The JsonArray of entries (position of nodes).
-     */
     abstract protected JsonArray getEntries();
 
     /**
-     * Get the new function parameters.
-     *
-     * @return String of the function params.
+     * Calculate the maximum number of widget rows that can fit in a height.
+     * @param height The max height.
+     * @return The max num of rows.
      */
+    public static int getNumWidgetRows(int height) {
+        // 20 = row height. 10 = row padding.
+        return height / (20 + 10);
+    }
+
+    /**
+     * Calculate the maximum number of widget columns that can fit in a width.
+     * @param indexSize The index size.
+     * @return The max num of rows.
+     */
+    public static int getNumWidgetCols(int width, int indexSize) {
+        // 20 = row height. 10 = row padding.
+        return width / (indexSize + 10);
+    }
+
     public String getNewFunctionParams() {
         return this.newFunctionParams;
     }
 
     /**
-     * The index of the selected option of the selected node.
+     * The index of the selected connection of the selected node.
      *
      * @return The selected index,
      */
@@ -303,17 +305,72 @@ abstract public class TreeBuilderScreen extends Screen {
         return this.selectedNodeIndex;
     }
 
-    /**
-     * Get the selected node.
-     *
-     * @return The selected node.
-     */
     @Nullable
     abstract public BuilderNode getSelectedNode();
 
     /**
-     * Function from Screen. Called before drawing the screen.
+     * Function to calculate the height of each widget based off of the row number. The middle of the screen is row 0.
+     * Rows going up the screen are positive.
+     * @param rowNum The row number. 0-based.
+     * @param screenHeight The height of the screen.
+     * @param rowHeights Nullable field of row heights.
+     * @return The height of the widget.
      */
+    public static int getWidgetHeight(int rowNum, int screenHeight, @Nullable int[] rowHeights) {
+        int defaultHeight = 20; // the default.
+        int rowPadding = 5; // the vertical spacing between widgets.
+        return get1DWidgetCoordinate(rowNum, screenHeight, defaultHeight, rowPadding, rowHeights);
+    }
+
+    /**
+     * Function to calculate the width of each widget based off of the column number. The middle of the screen is row 0.
+     * columns going left of the screen are positive.
+     * @param colNum The row number. 0-based.
+     * @param screenWidth The height of the screen.
+     * @param colWidths Nullable field of row heights.
+     * @return The height of the widget.
+     */
+    public static int getWidgetWidth(int colNum, int screenWidth, @Nullable int[] colWidths, int padding) {
+        int defaultWidth = 120; // the default.
+        int colPadding = 10;
+        if (padding > 0)
+            colPadding = padding; // the vertical spacing between widgets.
+        return get1DWidgetCoordinate(colNum, screenWidth, defaultWidth, colPadding, colWidths);
+    }
+
+    /**
+     * Function to calculate the position of an index in a certain space size given a default index size and padding.
+     * If indexSizes is used, then it will be used to replace defaultIndexSize. Padding is assumed to be constant.
+     * Index 0 is in the center of the space. Negative Indices result in smaller coordinates. Positive, larger.
+     * @param indexNum The index of the position. Essentially the row/col number.
+     * @param size The size of the space.
+     * @param defaultIndexSize The default size taken by an index.
+     * @param padding The size of the padding around an index.
+     * @param indexSizes Int array of actual sizes used. Replaces defaultIndexSize. Contains the sizes starting from
+     *                   index 0 in the desired direction.
+     * @return Return the coordinate of the index.
+     */
+    public static int get1DWidgetCoordinate(int indexNum, int size, int defaultIndexSize, int padding, @Nullable int[] indexSizes) {
+        int space = size / 2 - defaultIndexSize / 2;
+        int direction = indexNum > 0 ? -1 : 1;
+        indexNum = Mth.abs(indexNum);
+        if (indexSizes != null) {
+            // If indexSize of this object is known, use that.
+            if (indexSizes.length > 0) space = size / 2 - indexSizes[0] / 2;
+            int i = 1;
+            for(; i <= indexNum && i < indexSizes.length; i++) {
+                space += (indexSizes[i] + padding) * direction;
+            }
+            // In case the row heights provided is too small.
+            for (; i < indexNum; i++) {
+                space += (defaultIndexSize + padding) * direction;
+            }
+        }else {
+            space += ((defaultIndexSize + padding) * indexNum) * direction;
+        }
+        return space;
+    }
+
     @Override
     protected void init() {
         this.setEditingNode(null);

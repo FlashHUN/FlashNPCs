@@ -18,11 +18,14 @@ import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CEditBehavior;
 import flash.npcmod.network.packets.client.CEditNpc;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -37,6 +40,7 @@ import java.util.stream.Collectors;
 @OnlyIn(Dist.CLIENT)
 public class BehaviorBuilderScreen extends TreeBuilderScreen {
     protected String newDialogueName = "", newActionName = "", newTriggerName = "", newTriggerChild = "";
+    protected long[] waitingPath;
     /**
      * 0-2 Block Pos, 3 Radius, 4 Timer
      */
@@ -47,6 +51,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     private DropdownWidget<Trigger.TriggerType> triggerTypeDropdownWidget;
     private EditBox triggerChildField, triggerTimerField;
     private final List<EditBox> actionFields;
+    private Button getPathButton, setPathButton;
     @Nullable
     protected BehaviorNode editingNode, selectedNode;
 
@@ -62,6 +67,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         actionFields = new ArrayList<>();
         this.intArgs = new int[5];
         Arrays.fill(this.intArgs, 0);
+        this.waitingPath = new long[0];
     }
 
     /**
@@ -86,25 +92,16 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         BlockPos blockPos = new BlockPos(this.intArgs[0], this.intArgs[1], this.intArgs[2]);
         Action action = new Action(
                 newActionName, poseDropdownWidget.getSelectedOption(), actionTypeDropdownWidget.getSelectedOption(),
-                blockPos, intArgs[3]);
+                blockPos, intArgs[3], this.waitingPath);
         this.editingNode.getNodeData().setAction(action);
         this.editingNode.setEditTriggerIndex(-1);
     }
 
-    /**
-     * Get the background to draw.
-     * @return The background.
-     */
     @Override
     protected ResourceLocation getBackground() {
         return new ResourceLocation(Main.MODID, "textures/gui/edit_behavior/background.png");
     }
 
-
-    /**
-     * Get the editing node.
-     * @return The editing node.
-     */
     @Override
     public @Nullable BehaviorNode getEditingNode() {
         return this.editingNode;
@@ -120,98 +117,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         return ClientBehaviorUtil.currentBehaviorEditor.getAsJsonArray("entries");
     }
 
-    /**
-     * Get the selected Behavior node.
-     * @return The selected node.
-     */
     @Override
     public @Nullable BehaviorNode getSelectedNode() {
         return this.selectedNode;
     }
-
-    /**
-     * Calculate the maximum number of widget rows that can fit in a height.
-     * @param height The max height.
-     * @return The max num of rows.
-     */
-    public static int getNumWidgetRows(int height) {
-        // 20 = row height. 10 = row padding.
-        return height / (20 + 10);
-    }
-
-    /**
-     * Calculate the maximum number of widget columns that can fit in a width.
-     * @param indexSize The index size.
-     * @return The max num of rows.
-     */
-    public static int getNumWidgetCols(int width, int indexSize) {
-        // 20 = row height. 10 = row padding.
-        return width / (indexSize + 10);
-    }
-
-    /**
-     * Function to calculate the position of an index in a certain space size given a default index size and padding.
-     * If indexSizes is used, then it will be used to replace defaultIndexSize. Padding is assumed to be constant.
-     * Index 0 is in the center of the space. Negative Indices result in smaller coordinates. Positive, larger.
-     * @param indexNum The index of the position. Essentially the row/col number.
-     * @param size The size of the space.
-     * @param defaultIndexSize The default size taken by an index.
-     * @param padding The size of the padding around an index.
-     * @param indexSizes Int array of actual sizes used. Replaces defaultIndexSize. Contains the sizes starting from
-     *                   index 0 in the desired direction.
-     * @return Return the coordinate of the index.
-     */
-    public static int get1DWidgetCoordinate(int indexNum, int size, int defaultIndexSize, int padding, @Nullable int[] indexSizes) {
-        int space = size / 2 - defaultIndexSize / 2;
-        int direction = indexNum > 0 ? -1 : 1;
-        indexNum = Mth.abs(indexNum);
-        if (indexSizes != null) {
-            // If indexSize of this object is known, use that.
-            if (indexSizes.length > 0) space = size / 2 - indexSizes[0] / 2;
-            int i = 1;
-            for(; i <= indexNum && i < indexSizes.length; i++) {
-                space += (indexSizes[i] + padding) * direction;
-            }
-            // In case the row heights provided is too small.
-            for (; i < indexNum; i++) {
-                space += (defaultIndexSize + padding) * direction;
-            }
-        }else {
-            space += ((defaultIndexSize + padding) * indexNum) * direction;
-        }
-        return space;
-    }
-
-    /**
-     * Function to calculate the height of each widget based off of the row number. The middle of the screen is row 0.
-     * Rows going up the screen are positive.
-     * @param rowNum The row number. 0-based.
-     * @param screenHeight The height of the screen.
-     * @param rowHeights Nullable field of row heights.
-     * @return The height of the widget.
-     */
-    public static int getWidgetHeight(int rowNum, int screenHeight, @Nullable int[] rowHeights) {
-        int defaultHeight = 20; // the default.
-        int rowPadding = 5; // the vertical spacing between widgets.
-        return get1DWidgetCoordinate(rowNum, screenHeight, defaultHeight, rowPadding, rowHeights);
-    }
-
-    /**
-     * Function to calculate the width of each widget based off of the column number. The middle of the screen is row 0.
-     * columns going left of the screen are positive.
-     * @param colNum The row number. 0-based.
-     * @param screenWidth The height of the screen.
-     * @param colWidths Nullable field of row heights.
-     * @return The height of the widget.
-     */
-    public static int getWidgetWidth(int colNum, int screenWidth, @Nullable int[] colWidths, int padding) {
-        int defaultWidth = 120; // the default.
-        int colPadding = 10;
-        if (padding > 0)
-            colPadding = padding; // the vertical spacing between widgets.
-        return get1DWidgetCoordinate(colNum, screenWidth, defaultWidth, colPadding, colWidths);
-    }
-
 
     /**
      * Function from Screen. Called before drawing the screen.
@@ -352,6 +261,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         colWidths[indexWidth] = 34; //Reserve space for the block pos text.
         indexHeight = (numRows / 2) - 1;
         indexWidth -= 2;
+
         EditBox targetBlockXField = this.addRenderableWidget(
                 new EditBox(
                         this.font,
@@ -395,7 +305,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         EditBox targetBlockZField = this.addRenderableWidget(
                 new EditBox(
                         this.font,
-                        getWidgetWidth(indexWidth, this.width, colWidths, 5),
+                        getWidgetWidth(indexWidth--, this.width, colWidths, 5),
                         getWidgetHeight(indexHeight, this.height, null),
                         32,
                         20,
@@ -418,10 +328,48 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             actionFields.get(1).setValue(String.valueOf(blockPos.getX()));
             actionFields.get(2).setValue(String.valueOf(blockPos.getX()));
         }
+        colWidths[Math.abs(indexWidth - 1)] = 50;
+        colWidths[Math.abs(indexWidth - 2)] = 50;
+        this.getPathButton = this.addRenderableWidget(
+            new Button(
+                getWidgetWidth(indexWidth--, this.width, colWidths, 5),
+                getWidgetHeight(indexHeight, this.height, null),
+                50, 20, new TextComponent("Get Path"), btn -> {
+                    ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
+                    if (this.waitingPath.length == 0) {
+                        behaviorEditorStack.setTag(null);
+                        return;
+                    }
+                    CompoundTag pathTag = new CompoundTag();
+                    pathTag.putLongArray("Path", this.waitingPath);
+                    Main.LOGGER.info("Loaded something;");
+                }
+            )
+        );
+        this.getPathButton.visible = false;
+
+        this.setPathButton = this.addRenderableWidget(
+                new Button(
+                    getWidgetWidth(indexWidth, this.width, colWidths, 5),
+                    getWidgetHeight(indexHeight, this.height, null),
+                    50, 20, new TextComponent("Set Path"), btn -> {
+                        ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
+                        if (behaviorEditorStack.hasTag()) {
+                            CompoundTag pathTag = behaviorEditorStack.getTag();
+                            if (pathTag != null && pathTag.contains("Path")) {
+                                this.waitingPath = behaviorEditorStack.getTag().getLongArray("Path");
+                                return;
+                            }
+                        }
+                        this.waitingPath = new long[0];
+                    }
+                )
+        );
+        this.setPathButton.visible = false;
 
         // Set up the radius field.
 
-        indexWidth = (numCols / 2) - 2;
+        indexWidth = (numCols / 2) - 3;
         EditBox radiusField = this.addRenderableWidget(
                 new EditBox(
                         this.font,
@@ -681,6 +629,8 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.poseDropdownWidget.visible = isActionType;
         this.actionTypeDropdownWidget.visible = isActionType;
         for (EditBox editBox : actionFields) editBox.setVisible(isActionType);
+        this.getPathButton.visible = isActionType;
+        this.setPathButton.visible = isActionType;
         if (node != null) {
             this.allFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
             Trigger trigger = ((BehaviorNode) node).getEditTrigger();
@@ -700,6 +650,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.poseDropdownWidget.selectOption(action.getPose());
             this.actionTypeDropdownWidget.selectOption(action.getActionType());
             this.allFields.get(EditType.ACTION).setValue(action.getName());
+            this.waitingPath = action.getPath();
             if (action.getName().isEmpty()) this.confirmButton.active = false;
             BlockPos blockPos = action.getTargetBlockPos();
             actionFields.get(0).setValue(String.valueOf(blockPos.getX()));
@@ -714,6 +665,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             actionFields.get(1).setValue("0");
             actionFields.get(2).setValue("0");
             actionFields.get(3).setValue("0");
+            this.waitingPath = new long[0];
         }
 
         boolean isTriggerType = editType == EditType.TRIGGER;

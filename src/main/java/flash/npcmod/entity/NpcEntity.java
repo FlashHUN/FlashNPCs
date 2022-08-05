@@ -58,11 +58,13 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import org.jetbrains.annotations.NotNull;
 
+import static flash.npcmod.core.behaviors.CommonBehaviorUtil.INVALID_BEHAVIOR;
+
 public class NpcEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<String> BEHAVIOR_FILE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> CROUCHING = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<CompoundTag> CURRENT_BEHAVIOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final EntityDataAccessor<Behavior> CURRENT_BEHAVIOR = SynchedEntityData.defineId(NpcEntity.class, NpcDataSerializers.BEHAVIOR);
     private static final EntityDataAccessor<String> DIALOGUE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> GOAL_REACHED = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -74,7 +76,6 @@ public class NpcEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> SLIM = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<BlockPos> TARGET_BLOCK = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<Integer> TRIGGER_TIMER = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
-
     private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_DIMENSIONS).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
@@ -112,7 +113,7 @@ public class NpcEntity extends PathfinderMob {
         super.addAdditionalSaveData(compound);
         compound.putString("dialogue", getDialogue());
         compound.putString("behaviorFile", getBehaviorFile());
-        compound.put("currentBehavior", getCurrentBehavior());
+        compound.put("currentBehavior", getCurrentBehavior().toCompoundTag());
         compound.putBoolean("nameVisibility", isCustomNameVisible());
         compound.putInt("radius", getRadius());
         compound.putBoolean("slim", isSlim());
@@ -166,7 +167,7 @@ public class NpcEntity extends PathfinderMob {
                 this.goalSelector.removeGoal(goal);
         }
         switch (action.getActionType()) {
-            case MOVE_TO_BLOCK -> this.goalSelector.addGoal(1, new NPCMoveToBlockGoal(this, 1.0D));
+            case MOVE_TO_BLOCK -> this.goalSelector.addGoal(1, new NPCMoveToBlockGoal(this, 1.2D));
             case WANDER -> this.goalSelector.addGoal(0, new NPCWanderGoal(this, 300));
             //case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
             case STANDSTILL -> {
@@ -178,7 +179,7 @@ public class NpcEntity extends PathfinderMob {
             }
         }
 
-        this.setCurrentBehavior(behavior.toCompoundTag());
+        this.setCurrentBehavior(behavior);
     }
 
     /**
@@ -208,7 +209,7 @@ public class NpcEntity extends PathfinderMob {
         super.defineSynchedData();
         this.entityData.define(BEHAVIOR_FILE, "");
         this.entityData.define(CROUCHING, false);
-        this.entityData.define(CURRENT_BEHAVIOR,new CompoundTag());
+        this.entityData.define(CURRENT_BEHAVIOR, new Behavior());
         this.entityData.define(DIALOGUE, "");
         this.entityData.define(GOAL_REACHED, false);
         this.entityData.define(ORIGIN, BlockPos.ZERO);
@@ -249,8 +250,7 @@ public class NpcEntity extends PathfinderMob {
         NpcEntity npcEntity = EntityInit.NPC_ENTITY.get().create(level);
         assert npcEntity != null;
         if (jsonObject.has("currentBehavior"))
-            npcEntity.setCurrentBehavior(
-                    Behavior.fromJSONObject(jsonObject.getAsJsonObject("currentBehavior")).toCompoundTag());
+            npcEntity.setCurrentBehavior(Behavior.fromJSONObject(jsonObject.getAsJsonObject("currentBehavior")));
         npcEntity.setCustomNameVisible(jsonObject.get("nameVisibility").getAsBoolean());
         npcEntity.setDialogue(jsonObject.get("dialogue").getAsString());
         npcEntity.setCustomName(new TextComponent(jsonObject.get("name").getAsString()));
@@ -286,35 +286,18 @@ public class NpcEntity extends PathfinderMob {
         return this.entityData.get(BEHAVIOR_FILE);
     }
 
-    /**
-     * The current behavior stored as a compound tag.
-     * @return The compound tag.
-     */
-    public CompoundTag getCurrentBehavior() {
+    public Behavior getCurrentBehavior() {
         return this.entityData.get(CURRENT_BEHAVIOR);
     }
 
-    /**
-     * Get the death sound.
-     * @return SoundEvent.
-     */
     protected SoundEvent getDeathSound() {
         return SoundEvents.PLAYER_DEATH;
     }
 
-    /**
-     * The dialogue file of this npc.
-     * @return The dialogue file name.
-     */
     public String getDialogue() {
         return this.entityData.get(DIALOGUE);
     }
 
-    /**
-     * Get the correct bounding dimensions of this npc.
-     * @param pose The NPC's pose.
-     * @return The EntityDimensions.
-     */
     @Override
     public @NotNull EntityDimensions getDimensions(@NotNull Pose pose) {
         return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
@@ -547,8 +530,8 @@ public class NpcEntity extends PathfinderMob {
      * @return True if npc still moving.
      */
     public boolean isNotMovingToBlock() {
-        if (isGoalReached() || getCurrentBehavior().isEmpty()) return true;
-        Behavior behavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        if (isGoalReached() || getCurrentBehavior().isInvalid()) return true;
+        Behavior behavior = getCurrentBehavior();
         Action action = behavior.getAction();
         switch (action.getActionType()) {
             case MOVE_TO_BLOCK -> {//, INTERACT_WITH -> {
@@ -590,7 +573,8 @@ public class NpcEntity extends PathfinderMob {
         super.readAdditionalSaveData(compound);
         if (compound.contains("behaviorFile")) setBehaviorFile(compound.getString("behaviorFile"));
         setCrouching(compound.getBoolean("crouching"));
-        if (compound.contains("currentBehavior")) setCurrentBehavior(compound.getCompound("currentBehavior"));
+        if (compound.contains("currentBehavior")) setCurrentBehavior(
+                Behavior.fromCompoundTag(compound.getCompound("currentBehavior")));
         setCustomNameVisible(compound.getBoolean("nameVisibility"));
         setDialogue(compound.getString("dialogue"));
         setOrigin(NbtUtils.readBlockPos(compound.getCompound("origin")));
@@ -616,7 +600,7 @@ public class NpcEntity extends PathfinderMob {
 
         Behavior[] behaviors = BehaviorSavedData.getBehaviorSavedData(Objects.requireNonNull(getServer()), this.getBehaviorFile())
                 .getBehaviorSavedData();
-        if(getCurrentBehavior().isEmpty()) {
+        if(getCurrentBehavior().isInvalid()) {
             for (Behavior behavior : behaviors) {
                 if (behavior.isInitData()) {
                     this.applyBehavior(behavior);
@@ -625,7 +609,7 @@ public class NpcEntity extends PathfinderMob {
             }
             return;
         }
-        Behavior currentBehavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        Behavior currentBehavior = getCurrentBehavior();
 
         // look for changes of the loaded behaviors.
         for (Behavior behavior : behaviors) {
@@ -668,7 +652,7 @@ public class NpcEntity extends PathfinderMob {
             savedData.setBehaviors(behaviors);
             savedData.setDirty();
         }
-        setCurrentBehavior(new CompoundTag());
+        setCurrentBehavior(new Behavior());
     }
 
     /**
@@ -696,7 +680,7 @@ public class NpcEntity extends PathfinderMob {
      * Set the current behavior.
      * @param s The behavior tag.
      */
-    public void setCurrentBehavior(CompoundTag s) {
+    public void setCurrentBehavior(Behavior s) {
         this.entityData.set(CURRENT_BEHAVIOR, s);
     }
 
@@ -877,7 +861,7 @@ public class NpcEntity extends PathfinderMob {
         jsonObject.addProperty("nameVisibility", isCustomNameVisible());
         jsonObject.addProperty("dialogue", getDialogue());
 
-        jsonObject.add("currentBehavior", Behavior.fromCompoundTag(getCurrentBehavior()).toJSON());
+        jsonObject.add("currentBehavior", getCurrentBehavior().toJSON());
         jsonObject.addProperty("targetBlock", getTargetBlock().asLong());
         jsonObject.addProperty("texture", getTexture());
         jsonObject.addProperty("textColor", getTextColor());
@@ -896,7 +880,7 @@ public class NpcEntity extends PathfinderMob {
      * @param triggerName The name of the trigger.
      */
     public void trigger(String triggerName) {
-        Behavior behavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        Behavior behavior = getCurrentBehavior();
         String nextBehaviorName = null;
         for (Trigger trigger : behavior.getTriggers()) {
             if (trigger.getName().equals(triggerName)) {
@@ -922,7 +906,7 @@ public class NpcEntity extends PathfinderMob {
      * @param triggerType The type of the trigger.
      */
     public void trigger(Trigger.TriggerType triggerType) {
-        Behavior behavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        Behavior behavior = getCurrentBehavior();
         String nextBehaviorName = null;
         for (Trigger trigger : behavior.getTriggers()) {
             if (trigger.getType() == triggerType) {
