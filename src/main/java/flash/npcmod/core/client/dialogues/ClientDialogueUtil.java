@@ -20,11 +20,13 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientDialogueUtil {
@@ -50,10 +52,11 @@ public class ClientDialogueUtil {
       return;
     }
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      File jsonFile = FileUtil.getJsonFile("dialogues", name);
+      FileInputStream fis = new FileInputStream(jsonFile);
+      InputStreamReader is = new InputStreamReader(fis, StandardCharsets.UTF_8);
 
-      currentDialogue = object;
+      currentDialogue = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
     } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestDialogue(name));
@@ -66,10 +69,9 @@ public class ClientDialogueUtil {
       return;
     }
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("dialogue_editor", name)), StandardCharsets.UTF_8);
 
-      currentDialogueEditor = object;
+      currentDialogueEditor = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
     } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestDialogueEditor(name));
@@ -157,23 +159,23 @@ public class ClientDialogueUtil {
     }
 
     // Quest Talk Objective Check
-    if (Minecraft.getInstance().screen instanceof DialogueScreen) {
-      DialogueScreen dialogueScreen = (DialogueScreen) Minecraft.getInstance().screen;
+    if (Minecraft.getInstance().screen instanceof DialogueScreen dialogueScreen) {
       Player player = Minecraft.getInstance().player;
       if (player != null && player.isAlive()) {
         IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
         List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
-        acceptedQuests.forEach(questInstance -> {
-          questInstance.getQuest().getObjectives().forEach(objective -> {
+        for (QuestInstance questInstance : acceptedQuests) {
+          List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+          for (QuestObjective objective : objectives) {
             if (objective.getType().equals(QuestObjective.ObjectiveType.Talk)) {
               if (objective.getObjective().equals(dialogueScreen.getNpcName())
-                  && objective.getSecondaryObjective().equals(object.get("name").getAsString())) {
+                  && Objects.equals(objective.getSecondaryObjective(), object.get("name").getAsString())) {
                 String objectiveName = questInstance.getQuest().getName() + ":::" + objective.getName();
                 PacketDispatcher.sendToServer(new CTalkObjectiveComplete(objectiveName));
               }
             }
-          });
-        });
+          }
+        }
       }
     }
   }

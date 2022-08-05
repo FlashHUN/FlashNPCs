@@ -28,7 +28,7 @@ public class Function extends AbstractFunction {
           if (ConfigHolder.COMMON.isInvalidCommand(callable)) continue;
 
           String command = callable;
-          command = FunctionUtil.replaceSelectors(command, sender);
+          command = FunctionUtil.replaceSelectors(command, sender, npcEntity);
           if (paramNames.length > 0 && !paramNames[0].isEmpty()) {
             for (int i = 0; i < paramNames.length; i++) {
               String param = params[i];

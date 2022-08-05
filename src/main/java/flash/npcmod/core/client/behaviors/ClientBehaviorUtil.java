@@ -29,10 +29,9 @@ public class ClientBehaviorUtil {
    */
   public static void loadBehavior(String name) {
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/behaviors", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("behaviors", name)), StandardCharsets.UTF_8);
 
-      currentBehavior = object;
+      currentBehavior = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
     } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestBehaviorEditor(name));
@@ -45,10 +44,9 @@ public class ClientBehaviorUtil {
    */
   public static void loadBehaviorEditor(String name) {
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/behavior_editor", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("behavior_editor", name)), StandardCharsets.UTF_8);
 
-      currentBehaviorEditor = object;
+      currentBehaviorEditor = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
     } catch (Exception e) {
       PacketDispatcher.sendToServer(new CRequestBehaviorEditor(name));

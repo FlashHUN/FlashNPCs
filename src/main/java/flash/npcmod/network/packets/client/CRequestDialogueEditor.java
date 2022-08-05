@@ -50,16 +50,16 @@ public class CRequestDialogueEditor {
         // Send function names to player
         List<String> functionNames = new ArrayList<>();
         for (AbstractFunction function : FunctionUtil.FUNCTIONS) {
-          String name = function.getName();
+          StringBuilder name = new StringBuilder(function.getName());
           String[] paramNames = function.getParamNames();
           if (paramNames.length > 0 && !paramNames[0].isEmpty()) {
-            name += "::";
-            for (int i = 0; i < paramNames.length; i++) {
-              name += paramNames[i]+",";
+            name.append("::");
+            for (String paramName : paramNames) {
+              name.append(paramName).append(",");
             }
-            name = name.substring(0, name.length()-1);
+            name = new StringBuilder(name.substring(0, name.length() - 1));
           }
-          functionNames.add(name);
+          functionNames.add(name.toString());
         }
         PacketDispatcher.sendTo(new SResetFunctionNames(), sender);
         for (String name : functionNames) {
@@ -74,8 +74,7 @@ public class CRequestDialogueEditor {
           String dialogueEditorJson = CommonDialogueUtil.DEFAULT_DIALOGUE_EDITOR_JSON;
           if (msg.entityid != -1000) {
             Entity entity = sender.level.getEntity(msg.entityid);
-            if (entity instanceof NpcEntity) {
-              NpcEntity npcEntity = (NpcEntity) entity;
+            if (entity instanceof NpcEntity npcEntity) {
               for (String name : CommonDialogueUtil.HELLO_THERE_NAMES) {
                 if (npcEntity.getName().getString().equalsIgnoreCase(name)) {
                   dialogueEditorJson = CommonDialogueUtil.DEFAULT_DIALOGUE_EDITOR_JSON_HELLO_THERE;
@@ -91,7 +90,9 @@ public class CRequestDialogueEditor {
           PacketDispatcher.sendTo(new SSendDialogueEditor(msg.name, dialogueEditorJson), sender);
         }
 
-        PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.EDITDIALOGUE, msg.name, msg.entityid), sender);
+        if (msg.entityid != -1000) {
+          PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.EDITDIALOGUE, msg.name, msg.entityid), sender);
+        }
       }
     });
     ctx.get().setPacketHandled(true);
