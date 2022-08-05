@@ -27,11 +27,11 @@ public class CommonQuestUtil {
   public static void loadAllQuests() {
     QUESTS.clear();
     String path = Main.MODID+"/quests";
-    if (FileUtil.shouldReadFromWorld()) {
-      path = FileUtil.getWorldName() + "/" + path;
+    if (FileUtil.shouldGetFromWorld()) {
+      path = FileUtil.getWorldDirectory() + "/" + path;
     }
-    File folder = FileUtil.readDirectory(path);
-    for (File file : folder.listFiles()) {
+    File directory = FileUtil.getOrCreateDirectory(path);
+    for (File file : directory.listFiles()) {
       if (!file.isDirectory()) {
         loadQuestFile(FilenameUtils.removeExtension(file.getName()));
       }
@@ -59,8 +59,8 @@ public class CommonQuestUtil {
 
   public static void buildQuest(String name, String jsonText) {
     try {
-      File jsonFile = FileUtil.getJsonFile("quests", name);
-      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
+      File jsonFile = FileUtil.getJsonFileForWriting("quests", name);
+      JsonObject jsonObject = FileUtil.GSON.fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -96,12 +96,12 @@ public class CommonQuestUtil {
   @Nullable
   public static Quest loadQuestFile(String name) {
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/quests", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("quests", name)), StandardCharsets.UTF_8);
+      JsonObject object = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
 
       Quest quest = Quest.fromJson(object);
-      if (QUESTS.contains(quest)) QUESTS.remove(quest);
+      QUESTS.remove(quest);
 
       QUESTS.add(quest);
 

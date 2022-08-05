@@ -24,8 +24,8 @@ public class CommonBehaviorUtil {
   public static void buildBehavior(String name, String jsonText) {
     Writer fw = null;
     try {
-      File jsonFile = FileUtil.getJsonFile("behaviors", name);
-      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
+      File jsonFile = FileUtil.getJsonFileForWriting("behaviors", name);
+      JsonObject jsonObject = FileUtil.GSON.fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -46,8 +46,8 @@ public class CommonBehaviorUtil {
 
   public static void buildBehaviorEditor(String name, String jsonText) {
     try {
-      File jsonFile = FileUtil.getJsonFile("behavior_editor", name);
-      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
+      File jsonFile = FileUtil.getJsonFileForWriting("behavior_editor", name);
+      JsonObject jsonObject = FileUtil.GSON.fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -64,8 +64,8 @@ public class CommonBehaviorUtil {
 
   public static JsonObject loadBehaviorFile(String name) {
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/behaviors", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("behaviors", name)), StandardCharsets.UTF_8);
+      JsonObject object = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
       return object;
     } catch (Exception e) {
@@ -76,8 +76,8 @@ public class CommonBehaviorUtil {
 
   public static JsonObject loadBehaviorEditorFile(String name) {
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/behavior_editor", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("behavior_editor", name)), StandardCharsets.UTF_8);
+      JsonObject object = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
       return object;
     } catch (Exception e) {
@@ -87,8 +87,7 @@ public class CommonBehaviorUtil {
   }
 
   public static List<String> readAllBehaviorFileNames() {
-    File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/behaviors");
-    Stream<String> files = Arrays.stream(folder.listFiles()).map(file -> FilenameUtils.removeExtension(file.getName()));
-    return files.collect(Collectors.toList());
+    File[] files = FileUtil.getAllFiles("behaviors");
+    return Arrays.stream(files).map(file -> FilenameUtils.removeExtension(file.getName())).collect(Collectors.toList());
   }
 }

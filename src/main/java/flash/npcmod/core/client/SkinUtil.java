@@ -21,7 +21,7 @@ public class SkinUtil {
 
   static {
     minecraft = Minecraft.getInstance();
-    skinCacheDir = FileUtil.readDirectory("assets/npc_skins/");
+    skinCacheDir = FileUtil.getOrCreateDirectory("assets/npc_skins/");
   }
 
   public static ResourceLocation loadSkin(String url) {

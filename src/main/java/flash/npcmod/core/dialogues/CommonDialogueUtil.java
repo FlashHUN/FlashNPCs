@@ -32,8 +32,8 @@ public class CommonDialogueUtil {
   public static void buildDialogue(String name, String jsonText) {
     Writer fw = null;
     try {
-      File jsonFile = FileUtil.getJsonFile("dialogues", name);
-      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
+      File jsonFile = FileUtil.getJsonFileForWriting("dialogues", name);
+      JsonObject jsonObject = FileUtil.GSON.fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -54,8 +54,8 @@ public class CommonDialogueUtil {
 
   public static void buildDialogueEditor(String name, String jsonText) {
     try {
-      File jsonFile = FileUtil.getJsonFile("dialogue_editor", name);
-      JsonObject jsonObject = new Gson().fromJson(jsonText, JsonObject.class);
+      File jsonFile = FileUtil.getJsonFileForWriting("dialogue_editor", name);
+      JsonObject jsonObject = FileUtil.GSON.fromJson(jsonText, JsonObject.class);
       fw = new OutputStreamWriter(new FileOutputStream(jsonFile), StandardCharsets.UTF_8);
       fw.write(jsonObject.toString());
     } catch (Exception e) {
@@ -72,8 +72,8 @@ public class CommonDialogueUtil {
 
   public static JsonObject loadDialogueFile(String name) {
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogues", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("dialogues", name)), StandardCharsets.UTF_8);
+      JsonObject object = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
       return object;
     } catch (Exception e) {
@@ -84,8 +84,8 @@ public class CommonDialogueUtil {
 
   public static JsonObject loadDialogueEditorFile(String name) {
     try {
-      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.readFileFrom(Main.MODID+"/dialogue_editor", name+".json")), StandardCharsets.UTF_8);
-      JsonObject object = new Gson().fromJson(is, JsonObject.class);
+      InputStreamReader is = new InputStreamReader(new FileInputStream(FileUtil.getJsonFile("dialogue_editor", name)), StandardCharsets.UTF_8);
+      JsonObject object = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
       return object;
     } catch (Exception e) {
@@ -95,9 +95,8 @@ public class CommonDialogueUtil {
   }
 
   public static List<String> readAllDialogueFileNames() {
-    File folder = FileUtil.readDirectory(FileUtil.getWorldName()+"/"+Main.MODID+"/dialogues");
-    Stream<String> files = Arrays.stream(folder.listFiles()).map(file -> FilenameUtils.removeExtension(file.getName()));
-    return files.collect(Collectors.toList());
+    File[] files = FileUtil.getAllFiles("dialogues");
+    return Arrays.stream(files).map(file -> FilenameUtils.removeExtension(file.getName())).collect(Collectors.toList());
   }
 
 }

@@ -1,6 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import com.google.gson.JsonObject;
+import flash.npcmod.Main;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -48,8 +49,7 @@ public class CRequestDialogue {
         String dialogueJson = CommonDialogueUtil.DEFAULT_DIALOGUE_JSON;
         if (msg.entityid != -1000) {
           Entity entity = sender.level.getEntity(msg.entityid);
-          if (entity instanceof NpcEntity) {
-            NpcEntity npcEntity = (NpcEntity) entity;
+          if (entity instanceof NpcEntity npcEntity) {
             for (String name : CommonDialogueUtil.HELLO_THERE_NAMES) {
               if (npcEntity.getName().getString().equalsIgnoreCase(name)) {
                 dialogueJson = CommonDialogueUtil.DEFAULT_DIALOGUE_JSON_HELLO_THERE;
@@ -65,8 +65,9 @@ public class CRequestDialogue {
         PacketDispatcher.sendTo(new SSendDialogue(msg.name, dialogueJson), sender);
       }
 
-      PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.DIALOGUE, msg.name, msg.entityid), sender);
-
+      if (msg.entityid != -1000) {
+        PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.DIALOGUE, msg.name, msg.entityid), sender);
+      }
     });
     ctx.get().setPacketHandled(true);
   }
