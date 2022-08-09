@@ -15,9 +15,11 @@ import net.minecraft.util.Mth;
  * A special widget that is used in the HorizontalFrame to create space between widgets.
  */
 public class TextWidget extends AbstractWidget {
-    public TextWidget(int x, int y, int width, String s) {
-
-        super(x, y, width, 20, new TextComponent(s));
+    public TextWidget(String s) {
+        super(0, 0, Minecraft.getInstance().font.width(s), 20, new TextComponent(s));
+    }
+    public TextWidget(int x, int y, String s) {
+        super(x, y, Minecraft.getInstance().font.width(s), 20, new TextComponent(s));
     }
 
     public static void drawCenteredString(PoseStack poseStack, Font font, Component component, int x, int y, int alpha) {

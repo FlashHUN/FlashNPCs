@@ -4,16 +4,23 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.TextComponent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Manage the position of the widgets contained within this frame. Buttons and widgets with signals require the
+ * 'addWidget' call from the screen still.
+ */
 public class DirectionalFrame extends AbstractWidget{
     public static final boolean HORIZONTAL = true;
     public static final boolean VERTICAL = false;
     public static final int MINIMUM_PADDING = 5;
 
-    private boolean direction;
+    private final boolean direction;
     private int minimumSize, numSpacers;
     private final List<Integer> padding;
     private boolean sizeChanged;
@@ -67,12 +74,61 @@ public class DirectionalFrame extends AbstractWidget{
         sizeChanged = true;
     }
 
+    /**
+     * Create a horizontal Frame for AbstractWidgets.
+     * @param frameWidth The maximum available width for this widget.
+     * @return The vertical directional frame.
+     */
+    public static DirectionalFrame createHorizontalFrame(int frameWidth) {
+        return new DirectionalFrame(0, 0, frameWidth, 0, HORIZONTAL);
+    }
+
+    /**
+     * Create a horizontal Frame for AbstractWidgets.
+     * @param x The x coordinate of this frame.
+     * @param y The y coordinate of this frame.
+     * @param frameWidth The maximum available width for this widget.
+     * @return The vertical directional frame.
+     */
     public static DirectionalFrame createHorizontalFrame(int x, int y, int frameWidth) {
         return new DirectionalFrame(x, y, frameWidth, 0, HORIZONTAL);
     }
 
+    /**
+     * Create a vertical Frame for AbstractWidgets.
+     * @param frameHeight The maximum available height for this widget.
+     * @return The vertical directional frame.
+     */
+    public static DirectionalFrame createVerticalFrame(int frameHeight) {
+        return new DirectionalFrame(0, 0, 0,frameHeight, VERTICAL);
+    }
+
+    /**
+     * Create a vertical Frame for AbstractWidgets.
+     * @param x The x coordinate of this frame.
+     * @param y The y coordinate of this frame.
+     * @param frameHeight The maximum available height for this widget.
+     * @return The vertical directional frame.
+     */
     public static DirectionalFrame createVerticalFrame(int x, int y, int frameHeight) {
         return new DirectionalFrame(x, y, 0,frameHeight, VERTICAL);
+    }
+
+    @Override
+    public int getWidth() {
+        if (direction) return this.minimumSize;
+        else {
+            return Collections.max(widgets, Comparator.comparing(AbstractWidget::getWidth)).getWidth();
+        }
+    }
+
+    @Override
+    public int getHeight() {
+        if (!direction) return this.minimumSize;
+        else {
+            int max =  Collections.max(widgets, Comparator.comparing(AbstractWidget::getHeight)).getHeight();
+            return max;
+        }
     }
 
     /**
@@ -88,8 +144,8 @@ public class DirectionalFrame extends AbstractWidget{
      */
     public void recalulateSizeHorizontal() {
         this.sizeChanged = false;
-        int spacerSize = 0;
-        int nextSpot = MINIMUM_PADDING + this.x;
+        int spacerSize;
+        int nextSpot = this.x;
         if (numSpacers > 0) {
             spacerSize = (this.width - this.minimumSize) / numSpacers;
             for (int i = 0; i < this.widgets.size(); i++) {
@@ -98,7 +154,7 @@ public class DirectionalFrame extends AbstractWidget{
                     widget.setWidth(spacerSize);
                 }
 
-                widget.x = nextSpot;
+                widget.x = this.padding.get(i) + nextSpot;
 
                 nextSpot += widget.getWidth() + this.padding.get(i);
             }
@@ -107,7 +163,7 @@ public class DirectionalFrame extends AbstractWidget{
             nextSpot += whiteSpaceSize;
             for (int i = 0; i < this.widgets.size(); i++) {
                 AbstractWidget widget = this.widgets.get(i);
-                widget.x = nextSpot;
+                widget.x = this.padding.get(i) + nextSpot;
                 nextSpot += widget.getWidth() + this.padding.get(i) + whiteSpaceSize;
             }
         }
@@ -118,8 +174,8 @@ public class DirectionalFrame extends AbstractWidget{
      */
     public void recalulateSizeVertical() {
         this.sizeChanged = false;
-        int spacerSize = 0;
-        int nextSpot = MINIMUM_PADDING + this.y;
+        int spacerSize;
+        int nextSpot = this.y;
         if (numSpacers > 0) {
             spacerSize = (this.height - this.minimumSize) / numSpacers;
             for (int i = 0; i < this.widgets.size(); i++) {
@@ -127,16 +183,15 @@ public class DirectionalFrame extends AbstractWidget{
                 if (widget instanceof SpacerWidget) {
                     widget.setHeight(spacerSize);
                 }
-
-                widget.y = nextSpot;
+                widget.y = this.padding.get(i) + nextSpot;
                 nextSpot += widget.getHeight() + this.padding.get(i);
             }
         } else {
-            int whiteSpaceSize = (this.width - (this.minimumSize + MINIMUM_PADDING)) / (this.widgets.size() + 1);
+            int whiteSpaceSize = (this.height - (this.minimumSize + MINIMUM_PADDING)) / (this.widgets.size() + 1);
             nextSpot += whiteSpaceSize;
             for (int i = 0; i < this.widgets.size(); i++) {
                 AbstractWidget widget = this.widgets.get(i);
-                widget.y = nextSpot;
+                widget.y = this.padding.get(i) + nextSpot;
                 nextSpot += widget.getHeight() + this.padding.get(i) + whiteSpaceSize;
             }
         }
@@ -146,7 +201,7 @@ public class DirectionalFrame extends AbstractWidget{
         void setPos(AbstractWidget widget);
     }
 
-    public void render(PoseStack poseStack, int x, int y, float partialTicks) {
+    public void render(@NotNull PoseStack poseStack, int x, int y, float partialTicks) {
         if (this.visible) {
             if (sizeChanged) recalulateSize();
             SetPosFunction func;
@@ -168,12 +223,15 @@ public class DirectionalFrame extends AbstractWidget{
     }
 
     public void setVisible(boolean visible) {
-        for(AbstractWidget widget : widgets) widget.visible = visible;
+        for(AbstractWidget widget : widgets) {
+            if (widget instanceof DirectionalFrame) ((DirectionalFrame) widget).setVisible(visible);
+            else widget.visible = visible;
+        }
         this.visible = visible;
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput p_169152_) {
+    public void updateNarration(@NotNull NarrationElementOutput p_169152_) {
 
     }
 }

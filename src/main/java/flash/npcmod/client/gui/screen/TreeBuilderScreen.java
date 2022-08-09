@@ -4,8 +4,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import flash.npcmod.Main;
 import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
+import flash.npcmod.client.gui.widget.DirectionalFrame;
 import flash.npcmod.client.gui.widget.FunctionListWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
@@ -53,6 +55,7 @@ abstract public class TreeBuilderScreen extends Screen {
     protected EditBox functionParamsField;
     protected HashMap<EditType, EditBox> allFields;
     protected Button saveButton, confirmButton, cancelButton;
+    protected DirectionalFrame buttonFrame;
     protected String newName = "", newFunctionParams = "";
 
 
@@ -389,17 +392,27 @@ abstract public class TreeBuilderScreen extends Screen {
             }
         }));
         this.saveButton.active = conflictingNodeDataNames.size() == 0;
-        this.confirmButton = this.addRenderableWidget(new Button(width / 2 - 60, height / 2 + 15, 50, 20, new TextComponent("Confirm"), btn -> {
+        this.confirmButton = this.addWidget(new Button(width / 2 - 60, height / 2 + 15, 50, 20, new TextComponent("Confirm"), btn -> {
             if (this.getEditingNode() != null) {
                 confirmEdits();
                 this.getEditingNode().calculateDimensions();
             }
+            Main.LOGGER.info("Confirm hit");
             this.setNodeBeingEdited(null, EditType.NONE);
         }));
-        this.confirmButton.visible = false;
-        this.cancelButton = this.addRenderableWidget(new Button(width / 2 + 10, height / 2 + 15, 50, 20, new TextComponent("Cancel"),
-                btn -> this.setNodeBeingEdited(null, EditType.NONE)));
-        this.cancelButton.visible = false;
+        this.cancelButton = this.addWidget(new Button(width / 2 + 10, height / 2 + 15, 50, 20, new TextComponent("Cancel"),
+                btn -> this.setNodeBeingEdited(null, EditType.NONE)
+        ));
+
+        this.buttonFrame = this.addRenderableWidget(DirectionalFrame.createVerticalFrame(this.height));
+        this.buttonFrame.addSpacer();
+        DirectionalFrame horizontalFrame = DirectionalFrame.createHorizontalFrame(this.width);
+        horizontalFrame.addSpacer();
+        horizontalFrame.addWidget(this.confirmButton, 20);
+        horizontalFrame.addWidget(this.cancelButton, 20);
+        horizontalFrame.addSpacer();
+        this.buttonFrame.addWidget(horizontalFrame);
+        this.buttonFrame.setVisible(false);
 
         // Initialize our text field widgets
         EditBox nameField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
@@ -662,8 +675,7 @@ abstract public class TreeBuilderScreen extends Screen {
         this.functionListWidget.setEditingNode(node);
         this.functionListWidget.setVisible(editType == EditType.FUNCTION);
 
-        this.confirmButton.visible = editType != EditType.NONE;
-        this.cancelButton.visible = editType != EditType.NONE;
+        this.buttonFrame.setVisible(editType != EditType.NONE);
         if (editType == EditType.FUNCTION) {
             confirmButton.x = this.functionParamsField.x;
             confirmButton.y = this.functionParamsField.y + 22;
@@ -700,8 +712,7 @@ abstract public class TreeBuilderScreen extends Screen {
         // Button visibility
         boolean isAnyTextFieldVisible = this.isAnyTextFieldVisible();
         this.saveButton.visible = !isAnyTextFieldVisible;
-        this.confirmButton.visible = isAnyTextFieldVisible;
-        this.cancelButton.visible = isAnyTextFieldVisible;
+        this.buttonFrame.setVisible(isAnyTextFieldVisible);
 
         // Save button should only be active if we have no conflicting dialogue names
         this.saveButton.active = conflictingNodeDataNames.size() == 0;
