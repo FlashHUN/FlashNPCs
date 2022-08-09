@@ -10,8 +10,10 @@ import flash.npcmod.client.gui.behavior.BehaviorNode;
 import flash.npcmod.client.gui.behavior.Trigger;
 import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
+import flash.npcmod.client.gui.widget.DirectionalFrame;
 import flash.npcmod.client.gui.widget.DropdownWidget;
 import flash.npcmod.client.gui.widget.FunctionListWidget;
+import flash.npcmod.client.gui.widget.TextWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -50,10 +52,15 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     private DropdownWidget<Action.ActionType> actionTypeDropdownWidget;
     private DropdownWidget<Trigger.TriggerType> triggerTypeDropdownWidget;
     private EditBox triggerChildField, triggerTimerField;
+    /**
+     * 0-2 Block Pos, 3 Radius
+     */
     private final List<EditBox> actionFields;
     private Button getPathButton, setPathButton;
     @Nullable
     protected BehaviorNode editingNode, selectedNode;
+
+    protected DirectionalFrame testFrame;
 
     protected final Predicate<String> numberFilter = (text) -> {
         Pattern pattern = Pattern.compile("-?\\d*");
@@ -68,6 +75,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.intArgs = new int[5];
         Arrays.fill(this.intArgs, 0);
         this.waitingPath = new long[0];
+
     }
 
     /**
@@ -174,7 +182,8 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                         getWidgetWidth(0, this.width, null, 20),
                         getWidgetHeight(-2, this.height, null),
                         120,
-                        3
+                        3,
+                        null
                 )
         );
         this.triggerTypeDropdownWidget.visible = false;
@@ -248,7 +257,18 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                         Action.ActionType.STANDSTILL,
                         getWidgetWidth(0, this.width, colWidths, 20),
                         getWidgetHeight(indexHeight, this.height, null),
-                        100
+                        100,
+                        Action.ActionType.values().length,
+                        dropdownWidget -> {
+                            Action.ActionType actionType = (Action.ActionType) dropdownWidget.getSelectedOption();
+                            switch (actionType) {
+                                case MOVE_TO_BLOCK, STANDSTILL ->
+                                    this.actionFields.get(3).visible = false;
+                                case WANDER ->
+                                    this.actionFields.get(3).visible = true;
+                            }
+
+                        }
                 )
         );
         this.actionTypeDropdownWidget.visible = false;
@@ -330,42 +350,55 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         }
         colWidths[Math.abs(indexWidth - 1)] = 50;
         colWidths[Math.abs(indexWidth - 2)] = 50;
-        this.getPathButton = this.addRenderableWidget(
-            new Button(
-                getWidgetWidth(indexWidth--, this.width, colWidths, 5),
-                getWidgetHeight(indexHeight, this.height, null),
-                50, 20, new TextComponent("Get Path"), btn -> {
-                    ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
-                    if (this.waitingPath.length == 0) {
-                        behaviorEditorStack.setTag(null);
-                        return;
-                    }
-                    CompoundTag pathTag = new CompoundTag();
-                    pathTag.putLongArray("Path", this.waitingPath);
-                    Main.LOGGER.info("Loaded something;");
+        this.getPathButton = new Button(
+            getWidgetWidth(indexWidth--, this.width, colWidths, 5),
+            getWidgetHeight(indexHeight, this.height, null),
+            50, 20, new TextComponent("Get Path"), btn -> {
+                ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
+                if (this.waitingPath.length == 0) {
+                    behaviorEditorStack.setTag(null);
+                    return;
                 }
-            )
+                CompoundTag pathTag = new CompoundTag();
+                pathTag.putLongArray("Path", this.waitingPath);
+                Main.LOGGER.info("Loaded something;");
+            }
         );
         this.getPathButton.visible = false;
 
-        this.setPathButton = this.addRenderableWidget(
-                new Button(
-                    getWidgetWidth(indexWidth, this.width, colWidths, 5),
-                    getWidgetHeight(indexHeight, this.height, null),
-                    50, 20, new TextComponent("Set Path"), btn -> {
-                        ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
-                        if (behaviorEditorStack.hasTag()) {
-                            CompoundTag pathTag = behaviorEditorStack.getTag();
-                            if (pathTag != null && pathTag.contains("Path")) {
-                                this.waitingPath = behaviorEditorStack.getTag().getLongArray("Path");
-                                return;
-                            }
-                        }
-                        this.waitingPath = new long[0];
+        this.setPathButton = new Button(
+            getWidgetWidth(indexWidth, this.width, colWidths, 5),
+            getWidgetHeight(indexHeight, this.height, null),
+            50, 20, new TextComponent("Set Path"), btn -> {
+                ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
+                if (behaviorEditorStack.hasTag()) {
+                    CompoundTag pathTag = behaviorEditorStack.getTag();
+                    if (pathTag != null && pathTag.contains("Path")) {
+                        this.waitingPath = behaviorEditorStack.getTag().getLongArray("Path");
+                        return;
                     }
-                )
+                }
+                this.waitingPath = new long[0];
+            }
         );
+
         this.setPathButton.visible = false;
+
+        DirectionalFrame verticalFrame = this.addRenderableWidget(
+                DirectionalFrame.createVerticalFrame(0, 0, this.height)
+        );
+
+
+        this.testFrame = DirectionalFrame.createHorizontalFrame(0, getWidgetHeight(indexHeight, this.height, null), this.width);
+        this.testFrame.addWidget(new TextWidget(0, 0, minecraft.font.width("Target Block:"), "Target Block:"));
+        this.testFrame.addWidget(this.actionFields.get(0));
+        this.testFrame.addWidget(this.actionFields.get(1));
+        this.testFrame.addWidget(this.actionFields.get(2));
+        this.testFrame.addSpacer();
+        this.testFrame.addWidget(this.setPathButton);
+        this.testFrame.addWidget(this.getPathButton);
+        this.testFrame.setVisible(false);
+        verticalFrame.addWidget(this.testFrame);
 
         // Set up the radius field.
 
@@ -443,6 +476,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                         if (this.npcEntity != null) {
                             blockPos = this.npcEntity.blockPosition();
                         }
+
                         if (getSelectedNode() != null && getSelectedNodeIndex() == -2) {
                             newNode = new BehaviorNode(null, this, this.minecraft, Behavior.newBehavior(blockPos));
                             newNode.getNodeData().setName(name);
@@ -501,14 +535,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         }
     }
 
-    /**
-     * Function from screen.
-     *
-     * @param matrixStack  The Pose Stack.
-     * @param mouseX       The mouse x coordinate.
-     * @param mouseY       The mouse y coordinate.
-     * @param partialTicks float time.
-     */
     @Override
     public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         super.render(matrixStack, mouseX, mouseY, partialTicks);
@@ -520,22 +546,16 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             int numRows = getNumWidgetRows(this.height);
             numRows = (numRows / 2);
             int textHeightOffset = 5; // This lines up the text with the edit boxes a little better.
-            drawString(
-                    matrixStack,
-                    font,
-                    "Block Pos:",
-                    getWidgetWidth((numCols / 2)-1, this.width, colWidths, 0),
-                    getWidgetHeight(numRows - 1, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
-            drawString(
-                    matrixStack,
-                    font,
-                    "Radius:",
-                    getWidgetWidth((numCols / 2)-1, this.width, colWidths, 0),
-                    getWidgetHeight(numRows - 2, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
+            if (actionTypeDropdownWidget.getSelectedOption() == Action.ActionType.WANDER) {
+                drawString(
+                        matrixStack,
+                        font,
+                        "Radius:",
+                        getWidgetWidth((numCols / 2) - 1, this.width, colWidths, 0),
+                        getWidgetHeight(numRows - 2, this.height, null) + textHeightOffset,
+                        0xFFFFFF
+                );
+            }
             colWidths = new int[]{120, 30};
             drawString(
                     matrixStack,
@@ -628,9 +648,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         boolean isActionType = editType == EditType.ACTION;
         this.poseDropdownWidget.visible = isActionType;
         this.actionTypeDropdownWidget.visible = isActionType;
-        for (EditBox editBox : actionFields) editBox.setVisible(isActionType);
-        this.getPathButton.visible = isActionType;
-        this.setPathButton.visible = isActionType;
+        //for (EditBox editBox : actionFields) editBox.setVisible(isActionType);
+        this.testFrame.setVisible(isActionType);
+        //this.getPathButton.visible = isActionType;
+        //this.setPathButton.visible = isActionType;
         if (node != null) {
             this.allFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
             Trigger trigger = ((BehaviorNode) node).getEditTrigger();

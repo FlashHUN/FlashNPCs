@@ -174,7 +174,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
     }));
 
     EntityUtil.LivingEntities entity = entityObjective != null ? EntityUtil.LivingEntities.valueOf(EntityType.getKey(entityObjective).toString().replaceAll(":", "_")) : EntityUtil.LivingEntities.valueOf("minecraft_pig");
-    this.entityTypeDropdown = this.addRenderableWidget(new DropdownWidget<>(entity, 5+font.width(PRIMARY), 82-2, 200, 10));
+    this.entityTypeDropdown = this.addRenderableWidget(new DropdownWidget<>(entity, 5+font.width(PRIMARY), 82-2, 200, 10, null));
     this.typeDropdown = this.addRenderableWidget(new DropdownWidget<>(objectiveType, 5+font.width(TYPE), 3, 100));
 
     this.removeRunOnCompletionButtons = new Button[6];

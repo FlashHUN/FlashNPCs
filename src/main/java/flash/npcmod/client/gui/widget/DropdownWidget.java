@@ -6,17 +6,22 @@ import flash.npcmod.Main;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
 
   private static final Minecraft minecraft = Minecraft.getInstance();
 
   private static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/quest_objective_builder.png");
+
+  private final DropdownWidget.OnSelect onSelect;
 
   T myEnum;
   Enum selectedOption;
@@ -27,16 +32,17 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
   private final int maxDisplayedOptions;
 
   public DropdownWidget(T defaultOption, int x, int y, int width) {
-    this(defaultOption, x, y, width, 0);
+    this(defaultOption, x, y, width, 0, null);
   }
 
-  public DropdownWidget(T defaultOption, int x, int y, int width, int maxDisplayedOptions) {
+  public DropdownWidget(T defaultOption, int x, int y, int width, int maxDisplayedOptions, OnSelect onSelect) {
     super(x, y, Mth.clamp(width, 0, 200), 13, new TextComponent(defaultOption.name()));
     myEnum = defaultOption;
     selectedOption = defaultOption;
     enumConstants = myEnum.getClass().getEnumConstants();
     // TODO There is a bug where the scaled height will cause dropdowns to be cutoff earlier than necessary.
     this.maxDisplayedOptions = maxDisplayedOptions == 0 ? (minecraft.getWindow().getGuiScaledHeight() - (y + 13 + enumConstants.length*13)) / 13 : Math.abs(maxDisplayedOptions);
+    this.onSelect = onSelect;
   }
 
   @Override
@@ -48,6 +54,7 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
     RenderSystem.defaultBlendFunc();
     RenderSystem.enableDepthTest();
     int maxTextWidth = width-8;
+
     // draw main widget
     {
       int i = this.getYImage(this.isHoveredOrFocused());
@@ -56,6 +63,7 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
         name = fontrenderer.plainSubstrByWidth(this.getMessage().getString(), maxTextWidth-fontrenderer.width("...")) + "...";
       else
         name = this.getMessage().getString();
+
       drawOption(matrixStack, x, y, i, mouseX, mouseY, name);
       RenderSystem.setShaderTexture(0, TEXTURE);
       blit(matrixStack, x + width, y, 200 + (this.showOptions ? 15 : 0), i * 13, 15, 13);
@@ -141,10 +149,17 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
         double minY = this.y+13+i*13;
         if (mouseY >= minY && mouseY <= minY+13) {
           selectOption(i);
+          if (this.onSelect != null)
+            this.onSelect.onSelect(this);
           break;
         }
       }
     }
+  }
+
+  @OnlyIn(Dist.CLIENT)
+  public interface OnSelect {
+    void onSelect(DropdownWidget dropdownWidget);
   }
 
   @Override

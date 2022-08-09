@@ -44,7 +44,6 @@ import net.minecraftforge.client.event.RenderNameplateEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.glfw.GLFW;
 
-import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 
