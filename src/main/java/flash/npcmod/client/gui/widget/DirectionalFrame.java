@@ -20,13 +20,20 @@ public class DirectionalFrame extends AbstractWidget{
     public static final boolean VERTICAL = false;
     public static final int MINIMUM_PADDING = 5;
 
+    public enum Alignment {
+        START_ALIGNED,
+        CENTERED,
+        END_ALIGNED
+    };
+
+    private Alignment alignment;
     private final boolean direction;
     private int minimumSize, numSpacers;
     private final List<Integer> padding;
     private boolean sizeChanged;
     private final List<AbstractWidget> widgets;
 
-    public DirectionalFrame(int x, int y , int width, int height, boolean direction) {
+    public DirectionalFrame(int x, int y , int width, int height, boolean direction, Alignment alignment) {
         super(x, y, width, height, new TextComponent(""));
         this.widgets = new ArrayList<>();
         this.minimumSize = 0;
@@ -34,6 +41,7 @@ public class DirectionalFrame extends AbstractWidget{
         this.padding = new ArrayList<>();
         this.direction = direction;
         this.sizeChanged = false;
+        this.alignment = alignment;
     }
 
     public void addSpacer() {
@@ -79,8 +87,8 @@ public class DirectionalFrame extends AbstractWidget{
      * @param frameWidth The maximum available width for this widget.
      * @return The vertical directional frame.
      */
-    public static DirectionalFrame createHorizontalFrame(int frameWidth) {
-        return new DirectionalFrame(0, 0, frameWidth, 0, HORIZONTAL);
+    public static DirectionalFrame createHorizontalFrame(int frameWidth, Alignment alignment) {
+        return new DirectionalFrame(0, 0, frameWidth, 0, HORIZONTAL, alignment);
     }
 
     /**
@@ -90,8 +98,8 @@ public class DirectionalFrame extends AbstractWidget{
      * @param frameWidth The maximum available width for this widget.
      * @return The vertical directional frame.
      */
-    public static DirectionalFrame createHorizontalFrame(int x, int y, int frameWidth) {
-        return new DirectionalFrame(x, y, frameWidth, 0, HORIZONTAL);
+    public static DirectionalFrame createHorizontalFrame(int x, int y, int frameWidth, Alignment alignment) {
+        return new DirectionalFrame(x, y, frameWidth, 0, HORIZONTAL, alignment);
     }
 
     /**
@@ -99,8 +107,8 @@ public class DirectionalFrame extends AbstractWidget{
      * @param frameHeight The maximum available height for this widget.
      * @return The vertical directional frame.
      */
-    public static DirectionalFrame createVerticalFrame(int frameHeight) {
-        return new DirectionalFrame(0, 0, 0,frameHeight, VERTICAL);
+    public static DirectionalFrame createVerticalFrame(int frameHeight, Alignment alignment) {
+        return new DirectionalFrame(0, 0, 0,frameHeight, VERTICAL, alignment);
     }
 
     /**
@@ -110,8 +118,8 @@ public class DirectionalFrame extends AbstractWidget{
      * @param frameHeight The maximum available height for this widget.
      * @return The vertical directional frame.
      */
-    public static DirectionalFrame createVerticalFrame(int x, int y, int frameHeight) {
-        return new DirectionalFrame(x, y, 0,frameHeight, VERTICAL);
+    public static DirectionalFrame createVerticalFrame(int x, int y, int frameHeight, Alignment alignment) {
+        return new DirectionalFrame(x, y, 0,frameHeight, VERTICAL, alignment);
     }
 
     @Override
@@ -208,8 +216,6 @@ public class DirectionalFrame extends AbstractWidget{
             if (direction) func = (widget) -> widget.y = this.y;
             else func = (widget) -> widget.x = this.x;
             for (AbstractWidget widget : widgets) {
-                if (widget instanceof DirectionalFrame) ((DirectionalFrame) widget).setVisible(true);
-                else widget.visible = true;
                 func.setPos(widget);
                 widget.render(poseStack, x, y, partialTicks);
             }
@@ -223,10 +229,6 @@ public class DirectionalFrame extends AbstractWidget{
     }
 
     public void setVisible(boolean visible) {
-        for(AbstractWidget widget : widgets) {
-            if (widget instanceof DirectionalFrame) ((DirectionalFrame) widget).setVisible(visible);
-            else widget.visible = visible;
-        }
         this.visible = visible;
     }
 

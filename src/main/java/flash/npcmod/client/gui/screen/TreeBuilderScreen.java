@@ -404,9 +404,9 @@ abstract public class TreeBuilderScreen extends Screen {
                 btn -> this.setNodeBeingEdited(null, EditType.NONE)
         ));
 
-        this.buttonFrame = this.addRenderableWidget(DirectionalFrame.createVerticalFrame(this.height));
+        this.buttonFrame = this.addRenderableWidget(DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.START_ALIGNED));
         this.buttonFrame.addSpacer();
-        DirectionalFrame horizontalFrame = DirectionalFrame.createHorizontalFrame(this.width);
+        DirectionalFrame horizontalFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         horizontalFrame.addSpacer();
         horizontalFrame.addWidget(this.confirmButton, 20);
         horizontalFrame.addWidget(this.cancelButton, 20);

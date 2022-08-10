@@ -2,7 +2,6 @@ package flash.npcmod.client.gui.screen;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.behavior.Action;
 import flash.npcmod.client.gui.behavior.Behavior;
@@ -30,7 +29,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -62,7 +60,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     protected DirectionalFrame actionRadiusFrame, actionTargetFrame, actionVFrame, triggerFrame;
 
     protected final Predicate<String> numberFilter = (text) -> {
-        Pattern pattern = Pattern.compile("-?\\d*");
+        Pattern pattern = Pattern.compile("~?-?\\d*");
         Matcher matcher = pattern.matcher(text);
         return matcher.matches();
     };
@@ -135,13 +133,12 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Override
     protected void init() {
         super.init();
-        int numRows = getNumWidgetRows(this.height);
         //initialize function widget
         this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
         this.functionListWidget.calculatePositionAndDimensions();
 
         // Initialize our text field widgets
-        EditBox dialogueField = this.addRenderableWidget(
+        EditBox dialogueField = this.addWidget(
                 new EditBox(this.font,0,0,120,20,TextComponent.EMPTY)
         );
         dialogueField.setResponder(this::setNewDialogueName);
@@ -155,12 +152,8 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         EditBox triggerField = new EditBox(this.font,0,0,120,20,TextComponent.EMPTY);
         triggerField.setResponder(this::setNewTriggerName);
         triggerField.setMaxLength(50);
-        triggerField.setVisible(false);
         triggerField.setCanLoseFocus(true);
         allFields.put(EditType.TRIGGER, triggerField);
-
-        this.triggerTypeDropdownWidget = this.addWidget(new DropdownWidget<>(Trigger.TriggerType.DIALOGUE_TRIGGER,0,0,120,3,null));
-        this.triggerTypeDropdownWidget.visible = false;
 
         this.triggerTimerField =  new EditBox(this.font, 0, 0,120,20,TextComponent.EMPTY);
         this.triggerTimerField.setFilter(numberFilter);
@@ -169,30 +162,41 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.intArgs[4] = Integer.parseInt(s);
         });
         this.triggerTimerField.setMaxLength(10);
-        this.triggerTimerField.setVisible(false);
         this.triggerTimerField.setCanLoseFocus(true);
 
         this.triggerChildField = new EditBox(this.font, 0, 0, 120, 20, TextComponent.EMPTY);
         this.triggerChildField.setResponder(this::setNewTriggerChild);
         this.triggerChildField.setMaxLength(50);
-        this.triggerChildField.setVisible(false);
         this.triggerChildField.setCanLoseFocus(true);
 
-        this.triggerFrame = this.addRenderableWidget(DirectionalFrame.createVerticalFrame(this.height));
+        this.triggerFrame = this.addRenderableWidget(DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.START_ALIGNED));
         this.triggerFrame.addSpacer();
-        DirectionalFrame triggerNameFrame = DirectionalFrame.createHorizontalFrame(this.width);
+        DirectionalFrame triggerNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         triggerNameFrame.addSpacer();
         triggerNameFrame.addWidget(new TextWidget("Trigger:"));
         triggerNameFrame.addWidget(allFields.get(EditType.TRIGGER));
         triggerNameFrame.addSpacer();
         this.triggerFrame.addWidget(triggerNameFrame);
-        DirectionalFrame triggerTimerFrame = DirectionalFrame.createHorizontalFrame(this.width);
+        DirectionalFrame triggerTimerFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         triggerTimerFrame.addSpacer();
         triggerTimerFrame.addWidget(new TextWidget("Timer:"));
         triggerTimerFrame.addWidget(triggerTimerField);
         triggerTimerFrame.addSpacer();
+        triggerTimerFrame.setVisible(false);
         this.triggerFrame.addWidget(triggerTimerFrame);
-        DirectionalFrame triggerChildFrame = DirectionalFrame.createHorizontalFrame(this.width);
+        this.triggerTypeDropdownWidget = this.addWidget(
+            new DropdownWidget<>(Trigger.TriggerType.DIALOGUE_TRIGGER,0,0,120,3, dropdownWidget -> {
+                Trigger.TriggerType triggerType = (Trigger.TriggerType) dropdownWidget.getSelectedOption();
+                Main.LOGGER.info("Timer type changed");
+                switch (triggerType) {
+                    case ACTION_FINISH_TRIGGER, DIALOGUE_TRIGGER ->
+                            triggerTimerFrame.setVisible(false);
+                    case TIMER_TRIGGER ->
+                            triggerTimerFrame.setVisible(true);
+                }
+            })
+        );
+        DirectionalFrame triggerChildFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         triggerChildFrame.addSpacer();
         triggerChildFrame.addWidget(new TextWidget("Next:"));
         triggerChildFrame.addWidget(triggerChildField);
@@ -203,7 +207,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.triggerFrame.setVisible(false);
 
         // Set up the action fields.
-        EditBox actionField = this.addRenderableWidget(
+        EditBox actionField = this.addWidget(
                 new EditBox(this.font,0,0, 120,20,TextComponent.EMPTY)
         );
         actionField.setResponder(this::setNewActionName);
@@ -213,28 +217,27 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         allFields.put(EditType.ACTION, actionField);
 
         //  Set up the dropdown widgets
-        this.poseDropdownWidget = this.addRenderableWidget(
+        this.poseDropdownWidget = this.addWidget(
                 new DropdownWidget<>(CEditNpc.NPCPose.STANDING,0,0,80)
         );
-        this.poseDropdownWidget.visible = false;
 
-        this.actionTypeDropdownWidget = this.addRenderableWidget(
+        this.actionTypeDropdownWidget = this.addWidget(
                 new DropdownWidget<>(
                         Action.ActionType.STANDSTILL,0,0,100, Action.ActionType.values().length, dropdownWidget -> {
                             Action.ActionType actionType = (Action.ActionType) dropdownWidget.getSelectedOption();
+                            Main.LOGGER.info("Action type changed");
                             switch (actionType) {
                                 case MOVE_TO_BLOCK, STANDSTILL ->
-                                    this.actionFields.get(3).visible = false;
+                                    actionRadiusFrame.setVisible(false);
                                 case WANDER ->
-                                    this.actionFields.get(3).visible = true;
+                                    actionRadiusFrame.setVisible(true);
                             }
 
                         }
                 )
         );
-        this.actionTypeDropdownWidget.visible = false;
 
-        EditBox targetBlockXField = this.addRenderableWidget(
+        EditBox targetBlockXField = this.addWidget(
                 new EditBox(this.font,0,0,32,20,TextComponent.EMPTY)
         );
         targetBlockXField.setFilter(numberFilter);
@@ -243,11 +246,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.intArgs[0] = Integer.parseInt(s);
         });
         targetBlockXField.setMaxLength(10);
-        targetBlockXField.setVisible(false);
         targetBlockXField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockXField);
 
-        EditBox targetBlockYField = this.addRenderableWidget(
+        EditBox targetBlockYField = this.addWidget(
                 new EditBox(this.font,0,0,32,20,TextComponent.EMPTY)
         );
         targetBlockYField.setFilter(numberFilter);
@@ -256,11 +258,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.intArgs[1] = Integer.parseInt(s);
         });
         targetBlockYField.setMaxLength(10);
-        targetBlockYField.setVisible(false);
         targetBlockYField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockYField);
 
-        EditBox targetBlockZField = this.addRenderableWidget(
+        EditBox targetBlockZField = this.addWidget(
                 new EditBox(this.font,0,0,32,20,TextComponent.EMPTY)
         );
         targetBlockZField.setFilter(numberFilter);
@@ -269,7 +270,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.intArgs[2] = Integer.parseInt(s);
         });
         targetBlockZField.setMaxLength(10);
-        targetBlockZField.setVisible(false);
         targetBlockZField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockZField);
 
@@ -290,7 +290,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             pathTag.putLongArray("Path", this.waitingPath);
         }
         );
-        getPathButton.visible = false;
 
         Button setPathButton = new Button(
                 0,0, 50, 20, new TextComponent("Set Path"), btn -> {
@@ -306,14 +305,11 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         }
         );
 
-        setPathButton.visible = false;
-
         this.actionVFrame = this.addRenderableWidget(
-                DirectionalFrame.createVerticalFrame(0, 0, this.height)
+                DirectionalFrame.createVerticalFrame(0, 0, this.height, DirectionalFrame.Alignment.START_ALIGNED)
         );
-        this.actionVFrame.setVisible(false);
 
-        this.actionTargetFrame = DirectionalFrame.createHorizontalFrame(0, 0, this.width);
+        this.actionTargetFrame = DirectionalFrame.createHorizontalFrame(0, 0, this.width, DirectionalFrame.Alignment.START_ALIGNED);
         this.actionTargetFrame.addWidget(new TextWidget(0, 0, "Target Block:"));
         this.actionTargetFrame.addWidget(this.actionFields.get(0));
         this.actionTargetFrame.addWidget(this.actionFields.get(1));
@@ -321,11 +317,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.actionTargetFrame.addSpacer();
         this.actionTargetFrame.addWidget(setPathButton);
         this.actionTargetFrame.addWidget(getPathButton);
-        this.actionTargetFrame.setVisible(false);
         this.actionVFrame.addWidget(this.actionTargetFrame, 5);
 
         // Set up the radius field.
-        EditBox radiusField = this.addRenderableWidget(
+        EditBox radiusField = this.addWidget(
                 new EditBox(this.font, 0, 0,30,20,TextComponent.EMPTY)
         );
         radiusField.setFilter(numberFilter);
@@ -334,30 +329,30 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.intArgs[3] = Integer.parseInt(s);
         });
         radiusField.setMaxLength(10);
-        radiusField.setVisible(false);
         radiusField.setCanLoseFocus(true);
         this.actionFields.add(radiusField);
 
-        this.actionRadiusFrame = DirectionalFrame.createHorizontalFrame( this.width);
+        this.actionRadiusFrame = DirectionalFrame.createHorizontalFrame( this.width, DirectionalFrame.Alignment.START_ALIGNED);
         this.actionRadiusFrame.addWidget(new TextWidget(0,0, "Radius:"));
         this.actionRadiusFrame.addWidget(this.actionFields.get(3));
         this.actionRadiusFrame.addSpacer();
         this.actionRadiusFrame.setVisible(false);
         this.actionVFrame.addWidget(this.actionRadiusFrame);
 
-        DirectionalFrame nameFrame = DirectionalFrame.createHorizontalFrame(this.width);
+        DirectionalFrame nameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         nameFrame.addSpacer();
         nameFrame.addWidget(new TextWidget("Name:"));
         nameFrame.addWidget(this.allFields.get(EditType.ACTION));
         nameFrame.addSpacer();
         this.actionVFrame.addWidget(nameFrame);
-        DirectionalFrame dropdownFrame = DirectionalFrame.createHorizontalFrame(this.width);
+        DirectionalFrame dropdownFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         dropdownFrame.addSpacer();
         dropdownFrame.addWidget(this.actionTypeDropdownWidget, 20);
         dropdownFrame.addWidget(this.poseDropdownWidget, 20);
         dropdownFrame.addSpacer();
         this.actionVFrame.addWidget(dropdownFrame);
         this.actionVFrame.addSpacer();
+        this.actionVFrame.setVisible(false);
     }
 
     /**
@@ -522,8 +517,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         super.setNodeBeingEdited(node, editType);
         boolean isActionType = editType == EditType.ACTION;
-        this.poseDropdownWidget.visible = isActionType;
-        this.actionTypeDropdownWidget.visible = isActionType;
         this.actionVFrame.setVisible(isActionType);
         if (node != null) {
             this.allFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
