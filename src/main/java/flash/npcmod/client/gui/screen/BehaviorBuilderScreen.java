@@ -57,7 +57,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Nullable
     protected BehaviorNode editingNode, selectedNode;
 
-    protected DirectionalFrame actionRadiusFrame, actionTargetFrame, actionVFrame, triggerFrame;
+    protected DirectionalFrame actionRadiusFrame, actionTargetFrame, actionVFrame, dialogueFrame, triggerFrame;
 
     protected final Predicate<String> numberFilter = (text) -> {
         Pattern pattern = Pattern.compile("~?-?\\d*");
@@ -86,14 +86,15 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         super.confirmEdits();
 
         this.editingNode.getNodeData().setDialogueName(this.newDialogueName);
-        if (this.editingNode.isEditingTrigger())
+        if (this.editingNode.isEditingTrigger()) {
             this.editingNode.setEditTrigger(
                     new Trigger(
                             this.newTriggerName,
                             this.triggerTypeDropdownWidget.getSelectedOption(),
                             this.intArgs[4],
-                            this.newTriggerChild));
-
+                            this.newTriggerChild)
+            );
+        }
         BlockPos blockPos = new BlockPos(this.intArgs[0], this.intArgs[1], this.intArgs[2]);
         Action action = new Action(
                 newActionName, poseDropdownWidget.getSelectedOption(), actionTypeDropdownWidget.getSelectedOption(),
@@ -144,18 +145,28 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         dialogueField.setResponder(this::setNewDialogueName);
         dialogueField.setFilter(this.nameFilter);
         dialogueField.setMaxLength(50);
-        dialogueField.setVisible(false);
         dialogueField.setCanLoseFocus(true);
-        allFields.put(EditType.FILE, dialogueField);
+        allNameFields.put(EditType.FILE, dialogueField);
+
+        dialogueFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        dialogueFrame.addWidget(new TextWidget("Dialogue Name:"));
+        dialogueFrame.addWidget(dialogueField);
+        dialogueFrame.setVisible(false);
+        this.mainVFrame.insertWidget(this.dialogueFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.FILE, this.dialogueFrame);
 
         // Set up the trigger fields.
-        EditBox triggerField = new EditBox(this.font,0,0,120,20,TextComponent.EMPTY);
+        EditBox triggerField = this.addWidget(
+                new EditBox(this.font,0,0,120,20,TextComponent.EMPTY)
+        );
         triggerField.setResponder(this::setNewTriggerName);
         triggerField.setMaxLength(50);
         triggerField.setCanLoseFocus(true);
-        allFields.put(EditType.TRIGGER, triggerField);
+        allNameFields.put(EditType.TRIGGER, triggerField);
 
-        this.triggerTimerField =  new EditBox(this.font, 0, 0,120,20,TextComponent.EMPTY);
+        this.triggerTimerField = this.addWidget(
+                new EditBox(this.font, 0, 0,120,20,TextComponent.EMPTY)
+        );
         this.triggerTimerField.setFilter(numberFilter);
         this.triggerTimerField.setResponder((String s) -> {
             if (s.isEmpty() || s.equals("-")) s = "0";
@@ -164,24 +175,21 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.triggerTimerField.setMaxLength(10);
         this.triggerTimerField.setCanLoseFocus(true);
 
-        this.triggerChildField = new EditBox(this.font, 0, 0, 120, 20, TextComponent.EMPTY);
+        this.triggerChildField = this.addWidget(
+                new EditBox(this.font, 0, 0, 120, 20, TextComponent.EMPTY)
+        );
         this.triggerChildField.setResponder(this::setNewTriggerChild);
         this.triggerChildField.setMaxLength(50);
         this.triggerChildField.setCanLoseFocus(true);
 
-        this.triggerFrame = this.addRenderableWidget(DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.START_ALIGNED));
-        this.triggerFrame.addSpacer();
-        DirectionalFrame triggerNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
-        triggerNameFrame.addSpacer();
+        this.triggerFrame = DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.CENTERED);
+        DirectionalFrame triggerNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
         triggerNameFrame.addWidget(new TextWidget("Trigger:"));
-        triggerNameFrame.addWidget(allFields.get(EditType.TRIGGER));
-        triggerNameFrame.addSpacer();
+        triggerNameFrame.addWidget(allNameFields.get(EditType.TRIGGER));
         this.triggerFrame.addWidget(triggerNameFrame);
-        DirectionalFrame triggerTimerFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
-        triggerTimerFrame.addSpacer();
+        DirectionalFrame triggerTimerFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
         triggerTimerFrame.addWidget(new TextWidget("Timer:"));
         triggerTimerFrame.addWidget(triggerTimerField);
-        triggerTimerFrame.addSpacer();
         triggerTimerFrame.setVisible(false);
         this.triggerFrame.addWidget(triggerTimerFrame);
         this.triggerTypeDropdownWidget = this.addWidget(
@@ -196,15 +204,14 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                 }
             })
         );
-        DirectionalFrame triggerChildFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
-        triggerChildFrame.addSpacer();
+        DirectionalFrame triggerChildFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
         triggerChildFrame.addWidget(new TextWidget("Next:"));
         triggerChildFrame.addWidget(triggerChildField);
-        triggerChildFrame.addSpacer();
         this.triggerFrame.addWidget(triggerChildFrame);
         this.triggerFrame.addWidget(triggerTypeDropdownWidget);
-        this.triggerFrame.addSpacer();
         this.triggerFrame.setVisible(false);
+        this.mainVFrame.insertWidget(triggerFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.TRIGGER, this.triggerFrame);
 
         // Set up the action fields.
         EditBox actionField = this.addWidget(
@@ -212,9 +219,8 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         );
         actionField.setResponder(this::setNewActionName);
         actionField.setMaxLength(50);
-        actionField.setVisible(false);
         actionField.setCanLoseFocus(true);
-        allFields.put(EditType.ACTION, actionField);
+        allNameFields.put(EditType.ACTION, actionField);
 
         //  Set up the dropdown widgets
         this.poseDropdownWidget = this.addWidget(
@@ -279,7 +285,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             actionFields.get(1).setValue(String.valueOf(blockPos.getX()));
             actionFields.get(2).setValue(String.valueOf(blockPos.getX()));
         }
-        Button getPathButton = new Button(
+        Button getPathButton = this.addWidget(new Button(
                 0,0, 50, 20, new TextComponent("Get Path"), btn -> {
             ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
             if (this.waitingPath.length == 0) {
@@ -288,10 +294,9 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             }
             CompoundTag pathTag = new CompoundTag();
             pathTag.putLongArray("Path", this.waitingPath);
-        }
-        );
+        }));
 
-        Button setPathButton = new Button(
+        Button setPathButton = this.addWidget(new Button(
                 0,0, 50, 20, new TextComponent("Set Path"), btn -> {
             ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
             if (behaviorEditorStack.hasTag()) {
@@ -302,14 +307,12 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                 }
             }
             this.waitingPath = new long[0];
-        }
-        );
+        }));
 
-        this.actionVFrame = this.addRenderableWidget(
-                DirectionalFrame.createVerticalFrame(0, 0, this.height, DirectionalFrame.Alignment.START_ALIGNED)
-        );
+        this.actionVFrame = DirectionalFrame.createVerticalFrame(
+                this.height, DirectionalFrame.Alignment.START_ALIGNED);
 
-        this.actionTargetFrame = DirectionalFrame.createHorizontalFrame(0, 0, this.width, DirectionalFrame.Alignment.START_ALIGNED);
+        this.actionTargetFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.EQUALLY_SPACED);
         this.actionTargetFrame.addWidget(new TextWidget(0, 0, "Target Block:"));
         this.actionTargetFrame.addWidget(this.actionFields.get(0));
         this.actionTargetFrame.addWidget(this.actionFields.get(1));
@@ -332,27 +335,23 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         radiusField.setCanLoseFocus(true);
         this.actionFields.add(radiusField);
 
-        this.actionRadiusFrame = DirectionalFrame.createHorizontalFrame( this.width, DirectionalFrame.Alignment.START_ALIGNED);
+        this.actionRadiusFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         this.actionRadiusFrame.addWidget(new TextWidget(0,0, "Radius:"));
         this.actionRadiusFrame.addWidget(this.actionFields.get(3));
-        this.actionRadiusFrame.addSpacer();
         this.actionRadiusFrame.setVisible(false);
         this.actionVFrame.addWidget(this.actionRadiusFrame);
 
-        DirectionalFrame nameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
-        nameFrame.addSpacer();
+        DirectionalFrame nameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
         nameFrame.addWidget(new TextWidget("Name:"));
-        nameFrame.addWidget(this.allFields.get(EditType.ACTION));
-        nameFrame.addSpacer();
+        nameFrame.addWidget(this.allNameFields.get(EditType.ACTION));
         this.actionVFrame.addWidget(nameFrame);
-        DirectionalFrame dropdownFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
-        dropdownFrame.addSpacer();
+        DirectionalFrame dropdownFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
         dropdownFrame.addWidget(this.actionTypeDropdownWidget, 20);
         dropdownFrame.addWidget(this.poseDropdownWidget, 20);
-        dropdownFrame.addSpacer();
         this.actionVFrame.addWidget(dropdownFrame);
-        this.actionVFrame.addSpacer();
         this.actionVFrame.setVisible(false);
+        this.mainVFrame.insertWidget(this.actionVFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.ACTION, this.actionVFrame);
     }
 
     /**
@@ -516,18 +515,16 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Override
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         super.setNodeBeingEdited(node, editType);
-        boolean isActionType = editType == EditType.ACTION;
-        this.actionVFrame.setVisible(isActionType);
         if (node != null) {
-            this.allFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
+            this.allNameFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
             Trigger trigger = ((BehaviorNode) node).getEditTrigger();
             if (trigger != null) {
-                this.allFields.get(EditType.TRIGGER).setValue(trigger.getName());
+                this.allNameFields.get(EditType.TRIGGER).setValue(trigger.getName());
                 this.triggerChildField.setValue(trigger.getNextBehaviorName());
                 this.triggerTimerField.setValue(String.valueOf(trigger.getTimer()));
                 this.triggerTypeDropdownWidget.selectOption(trigger.getType());
             } else {
-                this.allFields.get(EditType.TRIGGER).setValue("");
+                this.allNameFields.get(EditType.TRIGGER).setValue("");
                 this.triggerChildField.setValue("");
                 this.triggerTimerField.setValue("0");
                 this.triggerTypeDropdownWidget.selectOption(Trigger.TriggerType.DIALOGUE_TRIGGER);
@@ -536,7 +533,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             Action action = ((BehaviorNode) node).getNodeData().getAction();
             this.poseDropdownWidget.selectOption(action.getPose());
             this.actionTypeDropdownWidget.selectOption(action.getActionType());
-            this.allFields.get(EditType.ACTION).setValue(action.getName());
+            this.allNameFields.get(EditType.ACTION).setValue(action.getName());
             this.waitingPath = action.getPath();
             if (action.getName().isEmpty()) this.confirmButton.active = false;
             BlockPos blockPos = action.getTargetBlockPos();
@@ -555,14 +552,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.waitingPath = new long[0];
         }
 
-        boolean isTriggerType = editType == EditType.TRIGGER;
-        this.triggerFrame.setVisible(isTriggerType);
-
-        if (!isActionType && !isTriggerType && editType != EditType.FILE) {
+        if (editType != EditType.ACTION && editType != EditType.TRIGGER && editType != EditType.FILE) {
             this.confirmButton.active = true;
         }
     }
-
 
     public void setSelectedNode(@Nullable BuilderNode node, int selectedNodeIndex) {
         this.selectedNode = (BehaviorNode) node;

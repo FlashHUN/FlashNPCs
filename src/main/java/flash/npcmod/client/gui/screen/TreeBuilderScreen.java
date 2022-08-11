@@ -9,6 +9,7 @@ import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
 import flash.npcmod.client.gui.widget.DirectionalFrame;
 import flash.npcmod.client.gui.widget.FunctionListWidget;
+import flash.npcmod.client.gui.widget.TextWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
@@ -53,9 +54,15 @@ abstract public class TreeBuilderScreen extends Screen {
      * The EditBoxes opened for editing.
      */
     protected EditBox functionParamsField;
-    protected HashMap<EditType, EditBox> allFields;
+    protected HashMap<EditType, EditBox> allNameFields;
+    protected HashMap<EditType, DirectionalFrame> allTopLevelFrames;
     protected Button saveButton, confirmButton, cancelButton;
-    protected DirectionalFrame buttonFrame;
+    /**
+     * The main Vertical Frame that all gui elements are added to. This is initialized
+     * with the `buttonFrame` already added.
+     */
+    protected DirectionalFrame mainVFrame;
+    protected DirectionalFrame buttonFrame, nodeNameFrame, fileNameFrame;
     protected String newName = "", newFunctionParams = "";
 
 
@@ -95,7 +102,8 @@ abstract public class TreeBuilderScreen extends Screen {
             updateNodePositionsFromJson();
 
         // Initialize allFields. Does not need to handle functionParamsField.
-        allFields = new HashMap<>();
+        this.allNameFields = new HashMap<>();
+        this.allTopLevelFrames = new HashMap<>();
     }
 
     /**
@@ -404,33 +412,42 @@ abstract public class TreeBuilderScreen extends Screen {
                 btn -> this.setNodeBeingEdited(null, EditType.NONE)
         ));
 
-        this.buttonFrame = this.addRenderableWidget(DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.START_ALIGNED));
-        this.buttonFrame.addSpacer();
-        DirectionalFrame horizontalFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
-        horizontalFrame.addSpacer();
-        horizontalFrame.addWidget(this.confirmButton, 20);
-        horizontalFrame.addWidget(this.cancelButton, 20);
-        horizontalFrame.addSpacer();
-        this.buttonFrame.addWidget(horizontalFrame);
+        this.mainVFrame = this.addRenderableWidget(
+                DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.CENTERED)
+        );
+
+        this.buttonFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        this.buttonFrame.addWidget(this.confirmButton, 20);
+        this.buttonFrame.addWidget(this.cancelButton, 20);
         this.buttonFrame.setVisible(false);
+        this.mainVFrame.addWidget(this.buttonFrame);
 
         // Initialize our text field widgets
-        EditBox nameField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
+        this.nodeNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        EditBox nameField = this.addWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         nameField.setResponder(this::setNewName);
         nameField.setFilter(this.nameFilter);
         nameField.setMaxLength(50);
-        nameField.setVisible(false);
         nameField.setCanLoseFocus(true);
-        allFields.put(EditType.NAME, nameField);
+        allNameFields.put(EditType.NAME, nameField);
+        this.nodeNameFrame.addWidget(new TextWidget("Name:"));
+        this.nodeNameFrame.addWidget(nameField);
+        this.nodeNameFrame.setVisible(false);
+        this.allTopLevelFrames.put(EditType.NAME, this.nodeNameFrame);
+        this.mainVFrame.insertWidget(nodeNameFrame, 0, 20);
 
-        EditBox fileNameField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
+        this.fileNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        EditBox fileNameField = this.addWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         fileNameField.setResponder(this::setNewFileName);
         fileNameField.setFilter(this.nameFilter);
         fileNameField.setMaxLength(50);
-        fileNameField.setVisible(false);
         fileNameField.setCanLoseFocus(true);
-        allFields.put(EditType.FILENAME, fileNameField);
-
+        allNameFields.put(EditType.FILENAME, fileNameField);
+        this.fileNameFrame.addWidget(new TextWidget("File Name:"));
+        this.fileNameFrame.addWidget(fileNameField);
+        this.fileNameFrame.setVisible(false);
+        this.mainVFrame.insertWidget(fileNameFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.FILENAME, this.fileNameFrame);
         // Initialize the function list widget.
         this.functionListWidget.calculatePositionAndDimensions();
         this.functionParamsField = this.addRenderableWidget(new EditBox(this.font, width / 2 - 60, height - 44, 120, 20, TextComponent.EMPTY));
@@ -448,8 +465,8 @@ abstract public class TreeBuilderScreen extends Screen {
      * @return True if any fields are visible.
      */
     protected boolean isAnyTextFieldVisible() {
-        for (EditBox field : allFields.values()) {
-            if (field.isVisible()) return true;
+        if (this.mainVFrame.isAnyVisible()) {
+            return true;
         }
         return functionListWidget.isVisible();
     }
@@ -642,7 +659,7 @@ abstract public class TreeBuilderScreen extends Screen {
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         boolean isNodeNull = node == null;
         if (!isNodeNull) {
-            this.allFields.get(EditType.NAME).setValue(node.getName());
+            this.allNameFields.get(EditType.NAME).setValue(node.getName());
 
             int i = -1;
             if (!node.getFunction().isEmpty()) {
@@ -664,11 +681,14 @@ abstract public class TreeBuilderScreen extends Screen {
             this.functionParamsField.setValue("");
         }
         boolean check;
-        for (EditType key : allFields.keySet()) {
+        this.fileNameFrame.setVisible(editType == EditType.FILENAME);
+        this.nodeNameFrame.setVisible(editType == EditType.NAME);
+
+        for (EditType key : this.allNameFields.keySet()) {
             check = editType == key;
-            allFields.get(key).setVisible(check);
-            allFields.get(key).setFocus(check);
-            if (isNodeNull) allFields.get(key).setValue("");
+            this.allNameFields.get(key).setFocus(check);
+            this.allTopLevelFrames.get(key).setVisible(check);
+            if (isNodeNull) this.allNameFields.get(key).setValue("");
         }
 
         this.functionListWidget.calculatePositionAndDimensions();
@@ -677,15 +697,10 @@ abstract public class TreeBuilderScreen extends Screen {
 
         this.buttonFrame.setVisible(editType != EditType.NONE);
         if (editType == EditType.FUNCTION) {
-            confirmButton.x = this.functionParamsField.x;
-            confirmButton.y = this.functionParamsField.y + 22;
-            cancelButton.x = this.functionParamsField.x + functionParamsField.getWidth() - confirmButton.getWidth();
-            cancelButton.y = this.functionParamsField.y + 22;
-        } else {
-            confirmButton.x = width / 2 - 60;
-            confirmButton.y = height / 2 + 15;
-            cancelButton.x = width / 2 + 10;
-            cancelButton.y = height / 2 + 15;
+            this.confirmButton.x = this.functionParamsField.x;
+            this.confirmButton.y = this.functionParamsField.y + 22;
+            this.cancelButton.x = this.functionParamsField.x + this.functionParamsField.getWidth() - confirmButton.getWidth();
+            this. cancelButton.y = this.functionParamsField.y + 22;
         }
 
         this.setEditingNode(node);
@@ -706,7 +721,7 @@ abstract public class TreeBuilderScreen extends Screen {
     @Override
     public void tick() {
         // Tick Text Field Widgets
-        for (EditBox field : allFields.values()) field.tick();
+        for (EditBox field : allNameFields.values()) field.tick();
         this.functionParamsField.tick();
 
         // Button visibility

@@ -1,6 +1,7 @@
 package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import flash.npcmod.Main;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.TextComponent;
@@ -12,73 +13,157 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Manage the position of the widgets contained within this frame. Buttons and widgets with signals require the
- * 'addWidget' call from the screen still.
+ * A Container Widget to dynamically manage the organization of gui widgets. The Direction of this object is the
+ * visual organization of the object it contains, i.e. topdown for Vertical and left-right for Horizontal.
+ * The Alignment of the object is where the gui elements encapsulated will be centered on. So a Vertical,
+ * START_ALIGNED Directional Frame will render all of its elements at the top of the screen, going down.
+ *
+ * Encapsulated Frames can be added within other frames.
+ *
+ * TODO: Make the Screen#addWidget call unnecessary by passing along GuiEventListener functions to the visible
+ *  children. Should reduce lag of maintaining all the children widgets.
+ *
+ *  TODO: Height and Width need to be usable when creating the children DirectionalFrames. As it is, directionalFrames
+ *   require the screen height and width instead of the parent's.
+ *
+ * Additionally, new AbstractWidgets were added to assist this Frame.
+ * @see TextWidget
+ * @see SpacerWidget
+ *
+ * @see DirectionalFrame#createHorizontalFrame(int, Alignment)
+ * @see DirectionalFrame#createVerticalFrame(int, Alignment)
  */
 public class DirectionalFrame extends AbstractWidget{
-    public static final boolean HORIZONTAL = true;
-    public static final boolean VERTICAL = false;
     public static final int MINIMUM_PADDING = 5;
 
     public enum Alignment {
         START_ALIGNED,
         CENTERED,
-        END_ALIGNED
-    };
+        END_ALIGNED,
+        EQUALLY_SPACED
+    }
 
-    private Alignment alignment;
-    private final boolean direction;
-    private int minimumSize, numSpacers;
+    public enum Direction {
+        HORIZONTAL,
+        VERTICAL
+    }
+
+    private final Alignment alignment;
+    private final Direction direction;
+    private final DirectionalWidget directionalWidget;
+    private int numSpacers;
     private final List<Integer> padding;
     private boolean sizeChanged;
     private final List<AbstractWidget> widgets;
 
-    public DirectionalFrame(int x, int y , int width, int height, boolean direction, Alignment alignment) {
+    /**
+     * Interface for generalizing the standard operations when calculating size and position along
+     * the "main" axis and the "secondary" axis.
+     * main - Direction
+     * secondary - The other Direction.
+     */
+    interface DirectionalWidget {
+        int getSizeAlongAxis(AbstractWidget widget);
+        void setSecondaryAxisPos(AbstractWidget widget);
+        void setMainAxisPos(AbstractWidget widget, int pos);
+        void setSizeAlongAxis(AbstractWidget widget, int size);
+    }
+
+    public DirectionalFrame(int x, int y , int width, int height, Direction direction, Alignment alignment) {
         super(x, y, width, height, new TextComponent(""));
         this.widgets = new ArrayList<>();
-        this.minimumSize = 0;
         this.numSpacers = 0;
         this.padding = new ArrayList<>();
         this.direction = direction;
         this.sizeChanged = false;
         this.alignment = alignment;
+        if (direction == Direction.HORIZONTAL) {
+            this.directionalWidget = new DirectionalWidget() {
+
+                @Override
+                public int getSizeAlongAxis(AbstractWidget widget) {
+                    if (widget instanceof DirectionalFrame) return ((DirectionalFrame) widget).getMinimumWidth();
+                    return widget.getWidth();
+                }
+
+                @Override
+                public void setSecondaryAxisPos(AbstractWidget widget) {
+                    widget.y = DirectionalFrame.this.y;
+                }
+
+                @Override
+                public void setMainAxisPos(AbstractWidget widget, int pos) {
+                    widget.x = pos;
+                }
+
+                @Override
+                public void setSizeAlongAxis(AbstractWidget widget, int size) {
+                    widget.setWidth(size);
+                }
+            };
+        } else {
+            this.directionalWidget = new DirectionalWidget() {
+
+                @Override
+                public int getSizeAlongAxis(AbstractWidget widget) {
+                    if (widget instanceof DirectionalFrame) return ((DirectionalFrame) widget).getMinimumHeight();
+                    return widget.getHeight();
+                }
+
+                @Override
+                public void setSecondaryAxisPos(AbstractWidget widget) {
+                    widget.x = DirectionalFrame.this.x;
+                }
+
+                @Override
+                public void setMainAxisPos(AbstractWidget widget, int pos) {
+                    widget.y = pos;
+                }
+
+                @Override
+                public void setSizeAlongAxis(AbstractWidget widget, int size) {
+                    widget.setHeight(size);
+                }
+            };
+        }
     }
 
+    /**
+     * Insert a SpacerWidget at the end of the frame. Overrides the alignment of the frame.
+     * @see SpacerWidget
+     */
     public void addSpacer() {
         this.widgets.add(new SpacerWidget(0, this.y));
         this.padding.add(0);
         this.numSpacers += 1;
-    }
-
-    public void addWidget(AbstractWidget widget) {
-        if (this.direction) {
-            widget.y = this.y;
-            this.minimumSize += widget.getWidth();
-        }
-        else {
-            widget.x = this.x;
-            this.minimumSize += widget.getHeight();
-        }
-        this.widgets.add(widget);
-        this.padding.add(2*MINIMUM_PADDING);
-        this.minimumSize += (2*MINIMUM_PADDING);
-
         sizeChanged = true;
     }
 
+    /**
+     * Add the widget to this Frame. Widgets added this way should NOT be added to the screen with
+     * `Screen.addRenderableWidget`. If signals/ functions are required from the object, use `Screen.addWidget`
+     * method instead.
+     *
+     * @param widget The widget to add.
+     */
+    public void addWidget(AbstractWidget widget) {
+        directionalWidget.setSecondaryAxisPos(widget);
+        this.widgets.add(widget);
+        this.padding.add(MINIMUM_PADDING);
+        sizeChanged = true;
+    }
+
+    /**
+     * Add the widget to this Frame. Widgets added this way should NOT be added to the screen with
+     * `addRenderableWidget`. If signals/ functions are required from the object, use `Screen.addWidget`
+     * method instead.
+     * @param widget The widget to add.
+     * @param padding The padding in front and behind to add. (is effectively doubled).
+     */
     public void addWidget(AbstractWidget widget, int padding) {
-        if (this.direction) {
-            widget.y = this.y;
-            this.minimumSize += widget.getWidth();
-        }
-        else {
-            widget.x = this.x;
-            this.minimumSize += widget.getHeight();
-        }
-        padding *= 2;
+        directionalWidget.setSecondaryAxisPos(widget);
         this.widgets.add(widget);
         this.padding.add(padding);
-        this.minimumSize += padding;
         sizeChanged = true;
     }
 
@@ -88,18 +173,7 @@ public class DirectionalFrame extends AbstractWidget{
      * @return The vertical directional frame.
      */
     public static DirectionalFrame createHorizontalFrame(int frameWidth, Alignment alignment) {
-        return new DirectionalFrame(0, 0, frameWidth, 0, HORIZONTAL, alignment);
-    }
-
-    /**
-     * Create a horizontal Frame for AbstractWidgets.
-     * @param x The x coordinate of this frame.
-     * @param y The y coordinate of this frame.
-     * @param frameWidth The maximum available width for this widget.
-     * @return The vertical directional frame.
-     */
-    public static DirectionalFrame createHorizontalFrame(int x, int y, int frameWidth, Alignment alignment) {
-        return new DirectionalFrame(x, y, frameWidth, 0, HORIZONTAL, alignment);
+        return new DirectionalFrame(0, 0, frameWidth, 0, Direction.HORIZONTAL, alignment);
     }
 
     /**
@@ -108,124 +182,139 @@ public class DirectionalFrame extends AbstractWidget{
      * @return The vertical directional frame.
      */
     public static DirectionalFrame createVerticalFrame(int frameHeight, Alignment alignment) {
-        return new DirectionalFrame(0, 0, 0,frameHeight, VERTICAL, alignment);
+        return new DirectionalFrame(0, 0, 0,frameHeight, Direction.VERTICAL, alignment);
+    }
+
+    public int getMinimumHeight() {
+        if (direction != Direction.HORIZONTAL) return this.getMinimumSize();
+        else {
+            return Collections.max(widgets, Comparator.comparing(AbstractWidget::getHeight)).getHeight();
+        }
     }
 
     /**
-     * Create a vertical Frame for AbstractWidgets.
-     * @param x The x coordinate of this frame.
-     * @param y The y coordinate of this frame.
-     * @param frameHeight The maximum available height for this widget.
-     * @return The vertical directional frame.
+     * Calculate the minimum size used by this DirectionalFrame. Does not account for Spacers.
+     * @return the minimum size.
      */
-    public static DirectionalFrame createVerticalFrame(int x, int y, int frameHeight, Alignment alignment) {
-        return new DirectionalFrame(x, y, 0,frameHeight, VERTICAL, alignment);
+    public int getMinimumSize() {
+        int size = 0;
+        for(int i = 0; i < this.widgets.size(); i++) {
+            AbstractWidget widget = this.widgets.get(i);
+            if (widget.visible) {
+                if (widget instanceof DirectionalFrame && !((DirectionalFrame) widget).isAnyVisible()) {
+                    continue;
+                }
+                size += directionalWidget.getSizeAlongAxis(widgets.get(i)) + (2 * this.padding.get(i));
+            }
+        }
+        return size;
     }
 
-    @Override
-    public int getWidth() {
-        if (direction) return this.minimumSize;
+    public int getMinimumWidth() {
+        if (direction == Direction.HORIZONTAL) return this.getMinimumSize();
         else {
             return Collections.max(widgets, Comparator.comparing(AbstractWidget::getWidth)).getWidth();
         }
     }
 
-    @Override
-    public int getHeight() {
-        if (!direction) return this.minimumSize;
-        else {
-            int max =  Collections.max(widgets, Comparator.comparing(AbstractWidget::getHeight)).getHeight();
-            return max;
+    /**
+     * Insert this widget to this Frame at a certain index. Widgets added this way should NOT be added to
+     * the screen with `addRenderableWidget`. If signals/ functions are required from the object, use the
+     * `Screen.addWidget` method instead.
+     * @param widget The widget to add.
+     * @param index The index at which to add this widget.
+     * @param padding The padding in front and behind to add. (is effectively doubled).
+     */
+    public void insertWidget(AbstractWidget widget, int index, int padding) {
+        directionalWidget.setSecondaryAxisPos(widget);
+        this.widgets.add(index, widget);
+        this.padding.add(index, padding);
+        sizeChanged = true;
+    }
+
+    /**
+     * Iterates over the children widgets of this Frame and checks if any are visible.
+     * @return True if any visible.
+     */
+    public boolean isAnyVisible() {
+        if (!this.visible) return false;
+        for (AbstractWidget widget : widgets) {
+            if (widget.visible && !(widget instanceof SpacerWidget)) return true;
         }
+        return false;
     }
 
     /**
      * Recalulate the spacing of the widgets.
      */
-    public void recalulateSize() {
-        if (this.direction) recalulateSizeHorizontal();
-        else recalulateSizeVertical();
-    }
-
-    /**
-     * Recalulate the spacing of the widgets.
-     */
-    public void recalulateSizeHorizontal() {
+    public void recalculateSize() {
         this.sizeChanged = false;
-        int spacerSize;
-        int nextSpot = this.x;
+        int emptySpaceSize, nextSpot, spacerSize;
+        int minimumSize = this.getMinimumSize();
+
+
+        if (direction == Direction.HORIZONTAL) {
+            nextSpot = this.x;
+            if (minimumSize > this.width) {
+                emptySpaceSize = minimumSize;
+            } else {
+                emptySpaceSize = this.width - minimumSize;
+            }
+            Main.LOGGER.info(minimumSize + "/" + this.width);
+        } else {
+            nextSpot = this.y;
+            if (minimumSize > this.height) {
+                emptySpaceSize = minimumSize;
+            } else {
+                emptySpaceSize = this.height - minimumSize;
+            }
+            Main.LOGGER.info(minimumSize + "/" + this.height);
+        }
         if (numSpacers > 0) {
-            spacerSize = (this.width - this.minimumSize) / numSpacers;
+            spacerSize = (emptySpaceSize - nextSpot) / numSpacers;
             for (int i = 0; i < this.widgets.size(); i++) {
                 AbstractWidget widget = this.widgets.get(i);
                 if (widget instanceof SpacerWidget) {
-                    widget.setWidth(spacerSize);
+                    directionalWidget.setSizeAlongAxis(widget, spacerSize);
+                } else if (!widget.visible) {
+                    continue;
                 }
-
-                widget.x = this.padding.get(i) + nextSpot;
-
-                nextSpot += widget.getWidth() + this.padding.get(i);
+                nextSpot += this.padding.get(i);
+                directionalWidget.setMainAxisPos(widget, nextSpot);
+                nextSpot += directionalWidget.getSizeAlongAxis(widget) + this.padding.get(i);
             }
         } else {
-            int whiteSpaceSize = (this.width - (this.minimumSize + MINIMUM_PADDING)) / (this.widgets.size() + 1);
-            nextSpot += whiteSpaceSize;
-            for (int i = 0; i < this.widgets.size(); i++) {
-                AbstractWidget widget = this.widgets.get(i);
-                widget.x = this.padding.get(i) + nextSpot;
-                nextSpot += widget.getWidth() + this.padding.get(i) + whiteSpaceSize;
-            }
-        }
-    }
-
-    /**
-     * Recalulate the spacing of the widgets.
-     */
-    public void recalulateSizeVertical() {
-        this.sizeChanged = false;
-        int spacerSize;
-        int nextSpot = this.y;
-        if (numSpacers > 0) {
-            spacerSize = (this.height - this.minimumSize) / numSpacers;
-            for (int i = 0; i < this.widgets.size(); i++) {
-                AbstractWidget widget = this.widgets.get(i);
-                if (widget instanceof SpacerWidget) {
-                    widget.setHeight(spacerSize);
+            int whiteSpaceSize = 0;
+            switch (alignment) {
+                case CENTERED -> nextSpot += emptySpaceSize / 2;
+                case END_ALIGNED -> nextSpot += emptySpaceSize;
+                case EQUALLY_SPACED -> {
+                    whiteSpaceSize = (emptySpaceSize - nextSpot) / (this.widgets.size() + 1);
+                    nextSpot += whiteSpaceSize;
                 }
-                widget.y = this.padding.get(i) + nextSpot;
-                nextSpot += widget.getHeight() + this.padding.get(i);
             }
-        } else {
-            int whiteSpaceSize = (this.height - (this.minimumSize + MINIMUM_PADDING)) / (this.widgets.size() + 1);
-            nextSpot += whiteSpaceSize;
             for (int i = 0; i < this.widgets.size(); i++) {
                 AbstractWidget widget = this.widgets.get(i);
-                widget.y = this.padding.get(i) + nextSpot;
-                nextSpot += widget.getHeight() + this.padding.get(i) + whiteSpaceSize;
+                if (!widget.visible) {
+                    continue;
+                }
+                nextSpot += this.padding.get(i);
+                directionalWidget.setMainAxisPos(widget, nextSpot);
+                nextSpot += directionalWidget.getSizeAlongAxis(widget) + this.padding.get(i) + whiteSpaceSize;
             }
         }
-    }
-
-    interface SetPosFunction {
-        void setPos(AbstractWidget widget);
     }
 
     public void render(@NotNull PoseStack poseStack, int x, int y, float partialTicks) {
-        if (this.visible) {
-            if (sizeChanged) recalulateSize();
-            SetPosFunction func;
-            if (direction) func = (widget) -> widget.y = this.y;
-            else func = (widget) -> widget.x = this.x;
+        if (this.isAnyVisible()) {
+            if (sizeChanged) recalculateSize();
             for (AbstractWidget widget : widgets) {
-                func.setPos(widget);
-                widget.render(poseStack, x, y, partialTicks);
+                if (widget.visible) {
+                    directionalWidget.setSecondaryAxisPos(widget);
+                    widget.render(poseStack, x, y, partialTicks);
+                }
             }
         }
-    }
-
-    public void resize(int width, int height) {
-        sizeChanged = true;
-        this.minimumSize = 0;
-        for(AbstractWidget widget : widgets) this.minimumSize += widget.getWidth();
     }
 
     public void setVisible(boolean visible) {

@@ -145,21 +145,21 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
         textField.setVisible(false);
 
         textField.setCanLoseFocus(true);
-        this.allFields.put(EditType.TEXT, textField);
+        this.allNameFields.put(EditType.TEXT, textField);
 
         EditBox responseField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         responseField.setResponder(this::setNewResponse);
         responseField.setMaxLength(500);
         responseField.setVisible(false);
         responseField.setCanLoseFocus(true);
-        this.allFields.put(EditType.RESPONSE, responseField);
+        this.allNameFields.put(EditType.RESPONSE, responseField);
 
         EditBox triggerField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         triggerField.setResponder(this::setNewTrigger);
         triggerField.setMaxLength(500);
         triggerField.setVisible(false);
         triggerField.setCanLoseFocus(true);
-        this.allFields.put(EditType.ACTION, triggerField);
+        this.allNameFields.put(EditType.ACTION, triggerField);
     }
 
     /**
@@ -326,9 +326,9 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         super.setNodeBeingEdited(node, editType);
         if (node != null) {
-            this.allFields.get(EditType.TEXT).setValue(((DialogueNode) node).getText());
-            this.allFields.get(EditType.RESPONSE).setValue(((DialogueNode) node).getResponse());
-            this.allFields.get(EditType.ACTION).setValue(((DialogueNode) node).getTrigger());
+            this.allNameFields.get(EditType.TEXT).setValue(((DialogueNode) node).getText());
+            this.allNameFields.get(EditType.RESPONSE).setValue(((DialogueNode) node).getResponse());
+            this.allNameFields.get(EditType.ACTION).setValue(((DialogueNode) node).getTrigger());
         }
     }
 
