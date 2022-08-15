@@ -28,7 +28,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.checkerframework.checker.units.qual.C;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -57,7 +56,8 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Nullable
     protected BehaviorNode editingNode, selectedNode;
 
-    protected DirectionalFrame actionRadiusFrame, actionTargetFrame, actionVFrame, dialogueFrame, triggerFrame;
+    protected DirectionalFrame actionRadiusFrame, actionTargetFrame, actionTargetBlockFrame, actionPathFrame;
+    protected DirectionalFrame actionVFrame, dialogueFrame, triggerFrame;
 
     protected final Predicate<String> numberFilter = (text) -> {
         Pattern pattern = Pattern.compile("~?-?\\d*");
@@ -72,7 +72,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.intArgs = new int[5];
         Arrays.fill(this.intArgs, 0);
         this.waitingPath = new long[0];
-
     }
 
     /**
@@ -229,15 +228,24 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                         Action.ActionType.STANDSTILL,0,0,100, Action.ActionType.values().length, dropdownWidget -> {
                             Action.ActionType actionType = (Action.ActionType) dropdownWidget.getSelectedOption();
                             switch (actionType) {
-                                case MOVE_TO_BLOCK ->
+                                case FOLLOW_PATH -> {
                                     actionRadiusFrame.setVisible(false);
-                                case WANDER ->
-                                    actionRadiusFrame.setVisible(true);
-                                case INTERACT_WITH ->
+                                    actionTargetBlockFrame.setVisible(false);
                                     actionTargetFrame.setVisible(true);
+                                    actionPathFrame.setVisible(true);
+                                }
+                                case WANDER -> {
+                                    actionRadiusFrame.setVisible(true);
+                                    actionPathFrame.setVisible(false);
+                                }
+                                case INTERACT_WITH -> {
+                                    actionTargetFrame.setVisible(true);
+                                    actionPathFrame.setVisible(false);
+                                }
                                 case STANDSTILL -> {
                                     actionRadiusFrame.setVisible(false);
                                     actionTargetFrame.setVisible(true);
+                                    actionPathFrame.setVisible(false);
                                 }
                             }
 
@@ -316,8 +324,9 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         }
         Button getPathButton = this.addWidget(new Button(
                 0,0, 50, 20, new TextComponent("Get Path"), btn -> {
+            assert Minecraft.getInstance().player != null;
             ItemStack behaviorEditorStack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
-            if (this.waitingPath.length == 0) {
+            if (this.waitingPath.length == 0 && this.getEditingNode() != null) {
                 CompoundTag pathTag = new CompoundTag();
                 pathTag.putLongArray("Path", this.getEditingNode().getNodeData().getAction().getPath());
                 behaviorEditorStack.setTag(pathTag);
@@ -330,6 +339,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
 
         Button setPathButton = this.addWidget(new Button(
                 0,0, 50, 20, new TextComponent("Set Path"), btn -> {
+            assert Minecraft.getInstance().player != null;
             ItemStack behaviorEditorStack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
             if (behaviorEditorStack.hasTag()) {
                 CompoundTag pathTag = behaviorEditorStack.getTag();
@@ -345,13 +355,17 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                 this.height, DirectionalFrame.Alignment.START_ALIGNED);
 
         this.actionTargetFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.EQUALLY_SPACED);
-        this.actionTargetFrame.addWidget(new TextWidget(0, 0, "Target Block:"));
-        this.actionTargetFrame.addWidget(this.actionFields.get(0));
-        this.actionTargetFrame.addWidget(this.actionFields.get(1));
-        this.actionTargetFrame.addWidget(this.actionFields.get(2));
+        this.actionTargetBlockFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
+        this.actionTargetBlockFrame.addWidget(new TextWidget(0, 0, "Target Block:"));
+        this.actionTargetBlockFrame.addWidget(this.actionFields.get(0));
+        this.actionTargetBlockFrame.addWidget(this.actionFields.get(1));
+        this.actionTargetBlockFrame.addWidget(this.actionFields.get(2));
+        this.actionTargetFrame.addWidget(this.actionTargetBlockFrame);
         this.actionTargetFrame.addSpacer();
-        this.actionTargetFrame.addWidget(setPathButton);
-        this.actionTargetFrame.addWidget(getPathButton);
+        this.actionPathFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
+        this.actionPathFrame.addWidget(setPathButton);
+        this.actionPathFrame.addWidget(getPathButton);
+        this.actionTargetFrame.addWidget(actionPathFrame);
         this.actionVFrame.addWidget(this.actionTargetFrame, 5);
 
         // Set up the radius field.

@@ -82,7 +82,6 @@ public class DirectionalFrame extends AbstractWidget{
 
                 @Override
                 public int getSizeAlongAxis(AbstractWidget widget) {
-                    if (widget instanceof DirectionalFrame) return ((DirectionalFrame) widget).getMinimumWidth();
                     return widget.getWidth();
                 }
 
@@ -106,7 +105,6 @@ public class DirectionalFrame extends AbstractWidget{
 
                 @Override
                 public int getSizeAlongAxis(AbstractWidget widget) {
-                    if (widget instanceof DirectionalFrame) return ((DirectionalFrame) widget).getMinimumHeight();
                     return widget.getHeight();
                 }
 
@@ -207,11 +205,16 @@ public class DirectionalFrame extends AbstractWidget{
         return new DirectionalFrame(0, 0, 0,frameHeight, Direction.VERTICAL, alignment);
     }
 
-    public int getMinimumHeight() {
-        if (direction != Direction.HORIZONTAL) return this.getMinimumSize();
-        else {
-            return Collections.max(widgets, Comparator.comparing(AbstractWidget::getHeight)).getHeight();
+    public int getHeight() {
+        int height = 0;
+        if (direction == Direction.HORIZONTAL) {
+            for (AbstractWidget widget : widgets) {
+                height = Math.max(widget.getHeight(), height);
+            }
+        } else {
+            height = getMinimumSize();
         }
+        return height;
     }
 
     /**
@@ -225,6 +228,8 @@ public class DirectionalFrame extends AbstractWidget{
             if (widget.visible) {
                 if (widget instanceof DirectionalFrame && !((DirectionalFrame) widget).isAnyVisible()) {
                     continue;
+                } else if (widget instanceof SpacerWidget) {
+                    continue;
                 }
                 size += directionalWidget.getSizeAlongAxis(widgets.get(i)) + (2 * this.padding.get(i));
             }
@@ -232,11 +237,16 @@ public class DirectionalFrame extends AbstractWidget{
         return size;
     }
 
-    public int getMinimumWidth() {
-        if (direction == Direction.HORIZONTAL) return this.getMinimumSize();
-        else {
-            return Collections.max(widgets, Comparator.comparing(AbstractWidget::getWidth)).getWidth();
+    public int getWidth() {
+        int width = 0;
+        if (direction == Direction.VERTICAL) {
+            for (AbstractWidget widget : widgets) {
+                width = Math.max(widget.getWidth(), width);
+            }
+        } else {
+            width = getMinimumSize();
         }
+        return width;
     }
 
     /**
@@ -382,7 +392,6 @@ public class DirectionalFrame extends AbstractWidget{
         int emptySpaceSize, nextSpot, spacerSize;
         int minimumSize = this.getMinimumSize();
 
-
         if (direction == Direction.HORIZONTAL) {
             nextSpot = this.x;
             if (minimumSize > this.width) {
@@ -390,7 +399,6 @@ public class DirectionalFrame extends AbstractWidget{
             } else {
                 emptySpaceSize = this.width - minimumSize;
             }
-            Main.LOGGER.info(minimumSize + "/" + this.width);
         } else {
             nextSpot = this.y;
             if (minimumSize > this.height) {
@@ -398,10 +406,13 @@ public class DirectionalFrame extends AbstractWidget{
             } else {
                 emptySpaceSize = this.height - minimumSize;
             }
-            Main.LOGGER.info(minimumSize + "/" + this.height);
         }
         if (numSpacers > 0) {
             spacerSize = (emptySpaceSize - nextSpot) / numSpacers;
+            if (direction == Direction.VERTICAL) {
+                Main.LOGGER.info("minimum size :" + minimumSize + "/" + this.height);
+                Main.LOGGER.info("Spacers size :" + spacerSize);
+            }
             for (int i = 0; i < this.widgets.size(); i++) {
                 AbstractWidget widget = this.widgets.get(i);
                 if (widget instanceof SpacerWidget) {
@@ -414,6 +425,9 @@ public class DirectionalFrame extends AbstractWidget{
                 nextSpot += directionalWidget.getSizeAlongAxis(widget) + this.padding.get(i);
             }
         } else {
+            if (direction == Direction.VERTICAL) {
+                Main.LOGGER.info("minimum size :" + minimumSize + "/" + this.height);
+            }
             int whiteSpaceSize = 0;
             switch (alignment) {
                 case CENTERED -> nextSpot += emptySpaceSize / 2;
@@ -436,19 +450,35 @@ public class DirectionalFrame extends AbstractWidget{
     }
 
     public void render(@NotNull PoseStack poseStack, int x, int y, float partialTicks) {
-        if (this.isAnyVisible()) {
+        if (this.visible) {
             if (sizeChanged) recalculateSize();
             for (AbstractWidget widget : widgets) {
-                if (widget.visible) {
+//                if (widget.visible) {
                     directionalWidget.setSecondaryAxisPos(widget);
                     widget.render(poseStack, x, y, partialTicks);
-                }
+//                }
             }
         }
     }
 
+    /**
+     * Recalculate the size of all inner frames in preparation of redraw.
+     * @param visible
+     */
     public void setVisible(boolean visible) {
         this.visible = visible;
+        this.recalculateSize();
+//        boolean framesUpdate = false;
+//        for (AbstractWidget widget : widgets) {
+//            if (widget.visible && widget instanceof DirectionalFrame) {
+//                ((DirectionalFrame) widget).recalculateSize();
+//                framesUpdate = true;
+//            }
+//        }
+//        if (framesUpdate) {
+//            this.recalculateSize();
+//        }
+
     }
 
     @Override

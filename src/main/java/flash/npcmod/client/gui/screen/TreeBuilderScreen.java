@@ -62,7 +62,7 @@ abstract public class TreeBuilderScreen extends Screen {
      * with the `buttonFrame` already added.
      */
     protected DirectionalFrame mainVFrame;
-    protected DirectionalFrame buttonFrame, fileNameFrame, functionFrame, nodeNameFrame;
+    protected DirectionalFrame buttonFrame, fileNameFrame, nodeNameFrame;
     protected String newName = "", newFunctionParams = "";
 
 
@@ -702,7 +702,7 @@ abstract public class TreeBuilderScreen extends Screen {
             this.cancelButton.x = this.functionParamsField.x + this.functionParamsField.getWidth() - confirmButton.getWidth();
             this. cancelButton.y = this.functionParamsField.y + 22;
         }
-
+        this.mainVFrame.recalculateSize();
         this.setEditingNode(node);
     }
 

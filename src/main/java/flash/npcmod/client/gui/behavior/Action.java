@@ -24,7 +24,7 @@ public class Action {
 
   public enum ActionType {
       //FOLLOW_PLAYER,
-      MOVE_TO_BLOCK,
+      FOLLOW_PATH,
       STANDSTILL,
       WANDER,
       INTERACT_WITH,

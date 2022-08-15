@@ -13,7 +13,7 @@ import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
-import flash.npcmod.entity.goals.NPCMoveToBlockGoal;
+import flash.npcmod.entity.goals.NPCFollowPathGoal;
 import flash.npcmod.entity.goals.NPCInteractWithBlockGoal;
 import flash.npcmod.entity.goals.NPCWanderGoal;
 import flash.npcmod.entity.goals.TalkWithPlayerGoal;
@@ -29,6 +29,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.player.Player;
@@ -166,7 +167,7 @@ public class NpcEntity extends PathfinderMob {
                 this.goalSelector.removeGoal(goal);
         }
         switch (action.getActionType()) {
-            case MOVE_TO_BLOCK -> this.goalSelector.addGoal(1, new NPCMoveToBlockGoal(this, 1.2D));
+            case FOLLOW_PATH -> this.goalSelector.addGoal(1, new NPCFollowPathGoal(this, 1.2D));
             case WANDER -> this.goalSelector.addGoal(0, new NPCWanderGoal(this, 300));
             case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
             case STANDSTILL -> {
@@ -533,7 +534,7 @@ public class NpcEntity extends PathfinderMob {
         Behavior behavior = getCurrentBehavior();
         Action action = behavior.getAction();
         switch (action.getActionType()) {
-            case MOVE_TO_BLOCK -> {
+            case FOLLOW_PATH -> {
                 return false;
             }
             case WANDER -> {
@@ -625,7 +626,7 @@ public class NpcEntity extends PathfinderMob {
     @Override
     protected void registerGoals() {
         super.registerGoals();
-
+        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true));
         this.goalSelector.addGoal(1, new TalkWithPlayerGoal(this));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
     }

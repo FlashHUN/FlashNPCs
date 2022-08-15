@@ -1,17 +1,13 @@
 package flash.npcmod.entity.goals;
 
-import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
 
-public class NPCMoveToBlockGoal  extends Goal {
+public class NPCFollowPathGoal extends Goal {
     protected int nextStartTick;
     public final double speedModifier;
     protected int tryTicks;
@@ -20,7 +16,7 @@ public class NPCMoveToBlockGoal  extends Goal {
     protected boolean reachedTarget;
 
     protected final NpcEntity npc;
-    public NPCMoveToBlockGoal(NpcEntity npc, double speedModifier) {
+    public NPCFollowPathGoal(NpcEntity npc, double speedModifier) {
         this.npc = npc;
         this.speedModifier = speedModifier;
         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP));
