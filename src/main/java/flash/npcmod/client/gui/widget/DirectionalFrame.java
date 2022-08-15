@@ -8,8 +8,6 @@ import net.minecraft.network.chat.TextComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -25,6 +23,8 @@ import java.util.List;
  *
  *  TODO: Height and Width need to be usable when creating the children DirectionalFrames. As it is, directionalFrames
  *   require the screen height and width instead of the parent's.
+ *
+ *  TODO: when setting a child widget to visible or invisible, need to manually call recalculateSize on the parent Frame.
  *
  * Additionally, new AbstractWidgets were added to assist this Frame.
  * @see TextWidget
@@ -276,7 +276,7 @@ public class DirectionalFrame extends AbstractWidget{
         }
         return false;
     }
-//       TODO: Implement below. As is does not remove the addWidget requirement.
+/*       TODO: Implement below. As is does not remove the addWidget requirement.
 //    public boolean isMouseOver(double mouseX, double mouseY) {
 //        if (this.active && this.isAnyVisible()) {
 //            if (mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)this.x + this.width && mouseY < (double)this.y + this.height) {
@@ -382,6 +382,7 @@ public class DirectionalFrame extends AbstractWidget{
 //        }
 //        return false;
 //    }
+ */
 
 
     /**
@@ -409,10 +410,6 @@ public class DirectionalFrame extends AbstractWidget{
         }
         if (numSpacers > 0) {
             spacerSize = (emptySpaceSize - nextSpot) / numSpacers;
-            if (direction == Direction.VERTICAL) {
-                Main.LOGGER.info("minimum size :" + minimumSize + "/" + this.height);
-                Main.LOGGER.info("Spacers size :" + spacerSize);
-            }
             for (int i = 0; i < this.widgets.size(); i++) {
                 AbstractWidget widget = this.widgets.get(i);
                 if (widget instanceof SpacerWidget) {
@@ -425,9 +422,6 @@ public class DirectionalFrame extends AbstractWidget{
                 nextSpot += directionalWidget.getSizeAlongAxis(widget) + this.padding.get(i);
             }
         } else {
-            if (direction == Direction.VERTICAL) {
-                Main.LOGGER.info("minimum size :" + minimumSize + "/" + this.height);
-            }
             int whiteSpaceSize = 0;
             switch (alignment) {
                 case CENTERED -> nextSpot += emptySpaceSize / 2;
@@ -453,32 +447,20 @@ public class DirectionalFrame extends AbstractWidget{
         if (this.visible) {
             if (sizeChanged) recalculateSize();
             for (AbstractWidget widget : widgets) {
-//                if (widget.visible) {
+                if (widget.visible) {
                     directionalWidget.setSecondaryAxisPos(widget);
                     widget.render(poseStack, x, y, partialTicks);
-//                }
+                }
             }
         }
     }
 
     /**
      * Recalculate the size of all inner frames in preparation of redraw.
-     * @param visible
      */
     public void setVisible(boolean visible) {
         this.visible = visible;
         this.recalculateSize();
-//        boolean framesUpdate = false;
-//        for (AbstractWidget widget : widgets) {
-//            if (widget.visible && widget instanceof DirectionalFrame) {
-//                ((DirectionalFrame) widget).recalculateSize();
-//                framesUpdate = true;
-//            }
-//        }
-//        if (framesUpdate) {
-//            this.recalculateSize();
-//        }
-
     }
 
     @Override
