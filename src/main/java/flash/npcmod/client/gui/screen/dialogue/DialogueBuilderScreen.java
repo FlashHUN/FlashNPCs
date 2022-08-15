@@ -23,12 +23,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueBuilderScreen extends TreeBuilderScreen {
     private String newText = "", newResponse = "", newTrigger = "";
-    private ListWidget<DialogueBuilderScreen> createMenuWidget;
     @Nullable
     protected DialogueNode editingNode, selectedNode;
 
@@ -120,11 +118,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     protected void init() {
         super.init();
 
-        //initialize right-click widget
-        this.createMenuWidget = new ListWidget<>(this, Minecraft.getInstance());
-
-        this.createMenuWidget.setOptions(List.of("Create Dialogue"));
-
         // Initialize our text field widgets
         EditBox textField = this.addRenderableWidget(
                 new EditBox(
@@ -201,20 +194,8 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
                         this.selectedNode = null;
                     }
                     if (button == 1) {
-                        this.createMenuWidget.setY(mouseY);
-                        this.createMenuWidget.setX(mouseX);
-                        this.createMenuWidget.setVisible(true);
+                        createNode(mouseX, mouseY);
                     }
-                }
-                if (button != 1 && this.createMenuWidget.isVisible()) {
-                    this.createMenuWidget.clickedOn(mouseX, mouseY);
-                    if (!this.createMenuWidget.getSelectedOption().isEmpty()) {
-                        String option = this.createMenuWidget.getSelectedOption();
-                        if (option.equals("Create Dialogue")) {
-                            createNode(mouseX, mouseY);
-                        }
-                    }
-                    this.createMenuWidget.setVisible(false);
                 }
                 // TODO make sure not to check during parent setting.
                 this.allNodes.forEach(node -> node.clickedOn(mouseX, mouseY, button, 0, 0, this.scrollX, this.scrollY));
@@ -255,7 +236,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     @Override
     public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         super.render(matrixStack, mouseX, mouseY, partialTicks);
-        this.createMenuWidget.draw(matrixStack);
     }
 
     /**

@@ -229,10 +229,16 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                         Action.ActionType.STANDSTILL,0,0,100, Action.ActionType.values().length, dropdownWidget -> {
                             Action.ActionType actionType = (Action.ActionType) dropdownWidget.getSelectedOption();
                             switch (actionType) {
-                                case MOVE_TO_BLOCK, STANDSTILL ->
+                                case MOVE_TO_BLOCK ->
                                     actionRadiusFrame.setVisible(false);
                                 case WANDER ->
                                     actionRadiusFrame.setVisible(true);
+                                case INTERACT_WITH ->
+                                    actionTargetFrame.setVisible(true);
+                                case STANDSTILL -> {
+                                    actionRadiusFrame.setVisible(false);
+                                    actionTargetFrame.setVisible(true);
+                                }
                             }
 
                         }
@@ -245,6 +251,15 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         targetBlockXField.setFilter(numberFilter);
         targetBlockXField.setResponder((String s) -> {
             if (s.isEmpty() || s.equals("-")) s = "0";
+            else if (s.startsWith("~")) {
+                if (s.length() == 1) {
+                    this.intArgs[0] = npcEntity.blockPosition().getX();
+                }
+                else {
+                    this.intArgs[0] = npcEntity.blockPosition().getX() + Integer.parseInt(s.substring(1));
+                }
+                return;
+            }
             this.intArgs[0] = Integer.parseInt(s);
         });
         targetBlockXField.setMaxLength(10);
@@ -257,6 +272,15 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         targetBlockYField.setFilter(numberFilter);
         targetBlockYField.setResponder((String s) -> {
             if (s.isEmpty() || s.equals("-")) s = "0";
+            else if (s.startsWith("~")) {
+                if (s.length() == 1) {
+                    this.intArgs[1] = npcEntity.blockPosition().getY();
+                }
+                else {
+                    this.intArgs[1] = npcEntity.blockPosition().getY() + Integer.parseInt(s.substring(1));
+                }
+                return;
+            }
             this.intArgs[1] = Integer.parseInt(s);
         });
         targetBlockYField.setMaxLength(10);
@@ -269,6 +293,15 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         targetBlockZField.setFilter(numberFilter);
         targetBlockZField.setResponder((String s) -> {
             if (s.isEmpty() || s.equals("-")) s = "0";
+            else if (s.startsWith("~")) {
+                if (s.length() == 1) {
+                    this.intArgs[2] = npcEntity.blockPosition().getZ();
+                }
+                else {
+                    this.intArgs[2] = npcEntity.blockPosition().getZ() + Integer.parseInt(s.substring(1));
+                }
+                return;
+            }
             this.intArgs[2] = Integer.parseInt(s);
         });
         targetBlockZField.setMaxLength(10);

@@ -27,7 +27,7 @@ public class Action {
       MOVE_TO_BLOCK,
       STANDSTILL,
       WANDER,
-      //INTERACT_WITH,
+      INTERACT_WITH,
       //LOOK_AT
   }
 

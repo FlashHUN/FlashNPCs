@@ -16,6 +16,7 @@ import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.entity.goals.NPCMoveToBlockGoal;
 import flash.npcmod.entity.goals.NPCInteractWithBlockGoal;
 import flash.npcmod.entity.goals.NPCWanderGoal;
+import flash.npcmod.entity.goals.TalkWithPlayerGoal;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.item.BehaviorEditorItem;
 import flash.npcmod.item.NpcEditorItem;
@@ -57,8 +58,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import org.jetbrains.annotations.NotNull;
-
-import static flash.npcmod.core.behaviors.CommonBehaviorUtil.INVALID_BEHAVIOR;
 
 public class NpcEntity extends PathfinderMob {
 
@@ -169,7 +168,7 @@ public class NpcEntity extends PathfinderMob {
         switch (action.getActionType()) {
             case MOVE_TO_BLOCK -> this.goalSelector.addGoal(1, new NPCMoveToBlockGoal(this, 1.2D));
             case WANDER -> this.goalSelector.addGoal(0, new NPCWanderGoal(this, 300));
-            //case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
+            case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
             case STANDSTILL -> {
                 if (!action.getTargetBlockPos().equals(BlockPos.ZERO)) {
                     BlockPos pos = action.getTargetBlockPos();
@@ -534,7 +533,7 @@ public class NpcEntity extends PathfinderMob {
         Behavior behavior = getCurrentBehavior();
         Action action = behavior.getAction();
         switch (action.getActionType()) {
-            case MOVE_TO_BLOCK -> {//, INTERACT_WITH -> {
+            case MOVE_TO_BLOCK -> {
                 return false;
             }
             case WANDER -> {
@@ -626,7 +625,8 @@ public class NpcEntity extends PathfinderMob {
     @Override
     protected void registerGoals() {
         super.registerGoals();
-        //this.goalSelector.addGoal(1, new TalkWithPlayerGoal(this));
+
+        this.goalSelector.addGoal(1, new TalkWithPlayerGoal(this));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
     }
 
