@@ -49,7 +49,7 @@ abstract public class TreeBuilderScreen extends Screen {
     public final List<BuilderNode> allNodes;
     public List<String> conflictingNodeDataNames;
     protected int selectedNodeIndex;
-    protected FunctionListWidget<BuilderNode, TreeBuilderScreen> functionListWidget;
+    protected FunctionListWidget<BuilderNode> functionListWidget;
     /**
      * The EditBoxes opened for editing.
      */
@@ -62,7 +62,7 @@ abstract public class TreeBuilderScreen extends Screen {
      * with the `buttonFrame` already added.
      */
     protected DirectionalFrame mainVFrame;
-    protected DirectionalFrame buttonFrame, nodeNameFrame, fileNameFrame;
+    protected DirectionalFrame buttonFrame, fileNameFrame, functionFrame, nodeNameFrame;
     protected String newName = "", newFunctionParams = "";
 
 
@@ -92,11 +92,9 @@ abstract public class TreeBuilderScreen extends Screen {
         super(TextComponent.EMPTY);
         this.fileName = name;
         conflictingNodeDataNames = new ArrayList<>();
-        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
-        this.functionListWidget.calculatePositionAndDimensions();
 
         // Initialize allNodes.
-        allNodes = new ArrayList<>();
+        this.allNodes = new ArrayList<>();
         loadFromJsonObject();
         if (!allNodes.isEmpty())
             updateNodePositionsFromJson();
@@ -420,6 +418,7 @@ abstract public class TreeBuilderScreen extends Screen {
         this.buttonFrame.addWidget(this.confirmButton, 20);
         this.buttonFrame.addWidget(this.cancelButton, 20);
         this.buttonFrame.setVisible(false);
+        this.mainVFrame.addSpacer();
         this.mainVFrame.addWidget(this.buttonFrame);
 
         // Initialize our text field widgets
@@ -449,6 +448,7 @@ abstract public class TreeBuilderScreen extends Screen {
         this.mainVFrame.insertWidget(fileNameFrame, 0, 20);
         this.allTopLevelFrames.put(EditType.FILENAME, this.fileNameFrame);
         // Initialize the function list widget.
+        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
         this.functionListWidget.calculatePositionAndDimensions();
         this.functionParamsField = this.addRenderableWidget(new EditBox(this.font, width / 2 - 60, height - 44, 120, 20, TextComponent.EMPTY));
         this.functionParamsField.setResponder(this::setNewFunctionParams);

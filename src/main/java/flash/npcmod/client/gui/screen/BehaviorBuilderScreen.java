@@ -11,7 +11,6 @@ import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
 import flash.npcmod.client.gui.widget.DirectionalFrame;
 import flash.npcmod.client.gui.widget.DropdownWidget;
-import flash.npcmod.client.gui.widget.FunctionListWidget;
 import flash.npcmod.client.gui.widget.TextWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.entity.NpcEntity;
@@ -29,6 +28,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.checkerframework.checker.units.qual.C;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -134,9 +134,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Override
     protected void init() {
         super.init();
-        //initialize function widget
-        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
-        this.functionListWidget.calculatePositionAndDimensions();
 
         // Initialize our text field widgets
         EditBox dialogueField = this.addWidget(
@@ -146,12 +143,12 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         dialogueField.setFilter(this.nameFilter);
         dialogueField.setMaxLength(50);
         dialogueField.setCanLoseFocus(true);
-        allNameFields.put(EditType.FILE, dialogueField);
+        this.allNameFields.put(EditType.FILE, dialogueField);
 
-        dialogueFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
-        dialogueFrame.addWidget(new TextWidget("Dialogue Name:"));
-        dialogueFrame.addWidget(dialogueField);
-        dialogueFrame.setVisible(false);
+        this.dialogueFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        this.dialogueFrame.addWidget(new TextWidget("Dialogue Name:"));
+        this.dialogueFrame.addWidget(dialogueField);
+        this.dialogueFrame.setVisible(false);
         this.mainVFrame.insertWidget(this.dialogueFrame, 0, 20);
         this.allTopLevelFrames.put(EditType.FILE, this.dialogueFrame);
 
@@ -231,7 +228,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                 new DropdownWidget<>(
                         Action.ActionType.STANDSTILL,0,0,100, Action.ActionType.values().length, dropdownWidget -> {
                             Action.ActionType actionType = (Action.ActionType) dropdownWidget.getSelectedOption();
-                            Main.LOGGER.info("Action type changed");
                             switch (actionType) {
                                 case MOVE_TO_BLOCK, STANDSTILL ->
                                     actionRadiusFrame.setVisible(false);
@@ -287,18 +283,21 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         }
         Button getPathButton = this.addWidget(new Button(
                 0,0, 50, 20, new TextComponent("Get Path"), btn -> {
-            ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
+            ItemStack behaviorEditorStack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
             if (this.waitingPath.length == 0) {
-                behaviorEditorStack.setTag(null);
+                CompoundTag pathTag = new CompoundTag();
+                pathTag.putLongArray("Path", this.getEditingNode().getNodeData().getAction().getPath());
+                behaviorEditorStack.setTag(pathTag);
                 return;
             }
             CompoundTag pathTag = new CompoundTag();
             pathTag.putLongArray("Path", this.waitingPath);
+            behaviorEditorStack.setTag(pathTag);
         }));
 
         Button setPathButton = this.addWidget(new Button(
                 0,0, 50, 20, new TextComponent("Set Path"), btn -> {
-            ItemStack behaviorEditorStack = getMinecraft().player.getItemInHand(InteractionHand.MAIN_HAND);
+            ItemStack behaviorEditorStack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
             if (behaviorEditorStack.hasTag()) {
                 CompoundTag pathTag = behaviorEditorStack.getTag();
                 if (pathTag != null && pathTag.contains("Path")) {

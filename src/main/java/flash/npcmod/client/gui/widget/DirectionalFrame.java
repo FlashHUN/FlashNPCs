@@ -167,6 +167,28 @@ public class DirectionalFrame extends AbstractWidget{
         sizeChanged = true;
     }
 
+    public boolean charTyped(char key, int p_94733_) {
+        if (this.active && this.isAnyVisible()) {
+            for (AbstractWidget widget : widgets) {
+                if (widget.visible && widget.charTyped(key, p_94733_)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean changeFocus(boolean p_94756_) {
+        if (this.active && this.isAnyVisible()) {
+            for (AbstractWidget widget : widgets) {
+                if (widget.visible && widget.changeFocus(p_94756_)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Create a horizontal Frame for AbstractWidgets.
      * @param frameWidth The maximum available width for this widget.
@@ -234,6 +256,7 @@ public class DirectionalFrame extends AbstractWidget{
 
     /**
      * Iterates over the children widgets of this Frame and checks if any are visible.
+     *
      * @return True if any visible.
      */
     public boolean isAnyVisible() {
@@ -243,6 +266,113 @@ public class DirectionalFrame extends AbstractWidget{
         }
         return false;
     }
+//       TODO: Implement below. As is does not remove the addWidget requirement.
+//    public boolean isMouseOver(double mouseX, double mouseY) {
+//        if (this.active && this.isAnyVisible()) {
+//            if (mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)this.x + this.width && mouseY < (double)this.y + this.height) {
+//                for (AbstractWidget widget : widgets) {
+//                    if (widget.visible && widget.isMouseOver(mouseX, mouseY)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//
+//    @Override
+//    public boolean keyPressed(int key, int scanCode, int modifiers) {
+//        if (this.active && this.isAnyVisible()) {
+//            for (AbstractWidget widget : widgets) {
+//                if (widget.visible && widget.keyPressed(key, scanCode, modifiers)) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean keyReleased(int key, int scanCode, int modifiers) {
+//        if (this.active && this.isAnyVisible()) {
+//            for (AbstractWidget widget : widgets) {
+//                if (widget.visible && widget.keyReleased(key, scanCode, modifiers)) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//
+//    @Override
+//    public void mouseMoved(double mouseX, double mouseY) {
+//        if (this.active && this.isAnyVisible()) {
+//            for (AbstractWidget widget : widgets) {
+//                if (widget.visible) {
+//                    widget.mouseMoved(mouseX, mouseY);
+//                }
+//            }
+//        }
+//    }
+//
+//    @Override
+//    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+//        if (this.active && this.isAnyVisible()) {
+//            if (mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)this.x + this.width && mouseY < (double)this.y + this.height) {
+//                for (AbstractWidget widget : widgets) {
+//                    if (widget.visible && widget.mouseClicked(mouseX, mouseY, mouseButton)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
+//        if (this.active && this.isAnyVisible()) {
+//            if (mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)this.x + this.width && mouseY < (double)this.y + this.height) {
+//                for (AbstractWidget widget : widgets) {
+//                    if (widget.visible && widget.mouseReleased(mouseX, mouseY, mouseButton)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean mouseDragged(double mouseX, double mouseY, int mouseButton, double mouseToX, double mouseToY) {
+//        if (this.active && this.isAnyVisible()) {
+//            if (mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)this.x + this.width && mouseY < (double)this.y + this.height) {
+//                for (AbstractWidget widget : widgets) {
+//                    if (widget.visible && widget.mouseDragged(mouseX, mouseY, mouseButton, mouseToX, mouseToY)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+//        if (this.active && this.isAnyVisible()) {
+//            if (mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)this.x + this.width && mouseY < (double)this.y + this.height) {
+//                for (AbstractWidget widget : widgets) {
+//                    if (widget.visible && widget.mouseScrolled(mouseX, mouseY, amount)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+//    }
+
 
     /**
      * Recalulate the spacing of the widgets.

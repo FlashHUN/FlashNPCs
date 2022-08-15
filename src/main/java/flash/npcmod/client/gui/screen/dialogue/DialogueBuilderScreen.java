@@ -9,7 +9,6 @@ import flash.npcmod.client.gui.dialogue.DialogueNode;
 import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
 import flash.npcmod.client.gui.screen.TreeBuilderScreen;
-import flash.npcmod.client.gui.widget.FunctionListWidget;
 import flash.npcmod.client.gui.widget.ListWidget;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import flash.npcmod.network.PacketDispatcher;
@@ -120,9 +119,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     @Override
     protected void init() {
         super.init();
-        // Initialize the function widget.
-        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
-        this.functionListWidget.calculatePositionAndDimensions();
 
         //initialize right-click widget
         this.createMenuWidget = new ListWidget<>(this, Minecraft.getInstance());

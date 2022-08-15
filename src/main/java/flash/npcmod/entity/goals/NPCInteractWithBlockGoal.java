@@ -21,19 +21,6 @@ public class NPCInteractWithBlockGoal extends NPCMoveToBlockGoal {
         this.interactOnce = true;
     }
 
-    /**
-     * Check if this goal can be used.
-     * @return Boolean.
-     */
-    public boolean canUse() {
-        if(super.canUse()){
-            if (this.npc.isNotMovingToBlock())
-                stop();
-            else return true;
-        }
-        return false;
-    }
-
     public double acceptedDistance() {
         return 2.5D;
     }
@@ -43,8 +30,7 @@ public class NPCInteractWithBlockGoal extends NPCMoveToBlockGoal {
      */
     public void tick() {
         super.tick();
-        if (this.reachedTarget && interactOnce) {
-
+        if (interactOnce) {
             BlockState blockState = this.npc.level.getBlockState(this.npc.getTargetBlock());
             if (blockState.is(BlockTags.BUTTONS) || blockState.is(BlockTags.WOODEN_BUTTONS)) {
                 ((ButtonBlock)blockState.getBlock()).press(blockState, this.npc.level, this.npc.getTargetBlock());
