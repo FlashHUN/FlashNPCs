@@ -104,8 +104,7 @@ public class CEditNpc {
       ServerPlayer sender = ctx.get().getSender();
       if (sender.hasPermissions(4)) {
         Entity entity = sender.level.getEntity(msg.entityid);
-        if (entity instanceof NpcEntity) {
-          NpcEntity npcEntity = (NpcEntity) entity;
+        if (entity instanceof NpcEntity npcEntity) {
           npcEntity.setCustomNameVisible(msg.isNameVisible);
           npcEntity.setCustomName(new TextComponent(msg.name));
           npcEntity.setTexture(msg.texture);
@@ -127,7 +126,7 @@ public class CEditNpc {
           }
 
           if(msg.resetAI) npcEntity.resetBehavior();
-          npcEntity.refreshGoals();
+          else npcEntity.refreshGoals();
         }
       }
     });

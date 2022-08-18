@@ -19,18 +19,18 @@ public class SummonCommand extends Command {
     public void build(LiteralArgumentBuilder<CommandSourceStack> builder) {
         builder.then(argument("position", BlockPosArgument.blockPos())
                 .then(argument("name", StringArgumentType.string())
-                        .then(argument("dialogue name", StringArgumentType.string())
-                                .then(argument("behavior name", StringArgumentType.string())
-                                        .then(argument("texture url", StringArgumentType.greedyString())
-                                                .executes(context -> summon(
-                                                                context.getSource(),
-                                                                BlockPosArgument.getSpawnablePos(context, "position"),
-                                                                StringArgumentType.getString(context, "name"),
-                                                                StringArgumentType.getString(context, "dialogue name"),
-                                                                StringArgumentType.getString(context, "behavior name"),
-                                                                StringArgumentType.getString(context, "texture url")
-                                                        )
-                                                ))))));
+                .then(argument("dialogue name", StringArgumentType.string())
+                .then(argument("behavior name", StringArgumentType.string())
+                .then(argument("texture url", StringArgumentType.greedyString())
+                .executes(context -> summon(
+                    context.getSource(),
+                    BlockPosArgument.getSpawnablePos(context, "position"),
+                    StringArgumentType.getString(context, "name"),
+                    StringArgumentType.getString(context, "dialogue name"),
+                    StringArgumentType.getString(context, "behavior name"),
+                    StringArgumentType.getString(context, "texture url")
+                )
+        ))))));
     }
 
     /**
@@ -74,6 +74,7 @@ public class SummonCommand extends Command {
             CommandSourceStack source, BlockPos position, String name, String dialogueName, String behaviorName,
             String textureURL) {
         NpcEntity newNpc = EntityInit.NPC_ENTITY.get().create(source.getLevel());
+        assert newNpc != null;
         newNpc.setPos(position.getX(), position.getY(), position.getZ());
         source.getLevel().addFreshEntity(newNpc);
         newNpc.setTexture(textureURL);

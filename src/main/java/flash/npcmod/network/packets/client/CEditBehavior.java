@@ -53,7 +53,6 @@ public class CEditBehavior {
           NpcEntity npc = ((NpcEntity) sender.level.getEntity(msg.entityId));
           if (npc != null) {
             npc.resetBehavior();
-            npc.refreshGoals();
           }
         }
         CommonBehaviorUtil.buildBehavior(msg.name, msg.behaviorJson);

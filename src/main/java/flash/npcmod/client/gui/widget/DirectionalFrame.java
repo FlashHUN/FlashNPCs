@@ -1,7 +1,6 @@
 package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.Main;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.TextComponent;

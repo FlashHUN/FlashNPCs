@@ -654,6 +654,7 @@ public class NpcEntity extends PathfinderMob {
             savedData.setDirty();
         }
         setCurrentBehavior(new Behavior());
+        refreshGoals();
     }
 
     /**
