@@ -111,6 +111,8 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
     this.selectedOption = enumConstants[i];
     this.setMessage(new TextComponent(enumConstants[i].name()));
     this.setShowOptions(false);
+    if (this.onSelect != null)
+      this.onSelect.onSelect(this);
   }
 
   /**

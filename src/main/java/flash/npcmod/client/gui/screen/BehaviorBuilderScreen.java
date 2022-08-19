@@ -233,18 +233,21 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                                     actionTargetAndPathFrame.setVisible(true);
                                     actionTargetBlockFrame.setVisible(false);
                                     actionPathFrame.setVisible(true);
+                                    this.actionVFrame.recalculateSize();
                                 }
                                 case WANDER -> {
                                     actionRadiusFrame.setVisible(true);
                                     actionTargetAndPathFrame.setVisible(true);
                                     actionPathFrame.setVisible(false);
                                     actionTargetBlockFrame.setVisible(true);
+                                    this.actionVFrame.recalculateSize();
                                 }
                                 case INTERACT_WITH, STANDSTILL -> {
                                     actionRadiusFrame.setVisible(false);
                                     actionTargetAndPathFrame.setVisible(true);
                                     actionPathFrame.setVisible(false);
                                     actionTargetBlockFrame.setVisible(true);
+                                    this.actionVFrame.recalculateSize();
                                 }
                             }
 
@@ -591,10 +594,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.triggerChildField.setValue("");
             this.triggerTimerField.setValue("0");
             this.actionTypeDropdownWidget.selectOption(Action.ActionType.STANDSTILL);
-            this.actionTargetAndPathFrame.setVisible(true);
-            this.actionTargetBlockFrame.setVisible(true);
-            this.actionPathFrame.setVisible(false);
-            this.actionRadiusFrame.setVisible(false);
+
             this.actionFields.get(0).setValue("0");
             this.actionFields.get(1).setValue("0");
             this.actionFields.get(2).setValue("0");
