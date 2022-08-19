@@ -2,6 +2,7 @@ package flash.npcmod.entity;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonObject;
+import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.behavior.Action;
@@ -830,6 +831,8 @@ public class NpcEntity extends PathfinderMob {
                 }
                 triggerTickCounter++;
                 if (triggerTickCounter > 20) {
+                    long time = this.level.getDayTime() % 24000L;
+
                     int countDown = getTriggerTimer();
                     if (countDown > 0) {
                         this.setTriggerTimer(--countDown);

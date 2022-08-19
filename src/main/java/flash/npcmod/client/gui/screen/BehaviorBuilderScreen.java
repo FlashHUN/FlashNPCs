@@ -56,7 +56,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Nullable
     protected BehaviorNode editingNode, selectedNode;
 
-    protected DirectionalFrame actionRadiusFrame, actionTargetFrame, actionTargetBlockFrame, actionPathFrame;
+    protected DirectionalFrame actionRadiusFrame, actionTargetAndPathFrame, actionTargetBlockFrame, actionPathFrame;
     protected DirectionalFrame actionVFrame, dialogueFrame, triggerFrame;
 
     protected final Predicate<String> numberFilter = (text) -> {
@@ -230,22 +230,21 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                             switch (actionType) {
                                 case FOLLOW_PATH -> {
                                     actionRadiusFrame.setVisible(false);
+                                    actionTargetAndPathFrame.setVisible(true);
                                     actionTargetBlockFrame.setVisible(false);
-                                    actionTargetFrame.setVisible(true);
                                     actionPathFrame.setVisible(true);
                                 }
                                 case WANDER -> {
                                     actionRadiusFrame.setVisible(true);
+                                    actionTargetAndPathFrame.setVisible(true);
                                     actionPathFrame.setVisible(false);
+                                    actionTargetBlockFrame.setVisible(true);
                                 }
-                                case INTERACT_WITH -> {
-                                    actionTargetFrame.setVisible(true);
-                                    actionPathFrame.setVisible(false);
-                                }
-                                case STANDSTILL -> {
+                                case INTERACT_WITH, STANDSTILL -> {
                                     actionRadiusFrame.setVisible(false);
-                                    actionTargetFrame.setVisible(true);
+                                    actionTargetAndPathFrame.setVisible(true);
                                     actionPathFrame.setVisible(false);
+                                    actionTargetBlockFrame.setVisible(true);
                                 }
                             }
 
@@ -354,19 +353,19 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.actionVFrame = DirectionalFrame.createVerticalFrame(
                 this.height, DirectionalFrame.Alignment.START_ALIGNED);
 
-        this.actionTargetFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.EQUALLY_SPACED);
+        this.actionTargetAndPathFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.EQUALLY_SPACED);
         this.actionTargetBlockFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         this.actionTargetBlockFrame.addWidget(new TextWidget(0, 0, "Target Block:"));
         this.actionTargetBlockFrame.addWidget(this.actionFields.get(0));
         this.actionTargetBlockFrame.addWidget(this.actionFields.get(1));
         this.actionTargetBlockFrame.addWidget(this.actionFields.get(2));
-        this.actionTargetFrame.addWidget(this.actionTargetBlockFrame);
-        this.actionTargetFrame.addSpacer();
+        this.actionTargetAndPathFrame.addWidget(this.actionTargetBlockFrame);
+        this.actionTargetAndPathFrame.addSpacer();
         this.actionPathFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
         this.actionPathFrame.addWidget(setPathButton);
         this.actionPathFrame.addWidget(getPathButton);
-        this.actionTargetFrame.addWidget(actionPathFrame);
-        this.actionVFrame.addWidget(this.actionTargetFrame, 5);
+        this.actionTargetAndPathFrame.addWidget(actionPathFrame);
+        this.actionVFrame.addWidget(this.actionTargetAndPathFrame, 5);
 
         // Set up the radius field.
         EditBox radiusField = this.addWidget(
@@ -583,18 +582,23 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.waitingPath = action.getPath();
             if (action.getName().isEmpty()) this.confirmButton.active = false;
             BlockPos blockPos = action.getTargetBlockPos();
-            actionFields.get(0).setValue(String.valueOf(blockPos.getX()));
-            actionFields.get(1).setValue(String.valueOf(blockPos.getY()));
-            actionFields.get(2).setValue(String.valueOf(blockPos.getZ()));
-            actionFields.get(3).setValue(String.valueOf(action.getRadius()));
+            this.actionFields.get(0).setValue(String.valueOf(blockPos.getX()));
+            this.actionFields.get(1).setValue(String.valueOf(blockPos.getY()));
+            this.actionFields.get(2).setValue(String.valueOf(blockPos.getZ()));
+            this.actionFields.get(3).setValue(String.valueOf(action.getRadius()));
 
         } else {
             this.triggerChildField.setValue("");
             this.triggerTimerField.setValue("0");
-            actionFields.get(0).setValue("0");
-            actionFields.get(1).setValue("0");
-            actionFields.get(2).setValue("0");
-            actionFields.get(3).setValue("0");
+            this.actionTypeDropdownWidget.selectOption(Action.ActionType.STANDSTILL);
+            this.actionTargetAndPathFrame.setVisible(true);
+            this.actionTargetBlockFrame.setVisible(true);
+            this.actionPathFrame.setVisible(false);
+            this.actionRadiusFrame.setVisible(false);
+            this.actionFields.get(0).setValue("0");
+            this.actionFields.get(1).setValue("0");
+            this.actionFields.get(2).setValue("0");
+            this.actionFields.get(3).setValue("0");
             this.waitingPath = new long[0];
         }
 
