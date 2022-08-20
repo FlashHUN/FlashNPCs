@@ -191,12 +191,15 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.triggerTypeDropdownWidget = this.addWidget(
             new DropdownWidget<>(Trigger.TriggerType.DIALOGUE_TRIGGER,0,0,120,3, dropdownWidget -> {
                 Trigger.TriggerType triggerType = (Trigger.TriggerType) dropdownWidget.getSelectedOption();
-                Main.LOGGER.info("Timer type changed");
                 switch (triggerType) {
-                    case ACTION_FINISH_TRIGGER, DIALOGUE_TRIGGER ->
-                            triggerTimerFrame.setVisible(false);
-                    case TIMER_TRIGGER ->
-                            triggerTimerFrame.setVisible(true);
+                    case ACTION_FINISH_TRIGGER, DIALOGUE_TRIGGER -> {
+                        triggerTimerFrame.setVisible(false);
+                        this.triggerFrame.recalculateSize();
+                    }
+                    case TIMER_TRIGGER -> {
+                        triggerTimerFrame.setVisible(true);
+                        this.triggerFrame.recalculateSize();
+                    }
                 }
             })
         );
@@ -204,7 +207,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         triggerChildFrame.addWidget(new TextWidget("Next:"));
         triggerChildFrame.addWidget(triggerChildField);
         this.triggerFrame.addWidget(triggerChildFrame);
-        this.triggerFrame.addWidget(triggerTypeDropdownWidget);
+        DirectionalFrame triggerTypeFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        triggerTypeFrame.addWidget(triggerTypeDropdownWidget);
+        this.triggerFrame.addWidget(triggerTypeFrame);
+        this.triggerFrame.addSpacer();
         this.triggerFrame.setVisible(false);
         this.mainVFrame.insertWidget(triggerFrame, 0, 20);
         this.allTopLevelFrames.put(EditType.TRIGGER, this.triggerFrame);
