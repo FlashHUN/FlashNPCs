@@ -1,8 +1,8 @@
 package flash.npcmod.client.gui.screen.quests;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.client.gui.widget.DropdownWidget;
-import flash.npcmod.core.EntityUtil;
+import flash.npcmod.client.gui.widget.EntityDropdownWidget;
+import flash.npcmod.client.gui.widget.EnumDropdownWidget;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.core.quests.QuestObjectiveTypes;
 import flash.npcmod.network.PacketDispatcher;
@@ -29,8 +29,8 @@ import java.util.function.Predicate;
 @OnlyIn(Dist.CLIENT)
 public class QuestObjectiveBuilderScreen extends Screen {
 
-  private DropdownWidget<QuestObjective.ObjectiveType> typeDropdown;
-  private DropdownWidget<EntityUtil.LivingEntities> entityTypeDropdown;
+  private EnumDropdownWidget<QuestObjective.ObjectiveType> typeDropdown;
+  private EntityDropdownWidget entityDropdown;
   private EditBox nameField, amountField, primaryObjectiveField, secondaryObjectiveField, runOnCompleteField;
   private Checkbox optionalCheckbox, hiddenCheckbox, displayProgressCheckbox;
   private Button itemFromInventoryButton, plusRunOnCompleteButton;
@@ -173,9 +173,9 @@ public class QuestObjectiveBuilderScreen extends Screen {
       }
     }));
 
-    EntityUtil.LivingEntities entity = entityObjective != null ? EntityUtil.LivingEntities.valueOf(EntityType.getKey(entityObjective).toString().replaceAll(":", "_")) : EntityUtil.LivingEntities.valueOf("minecraft_pig");
-    this.entityTypeDropdown = this.addRenderableWidget(new DropdownWidget<>(entity, 5+font.width(PRIMARY), 82-2, 200, 10));
-    this.typeDropdown = this.addRenderableWidget(new DropdownWidget<>(objectiveType, 5+font.width(TYPE), 3, 100));
+    EntityType<?> entity = entityObjective != null ? entityObjective : EntityType.PIG;
+    this.entityDropdown = this.addRenderableWidget(new EntityDropdownWidget(entity, 5+font.width(PRIMARY), 82-2, 200, 10));
+    this.typeDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(objectiveType, 5+font.width(TYPE), 3, 100));
 
     this.removeRunOnCompletionButtons = new Button[6];
     for (int i = 0; i < removeRunOnCompletionButtons.length; i++) {
@@ -243,7 +243,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
         typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Talk)
             || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Find)
             || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Scoreboard));
-    secondaryObjectiveField.visible = !typeDropdown.isShowingOptions() && !entityTypeDropdown.isShowingOptions() && (
+    secondaryObjectiveField.visible = !typeDropdown.isShowingOptions() && !entityDropdown.isShowingOptions() && (
         typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.DeliverToLocation)
             || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Talk)
             || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Scoreboard)
@@ -275,26 +275,24 @@ public class QuestObjectiveBuilderScreen extends Screen {
     boolean isSecondaryEntityObjective =
         typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.DeliverToEntity)
             || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnEntity);
-    entityTypeDropdown.active = !typeDropdown.isShowingOptions();
-    entityTypeDropdown.visible = isPrimaryEntityObjective || isSecondaryEntityObjective;
+    entityDropdown.active = !typeDropdown.isShowingOptions();
+    entityDropdown.visible = isPrimaryEntityObjective || isSecondaryEntityObjective;
     if (isPrimaryEntityObjective) {
-      entityTypeDropdown.x = 5 + font.width(PRIMARY);
-      entityTypeDropdown.y = 82 - 2;
-      entityObjective = entityTypeDropdown.getSelectedOption().entityType;
+      entityDropdown.x = 5 + font.width(PRIMARY);
+      entityDropdown.y = 82 - 2;
+      entityObjective = entityDropdown.getSelectedType();
     } else if (isSecondaryEntityObjective) {
-      entityTypeDropdown.x = 5 + font.width(SECONDARY);
-      entityTypeDropdown.y = 112 - 2;
-      entityObjective = entityTypeDropdown.getSelectedOption().entityType;
+      entityDropdown.x = 5 + font.width(SECONDARY);
+      entityDropdown.y = 112 - 2;
+      entityObjective = entityDropdown.getSelectedType();
     }
 
-    boolean isPrimaryItemObjective =
-        typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Gather)
-            || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.DeliverToEntity)
-            || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.DeliverToLocation)
-            || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnEntity)
-            || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnBlock)
-            || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Use);
-    itemFromInventoryButton.visible = isPrimaryItemObjective;
+    itemFromInventoryButton.visible = typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Gather)
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.DeliverToEntity)
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.DeliverToLocation)
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnEntity)
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnBlock)
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Use);
     itemFromInventoryButton.active = !typeDropdown.isShowingOptions();
 
 
@@ -302,9 +300,9 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
     nameField.visible = isNotEscortObjective && !typeDropdown.isShowingOptions();
     amountField.visible = isNotEscortObjective;
-    runOnCompleteField.visible = isNotEscortObjective && !typeDropdown.isShowingOptions() && !entityTypeDropdown.isShowingOptions();
+    runOnCompleteField.visible = isNotEscortObjective && !typeDropdown.isShowingOptions() && !entityDropdown.isShowingOptions();
     plusRunOnCompleteButton.visible = isNotEscortObjective;
-    plusRunOnCompleteButton.active = canAddRunOnComplete() && !typeDropdown.isShowingOptions() && !entityTypeDropdown.isShowingOptions();
+    plusRunOnCompleteButton.active = canAddRunOnComplete() && !typeDropdown.isShowingOptions() && !entityDropdown.isShowingOptions();
 
     optionalCheckbox.visible = isNotEscortObjective;
     hiddenCheckbox.visible = isNotEscortObjective;
@@ -361,29 +359,20 @@ public class QuestObjectiveBuilderScreen extends Screen {
   }
 
   private boolean canCreateObjective() {
-    switch (typeDropdown.getSelectedOption()) {
-      case Gather:
-      case Use:
-        return itemStackObjective != null && !itemStackObjective.isEmpty() && amount > 0;
-      case Kill:
-        return entityObjective != null && amount > 0;
-      case DeliverToEntity:
-      case UseOnEntity:
-        return itemStackObjective != null && !itemStackObjective.isEmpty() && entityObjective != null && amount > 0;
-      case DeliverToLocation:
-        return itemStackObjective != null && !itemStackObjective.isEmpty() && canConvertToArea(secondaryObjective) && amount > 0;
-      case Escort:
-        return false; // TODO
-      case Talk:
-        return !primaryObjective.isEmpty() && !secondaryObjective.isEmpty();
-      case Find:
-        return canConvertToArea(primaryObjective);
-      case UseOnBlock:
-        return itemStackObjective != null && !itemStackObjective.isEmpty() && blockStateObjective != null && !blockStateObjective.getBlock().equals(Blocks.AIR) && amount > 0;
-      case Scoreboard:
-        return !primaryObjective.isEmpty();
-    }
-    return false;
+    return switch (typeDropdown.getSelectedOption()) {
+      case Gather, Use -> itemStackObjective != null && !itemStackObjective.isEmpty() && amount > 0;
+      case Kill -> entityObjective != null && amount > 0;
+      case DeliverToEntity, UseOnEntity ->
+              itemStackObjective != null && !itemStackObjective.isEmpty() && entityObjective != null && amount > 0;
+      case DeliverToLocation ->
+              itemStackObjective != null && !itemStackObjective.isEmpty() && canConvertToArea(secondaryObjective) && amount > 0;
+      case Escort -> false; // TODO
+      case Talk -> !primaryObjective.isEmpty() && !secondaryObjective.isEmpty();
+      case Find -> canConvertToArea(primaryObjective);
+      case UseOnBlock ->
+              itemStackObjective != null && !itemStackObjective.isEmpty() && blockStateObjective != null && !blockStateObjective.getBlock().equals(Blocks.AIR) && amount > 0;
+      case Scoreboard -> !primaryObjective.isEmpty();
+    };
   }
 
   @Nullable

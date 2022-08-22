@@ -2,7 +2,7 @@ package flash.npcmod.client.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.client.gui.widget.ColorSliderWidget;
-import flash.npcmod.client.gui.widget.DropdownWidget;
+import flash.npcmod.client.gui.widget.EnumDropdownWidget;
 import flash.npcmod.core.ColorUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -39,7 +39,7 @@ public class NpcBuilderScreen extends Screen {
   public EditBox redField, greenField, blueField;
   private Checkbox slimCheckBox, nameVisibleCheckbox;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
-  private DropdownWidget<CEditNpc.NPCPose> poseDropdown;
+  private EnumDropdownWidget<CEditNpc.NPCPose> poseDropdown;
 
   private int r, g, b;
   private CEditNpc.NPCPose pose;
@@ -174,7 +174,7 @@ public class NpcBuilderScreen extends Screen {
                       this.behavior, this.textColor, this.items, this.pose, true));
     }));
 
-    this.poseDropdown = this.addRenderableWidget(new DropdownWidget<>(this.pose, minX + 210, 5, 80));
+    this.poseDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(this.pose, minX + 210, 5, 80));
   }
 
   private void setName(String s) {

@@ -29,6 +29,10 @@ import org.jetbrains.annotations.NotNull;
 @Mod(Main.MODID)
 public class Main {
 
+  // TODO figure out a way to sort mobs by namespace and name in the EntityDropdownWidget
+  // TODO add an EntityDropdownWidget to the NpcBuilderScreen, add a tag to the NPC for which entity is selected
+  // TODO renderer changes so the NPC can be rendered as any entity
+
   public static final String MODID = "flashnpcs";
 
   public static final Logger LOGGER = LogManager.getLogger("Flashs NPCs");
@@ -47,7 +51,7 @@ public class Main {
     IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
     // Set up proxies
-    PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
+    PROXY = DistExecutor.runForDist(() -> ClientProxy::new, () -> CommonProxy::new);
 
     // Register the setup method for modloading
     modEventBus.addListener(this::setup);

@@ -68,6 +68,7 @@ public class PacketDispatcher {
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendDialogueEditor.class, SSendDialogueEditor::encode, SSendDialogueEditor::decode, SSendDialogueEditor::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendFunctionName.class, SSendFunctionName::encode, SSendFunctionName::decode, SSendFunctionName::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSendQuestInfo.class, SSendQuestInfo::encode, SSendQuestInfo::decode, SSendQuestInfo::handle);
+    PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncEntityList.class, SSyncEntityList::encode, SSyncEntityList::decode, SSyncEntityList::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncQuestCapability.class, SSyncQuestCapability::encode, SSyncQuestCapability::decode, SSyncQuestCapability::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncSavedNpcs.class, SSyncSavedNpcs::encode, SSyncSavedNpcs::decode, SSyncSavedNpcs::handle);
     PacketDispatcher.INSTANCE.registerMessage(nextID(), SSyncTrades.class, SSyncTrades::encode, SSyncTrades::decode, SSyncTrades::handle);

@@ -20,7 +20,9 @@ import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
@@ -33,6 +35,7 @@ import java.util.*;
 public class ClientProxy extends CommonProxy {
 
   public static List<String> SAVED_NPCS = new ArrayList<>();
+  public static Map<String, EntityType<?>> ENTITY_TYPES = new HashMap<>();
 
   Minecraft minecraft = Minecraft.getInstance();
 
@@ -253,5 +256,12 @@ public class ClientProxy extends CommonProxy {
 
   public void loadSavedNpcs(List<String> savedNpcs) {
     SAVED_NPCS = savedNpcs;
+  }
+
+  public void loadEntities(String[] entities) {
+    ENTITY_TYPES.clear();
+    for (String name : entities) {
+      EntityType.byString(name).ifPresent(entityType -> ENTITY_TYPES.put(name, entityType));
+    }
   }
 }

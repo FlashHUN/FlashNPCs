@@ -5,6 +5,7 @@ import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
@@ -46,5 +47,7 @@ public class CommonProxy {
   public void syncTrades(int entityid, TradeOffers tradeOffers) {}
 
   public void loadSavedNpcs(List<String> savedNpcs) {}
+
+  public void loadEntities(String[] entities) {}
 
 }

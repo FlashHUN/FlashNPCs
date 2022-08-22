@@ -3,32 +3,35 @@ package flash.npcmod.core;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class EntityUtil {
 
-  public static void loadAllEntitiesIntoEnum(Level world) {
+  private static String[] ENTITY_TYPES = new String[0];
+  private static boolean hasLoadedEntities = false;
+
+  public static void loadAllValidEntities(Level world) {
+    List<EntityType<?>> entityTypes = new ArrayList<>();
     ForgeRegistries.ENTITIES.forEach(entityType -> {
       if (entityType.create(world) instanceof LivingEntity) {
-        String name = EntityType.getKey(entityType).toString().replaceAll(":", "_");
-        LivingEntities.create(name, entityType);
+        entityTypes.add(entityType);
       }
     });
+    ENTITY_TYPES = entityTypes.stream().map(type -> EntityType.getKey(type).toString()).toArray(String[]::new);
+    hasLoadedEntities = true;
   }
 
-  public enum LivingEntities implements net.minecraftforge.common.IExtensibleEnum {
-    ;
+  public static boolean hasLoadedEntities() {
+    return hasLoadedEntities;
+  }
 
-    public final EntityType<?> entityType;
-
-    LivingEntities(EntityType<?> type) {
-      this.entityType = type;
-    }
-
-    public static LivingEntities create(String name, EntityType<?> type) {
-      throw new IllegalStateException("Enum not extended");
-    }
-
+  public static String[] getEntityTypes() {
+    return ENTITY_TYPES.clone();
   }
 
 }

@@ -10,7 +10,7 @@ import flash.npcmod.client.gui.behavior.BehaviorNode;
 import flash.npcmod.client.gui.behavior.Trigger;
 import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
-import flash.npcmod.client.gui.widget.DropdownWidget;
+import flash.npcmod.client.gui.widget.EnumDropdownWidget;
 import flash.npcmod.client.gui.widget.FunctionListWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.entity.NpcEntity;
@@ -42,9 +42,9 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
      */
     protected int[] intArgs;
     private final NpcEntity npcEntity;
-    private DropdownWidget<CEditNpc.NPCPose> poseDropdownWidget;
-    private DropdownWidget<Action.ActionType> actionTypeDropdownWidget;
-    private DropdownWidget<Trigger.TriggerType> triggerTypeDropdownWidget;
+    private EnumDropdownWidget<CEditNpc.NPCPose> poseDropdownWidget;
+    private EnumDropdownWidget<Action.ActionType> actionTypeDropdownWidget;
+    private EnumDropdownWidget<Trigger.TriggerType> triggerTypeDropdownWidget;
     private EditBox triggerChildField, triggerTimerField;
     private final List<EditBox> actionFields;
     @Nullable
@@ -260,7 +260,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         allFields.put(EditType.TRIGGER, triggerField);
 
         this.triggerTypeDropdownWidget = this.addRenderableWidget(
-                new DropdownWidget<>(
+                new EnumDropdownWidget<>(
                         Trigger.TriggerType.DIALOGUE_TRIGGER,
                         getWidgetWidth(0, this.width, null, 20),
                         getWidgetHeight(-2, this.height, null),
@@ -325,7 +325,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         int[] colWidths = new int[]{80, 100};
         int indexHeight = (numRows / 2);
         this.poseDropdownWidget = this.addRenderableWidget(
-                new DropdownWidget<>(
+                new EnumDropdownWidget<>(
                         CEditNpc.NPCPose.STANDING,
                         getWidgetWidth(-1, this.width, colWidths, 20),
                         getWidgetHeight(indexHeight, this.height, null),
@@ -335,7 +335,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         this.poseDropdownWidget.visible = false;
 
         this.actionTypeDropdownWidget = this.addRenderableWidget(
-                new DropdownWidget<>(
+                new EnumDropdownWidget<>(
                         Action.ActionType.STANDSTILL,
                         getWidgetWidth(0, this.width, colWidths, 20),
                         getWidgetHeight(indexHeight, this.height, null),

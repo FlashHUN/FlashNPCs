@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.network.chat.TextComponent;
 
-public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
+public class EnumDropdownWidget<T extends Enum<T>> extends AbstractWidget {
 
   private static final Minecraft minecraft = Minecraft.getInstance();
 
@@ -26,11 +26,11 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
   private int scrollY;
   private final int maxDisplayedOptions;
 
-  public DropdownWidget(T defaultOption, int x, int y, int width) {
+  public EnumDropdownWidget(T defaultOption, int x, int y, int width) {
     this(defaultOption, x, y, width, 0);
   }
 
-  public DropdownWidget(T defaultOption, int x, int y, int width, int maxDisplayedOptions) {
+  public EnumDropdownWidget(T defaultOption, int x, int y, int width, int maxDisplayedOptions) {
     super(x, y, Mth.clamp(width, 0, 200), 13, new TextComponent(defaultOption.name()));
     myEnum = defaultOption;
     selectedOption = defaultOption;
