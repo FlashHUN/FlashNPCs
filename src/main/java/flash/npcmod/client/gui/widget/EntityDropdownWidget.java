@@ -14,6 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class EntityDropdownWidget extends AbstractWidget {
@@ -36,8 +38,11 @@ public class EntityDropdownWidget extends AbstractWidget {
 
     public EntityDropdownWidget(EntityType<?> defaultOption, int x, int y, int width, int maxDisplayedOptions) {
         super(x, y, Mth.clamp(width, 0, 200), 13, new TextComponent(EntityType.getKey(defaultOption).toString()));
-        this.names = ClientProxy.ENTITY_TYPES.keySet().stream().toList();
-        this.types = ClientProxy.ENTITY_TYPES.values().stream().toList();
+        this.names = ClientProxy.ENTITY_TYPES.keySet().stream().sorted().toList();
+        this.types = new ArrayList<>();
+        for (String name : names) {
+            types.add(ClientProxy.ENTITY_TYPES.get(name));
+        }
         String selectedName = EntityType.getKey(defaultOption).toString();
         if (!names.contains(selectedName)) {
             throw new IllegalArgumentException("This entity is not in the list of known valid entities: " + selectedName);

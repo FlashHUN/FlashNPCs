@@ -29,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 @Mod(Main.MODID)
 public class Main {
 
-  // TODO figure out a way to sort mobs by namespace and name in the EntityDropdownWidget
   // TODO add an EntityDropdownWidget to the NpcBuilderScreen, add a tag to the NPC for which entity is selected
   // TODO renderer changes so the NPC can be rendered as any entity
 
