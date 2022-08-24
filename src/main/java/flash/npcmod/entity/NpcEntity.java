@@ -14,7 +14,6 @@ import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.entity.goals.NPCMoveToBlockGoal;
-import flash.npcmod.entity.goals.NPCInteractWithBlockGoal;
 import flash.npcmod.entity.goals.NPCWanderGoal;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.item.BehaviorEditorItem;
@@ -60,6 +59,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class NpcEntity extends PathfinderMob {
 
+    private static final EntityDataAccessor<String> RENDERER = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> BEHAVIOR_FILE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> CROUCHING = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> CURRENT_BEHAVIOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
@@ -89,6 +89,7 @@ public class NpcEntity extends PathfinderMob {
 
     @Nullable
     private TradeOffers tradeOffers;
+    private LivingEntity entityToRenderAs;
 
     public NpcEntity(EntityType<? extends PathfinderMob> type, Level world) {
         super(type, world);
@@ -123,6 +124,7 @@ public class NpcEntity extends PathfinderMob {
         compound.put("origin", NbtUtils.writeBlockPos(getOrigin()));
         compound.putBoolean("sitting", isSitting());
         compound.putBoolean("crouching", isCrouching());
+        compound.putString("renderer", getRenderer());
 
         TradeOffers tradeOffers = this.getOffers();
         if (!tradeOffers.isEmpty()) {
@@ -219,6 +221,7 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.define(TEXTURE, "");
         this.entityData.define(SLIM, false);
         this.entityData.define(SITTING, false);
+        this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
     }
 
     /**
@@ -265,6 +268,7 @@ public class NpcEntity extends PathfinderMob {
             case "sitting" -> npcEntity.setSitting(true);
             case "crouching" -> npcEntity.setCrouching(true);
         }
+        npcEntity.setRenderer(jsonObject.get("renderer").getAsString());
         npcEntity.tradeOffers = TradeOffers.read(jsonObject.get("trades").getAsString());
 
         JsonObject inventory = jsonObject.getAsJsonObject("inventory");
@@ -577,6 +581,15 @@ public class NpcEntity extends PathfinderMob {
         return this.entityData.get(SLIM);
     }
 
+    public String getRenderer() {
+        return this.entityData.get(RENDERER);
+    }
+
+    public EntityType<?> getRendererType() {
+        String renderer = getRenderer();
+        return EntityType.byString(renderer).orElse(this.getType());
+    }
+
     public boolean isTooFar() {
         return this.blockPosition().distManhattan(this.getTargetBlock()) > this.getRadius();
     }
@@ -600,6 +613,7 @@ public class NpcEntity extends PathfinderMob {
         setTargetBlock(NbtUtils.readBlockPos(compound.getCompound("targetBlock")));
         setTextColor(compound.getInt("textColor"));
         setTexture(compound.getString("texture"));
+        setRenderer(compound.getString("renderer"));
 
         if (compound.contains("Offers", 10)) {
             this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
@@ -808,6 +822,44 @@ public class NpcEntity extends PathfinderMob {
         this.tradeOffers = tradeOffers;
     }
 
+    public void setRenderer(String renderer) {
+        this.entityData.set(RENDERER, renderer);
+        setEntityToRenderAs(getRendererType());
+    }
+
+    public void setRenderer(EntityType<?> rendererType) {
+        String renderer = EntityType.getKey(rendererType).toString();
+        this.entityData.set(RENDERER, renderer);
+        setEntityToRenderAs(getRendererType());
+    }
+
+    private void setEntityToRenderAs(EntityType<?> rendererType) {
+        this.entityToRenderAs = (LivingEntity) rendererType.create(this.level);
+        addExtraPropertiesToRenderedEntity();
+    }
+
+    public void addExtraPropertiesToRenderedEntity() {
+        if (entityToRenderAs != null) {
+            if (entityToRenderAs instanceof Mob mobEntity) {
+                mobEntity.setItemSlot(EquipmentSlot.MAINHAND, this.getItemBySlot(EquipmentSlot.MAINHAND));
+                mobEntity.setItemSlot(EquipmentSlot.OFFHAND, this.getItemBySlot(EquipmentSlot.OFFHAND));
+                mobEntity.setItemSlot(EquipmentSlot.HEAD, this.getItemBySlot(EquipmentSlot.HEAD));
+                mobEntity.setItemSlot(EquipmentSlot.CHEST, this.getItemBySlot(EquipmentSlot.CHEST));
+                mobEntity.setItemSlot(EquipmentSlot.LEGS, this.getItemBySlot(EquipmentSlot.LEGS));
+                mobEntity.setItemSlot(EquipmentSlot.FEET, this.getItemBySlot(EquipmentSlot.FEET));
+            }
+            entityToRenderAs.setCustomName(this.getCustomName());
+            entityToRenderAs.setCustomNameVisible(this.isCustomNameVisible());
+        }
+    }
+
+    public LivingEntity getEntityToRenderAs() {
+        if (entityToRenderAs == null || entityToRenderAs.getType() != this.getRendererType()) {
+            setEntityToRenderAs(getRendererType());
+        }
+        return entityToRenderAs;
+    }
+
     /**
      * Set the countdown for a trigger to be called.
      * @param timer The time in seconds.
@@ -884,6 +936,7 @@ public class NpcEntity extends PathfinderMob {
         jsonObject.addProperty("slim", isSlim());
         jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");
         jsonObject.addProperty("trades", getOffers().write().getAsString());
+        jsonObject.addProperty("renderer", getRenderer());
 
         jsonObject.add("inventory", inventoryToJson());
 

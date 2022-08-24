@@ -29,8 +29,7 @@ import org.jetbrains.annotations.NotNull;
 @Mod(Main.MODID)
 public class Main {
 
-  // TODO add an EntityDropdownWidget to the NpcBuilderScreen, add a tag to the NPC for which entity is selected
-  // TODO renderer changes so the NPC can be rendered as any entity
+  // FIXME entity rotation is quite spinny in the renderer
 
   public static final String MODID = "flashnpcs";
 

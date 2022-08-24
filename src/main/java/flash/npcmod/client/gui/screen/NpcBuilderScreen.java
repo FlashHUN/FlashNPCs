@@ -2,6 +2,7 @@ package flash.npcmod.client.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.client.gui.widget.ColorSliderWidget;
+import flash.npcmod.client.gui.widget.EntityDropdownWidget;
 import flash.npcmod.client.gui.widget.EnumDropdownWidget;
 import flash.npcmod.core.ColorUtil;
 import flash.npcmod.entity.NpcEntity;
@@ -13,7 +14,9 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.util.Mth;
 import net.minecraft.network.chat.TextComponent;
@@ -35,11 +38,13 @@ public class NpcBuilderScreen extends Screen {
   private String texture;
   private boolean isSlim, isNameVisible;
   private final ItemStack[] items;
+  private EntityType<?> renderer;
 
   public EditBox redField, greenField, blueField;
   private Checkbox slimCheckBox, nameVisibleCheckbox;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
   private EnumDropdownWidget<CEditNpc.NPCPose> poseDropdown;
+  private EntityDropdownWidget rendererDropdown;
 
   private int r, g, b;
   private CEditNpc.NPCPose pose;
@@ -85,6 +90,7 @@ public class NpcBuilderScreen extends Screen {
     this.r = ColorUtil.hexToR(textColor);
     this.g = ColorUtil.hexToG(textColor);
     this.b = ColorUtil.hexToB(textColor);
+    this.renderer = npcEntity.getRendererType();
   }
 
   @Override
@@ -147,7 +153,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 20, 60, 20, new TextComponent("Confirm"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
-                      this.behavior, this.textColor, this.items, this.pose));
+                      this.behavior, this.textColor, this.items, this.pose, this.renderer));
       minecraft.setScreen(null);
     }));
 
@@ -155,7 +161,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 40, 60, 20, new TextComponent("Inventory"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
-                      this.behavior, this.textColor, this.items, this.pose));
+                      this.behavior, this.textColor, this.items, this.pose, this.renderer));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.NPCINVENTORY));
     }));
 
@@ -163,7 +169,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 60, 60, 20, new TextComponent("Trades"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
-                      this.behavior, this.textColor, this.items, this.pose));
+                      this.behavior, this.textColor, this.items, this.pose, this.renderer));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.TRADE_EDITOR));
     }));
 
@@ -171,10 +177,12 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 80, 60, 20, new TextComponent("Reset AI"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), this.isNameVisible, this.name, this.texture, this.isSlim, this.dialogue,
-                      this.behavior, this.textColor, this.items, this.pose, true));
+                      this.behavior, this.textColor, this.items, this.pose, true, this.renderer));
     }));
 
     this.poseDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(this.pose, minX + 210, 5, 80));
+
+    this.rendererDropdown = this.addRenderableWidget(new EntityDropdownWidget(this.renderer, minX + 125, 55, 165, 10));
   }
 
   private void setName(String s) {
@@ -282,6 +290,9 @@ public class NpcBuilderScreen extends Screen {
         case STANDING -> { npcEntity.setCrouching(false); npcEntity.setSitting(false); }
       }
     }
+
+    this.renderer = this.rendererDropdown.getSelectedType();
+    npcEntity.setRenderer(renderer);
   }
 
   @Override
@@ -307,8 +318,8 @@ public class NpcBuilderScreen extends Screen {
 
     drawString(matrixStack, font, "Text Color: ", 5, 105 + (100 - font.lineHeight) / 2, 0xFFFFFF);
 
-    fill(matrixStack, minX + 99, 121, minX + 126, 147, 0xFF000000);
-    fill(matrixStack, minX + 100, 122, minX + 125, 146, ColorUtil.hexToHexA(textColor));
+    fill(matrixStack, minX + 89, 121, minX + 116, 147, 0xFF000000);
+    fill(matrixStack, minX + 90, 122, minX + 115, 146, ColorUtil.hexToHexA(textColor));
 
     super.render(matrixStack, mouseX, mouseY, partialTicks);
   }

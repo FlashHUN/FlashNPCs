@@ -9,6 +9,7 @@ import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.*;
 import net.minecraft.client.model.HumanoidModel;
@@ -19,6 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -64,18 +66,25 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
   @Override
   public void render(NpcEntity entityIn, float entityYaw, float partialTicks, PoseStack matrixStackIn,
                      MultiBufferSource bufferIn, int packedLightIn) {
-    if (entityIn.isSlim())
-      this.model = slimModel;
-    else
-      this.model = normalModel;
+    if (entityIn.getRendererType().equals(entityIn.getType()) || entityIn.getEntityToRenderAs() == null) {
+      if (entityIn.isSlim())
+        this.model = slimModel;
+      else
+        this.model = normalModel;
 
-    setModelProperties(entityIn);
-
-    render2(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
+      setModelProperties(entityIn);
+      renderPlayerModel(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
+    }
+    else {
+      LivingEntity entityToRenderAs = entityIn.getEntityToRenderAs();
+      entityToRenderAs.setYBodyRot(entityIn.yBodyRot);
+      entityToRenderAs.setYHeadRot(entityIn.yHeadRot);
+      this.entityRenderDispatcher.render(entityIn.getEntityToRenderAs(), 0.0, 0.0, 0.0, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
+    }
   }
   
-  private void render2(NpcEntity entityIn, float entityYaw, float partialTicks, PoseStack matrixStackIn,
-                       MultiBufferSource bufferIn, int packedLightIn) {
+  private void renderPlayerModel(NpcEntity entityIn, float entityYaw, float partialTicks, PoseStack matrixStackIn,
+                                 MultiBufferSource bufferIn, int packedLightIn) {
     if (net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.RenderLivingEvent.Pre<>(entityIn, this, partialTicks, matrixStackIn, bufferIn, packedLightIn))) return;
     matrixStackIn.pushPose();
     this.model.attackTime = this.getAttackAnim(entityIn, partialTicks);
@@ -159,21 +168,17 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
     }
 
     matrixStackIn.popPose();
-    render3(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
-    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.RenderLivingEvent.Post<>(entityIn, this, partialTicks, matrixStackIn, bufferIn, packedLightIn));
-  }
-
-  private void render3(NpcEntity entityIn, float entityYaw, float partialTicksIn, PoseStack matrixStackIn, MultiBufferSource bufferIn, int packedLightIn) {
-    net.minecraftforge.client.event.RenderNameplateEvent renderNameplateEvent = new net.minecraftforge.client.event.RenderNameplateEvent(entityIn, entityIn.getDisplayName(), this, matrixStackIn, bufferIn, packedLightIn, partialTicksIn);
+    net.minecraftforge.client.event.RenderNameplateEvent renderNameplateEvent = new net.minecraftforge.client.event.RenderNameplateEvent(entityIn, entityIn.getDisplayName(), this, matrixStackIn, bufferIn, packedLightIn, partialTicks);
     net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(renderNameplateEvent);
     if (renderNameplateEvent.getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY && (renderNameplateEvent.getResult() == net.minecraftforge.eventbus.api.Event.Result.ALLOW || this.shouldShowName(entityIn))) {
       this.renderNameTag(entityIn, renderNameplateEvent.getContent(), matrixStackIn, bufferIn, packedLightIn);
     }
+    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.RenderLivingEvent.Post<>(entityIn, this, partialTicks, matrixStackIn, bufferIn, packedLightIn));
   }
 
   @Override
-  public Vec3 getRenderOffset(NpcEntity p_117785_, float p_117786_) {
-    return p_117785_.isCrouching() ? new Vec3(0.0D, -0.125D, 0.0D) : p_117785_.isSitting() ? new Vec3(0.0D, -0.55D, 0.0D) : super.getRenderOffset(p_117785_, p_117786_);
+  public Vec3 getRenderOffset(NpcEntity npcEntity, float p_117786_) {
+    return npcEntity.isCrouching() ? new Vec3(0.0D, -0.125D, 0.0D) : npcEntity.isSitting() ? new Vec3(0.0D, -0.55D, 0.0D) : super.getRenderOffset(npcEntity, p_117786_);
   }
 
   @Override
