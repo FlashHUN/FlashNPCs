@@ -182,7 +182,7 @@ public class NpcBuilderScreen extends Screen {
 
     this.poseDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(this.pose, minX + 210, 5, 80));
 
-    this.rendererDropdown = this.addRenderableWidget(new EntityDropdownWidget(this.renderer, minX + 125, 55, 165, 10));
+    this.rendererDropdown = this.addRenderableWidget(new EntityDropdownWidget(this.renderer, minX + 125, 55, 165, 10, true));
   }
 
   private void setName(String s) {

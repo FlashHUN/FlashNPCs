@@ -122,7 +122,7 @@ public class CEditNpc {
           npcEntity.setItemSlot(EquipmentSlot.CHEST, msg.items[3]);
           npcEntity.setItemSlot(EquipmentSlot.LEGS, msg.items[4]);
           npcEntity.setItemSlot(EquipmentSlot.FEET, msg.items[5]);
-          npcEntity.addExtraPropertiesToRenderedEntity();
+          npcEntity.setRenderedEntityItems();
 
           switch (msg.pose) {
             case CROUCHING -> { npcEntity.setCrouching(true); npcEntity.setSitting(false); }

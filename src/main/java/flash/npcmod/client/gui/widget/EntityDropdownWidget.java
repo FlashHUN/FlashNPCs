@@ -17,6 +17,7 @@ import net.minecraft.world.entity.EntityType;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 public class EntityDropdownWidget extends AbstractWidget {
 
@@ -32,16 +33,17 @@ public class EntityDropdownWidget extends AbstractWidget {
     private int scrollY;
     private final int maxDisplayedOptions;
 
-    public EntityDropdownWidget(EntityType<?> defaultOption, int x, int y, int width) {
-        this(defaultOption, x, y, width, 0);
+    public EntityDropdownWidget(EntityType<?> defaultOption, int x, int y, int width, boolean isRenderOnly) {
+        this(defaultOption, x, y, width, 0, isRenderOnly);
     }
 
-    public EntityDropdownWidget(EntityType<?> defaultOption, int x, int y, int width, int maxDisplayedOptions) {
+    public EntityDropdownWidget(EntityType<?> defaultOption, int x, int y, int width, int maxDisplayedOptions, boolean isRenderOnly) {
         super(x, y, Mth.clamp(width, 0, 200), 13, new TextComponent(EntityType.getKey(defaultOption).toString()));
-        this.names = ClientProxy.ENTITY_TYPES.keySet().stream().sorted().toList();
+        Map<String, EntityType<?>> mapToUse = isRenderOnly ? ClientProxy.RENDER_ENTITY_TYPES : ClientProxy.ENTITY_TYPES;
+        this.names = mapToUse.keySet().stream().sorted().toList();
         this.types = new ArrayList<>();
         for (String name : names) {
-            types.add(ClientProxy.ENTITY_TYPES.get(name));
+            types.add(mapToUse.get(name));
         }
         String selectedName = EntityType.getKey(defaultOption).toString();
         if (!names.contains(selectedName)) {
@@ -50,6 +52,7 @@ public class EntityDropdownWidget extends AbstractWidget {
         this.selectedType = defaultOption;
         // TODO There is a bug where the scaled height will cause dropdowns to be cutoff earlier than necessary.
         this.maxDisplayedOptions = maxDisplayedOptions == 0 ? (minecraft.getWindow().getGuiScaledHeight() - (y + 13 + names.size()*13)) / 13 : Math.abs(maxDisplayedOptions);
+        scrollY = clampScroll(names.indexOf(selectedName));
     }
 
     @Override

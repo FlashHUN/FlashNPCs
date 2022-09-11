@@ -20,6 +20,7 @@ import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -36,6 +37,7 @@ public class ClientProxy extends CommonProxy {
 
   public static List<String> SAVED_NPCS = new ArrayList<>();
   public static Map<String, EntityType<?>> ENTITY_TYPES = new HashMap<>();
+  public static Map<String, EntityType<?>> RENDER_ENTITY_TYPES = new HashMap<>();
 
   Minecraft minecraft = Minecraft.getInstance();
 
@@ -260,8 +262,13 @@ public class ClientProxy extends CommonProxy {
 
   public void loadEntities(String[] entities) {
     ENTITY_TYPES.clear();
+    RENDER_ENTITY_TYPES.clear();
     for (String name : entities) {
-      EntityType.byString(name).ifPresent(entityType -> ENTITY_TYPES.put(name, entityType));
+      EntityType.byString(name).ifPresent(entityType -> {
+        ENTITY_TYPES.put(name, entityType);
+        if (minecraft.getEntityRenderDispatcher().renderers.get(entityType) instanceof LivingEntityRenderer<?,?>)
+          RENDER_ENTITY_TYPES.put(name, entityType);
+      });
     }
   }
 }

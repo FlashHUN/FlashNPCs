@@ -174,7 +174,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
     }));
 
     EntityType<?> entity = entityObjective != null ? entityObjective : EntityType.PIG;
-    this.entityDropdown = this.addRenderableWidget(new EntityDropdownWidget(entity, 5+font.width(PRIMARY), 82-2, 200, 10));
+    this.entityDropdown = this.addRenderableWidget(new EntityDropdownWidget(entity, 5+font.width(PRIMARY), 82-2, 200, 10, false));
     this.typeDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(objectiveType, 5+font.width(TYPE), 3, 100));
 
     this.removeRunOnCompletionButtons = new Button[6];

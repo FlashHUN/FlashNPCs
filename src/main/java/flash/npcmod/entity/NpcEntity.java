@@ -321,7 +321,10 @@ public class NpcEntity extends PathfinderMob {
      */
     @Override
     public @NotNull EntityDimensions getDimensions(@NotNull Pose pose) {
-        return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
+        if (entityToRenderAs == null) {
+            return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
+        }
+        return entityToRenderAs.getDimensions(pose);
     }
 
     /**
@@ -377,7 +380,10 @@ public class NpcEntity extends PathfinderMob {
 
     @Override
     protected float getStandingEyeHeight(@NotNull Pose poseIn, @NotNull EntityDimensions sizeIn) {
-        return getDimensions(poseIn).height * 0.85F;
+        if (entityToRenderAs == null) {
+            return getDimensions(poseIn).height * 0.85F;
+        }
+        return entityToRenderAs.getEyeHeightAccess(poseIn, sizeIn);
     }
 
     /**
@@ -835,21 +841,18 @@ public class NpcEntity extends PathfinderMob {
 
     private void setEntityToRenderAs(EntityType<?> rendererType) {
         this.entityToRenderAs = (LivingEntity) rendererType.create(this.level);
-        addExtraPropertiesToRenderedEntity();
+        setRenderedEntityItems();
+        refreshDimensions();
     }
 
-    public void addExtraPropertiesToRenderedEntity() {
+    public void setRenderedEntityItems() {
         if (entityToRenderAs != null) {
-            if (entityToRenderAs instanceof Mob mobEntity) {
-                mobEntity.setItemSlot(EquipmentSlot.MAINHAND, this.getItemBySlot(EquipmentSlot.MAINHAND));
-                mobEntity.setItemSlot(EquipmentSlot.OFFHAND, this.getItemBySlot(EquipmentSlot.OFFHAND));
-                mobEntity.setItemSlot(EquipmentSlot.HEAD, this.getItemBySlot(EquipmentSlot.HEAD));
-                mobEntity.setItemSlot(EquipmentSlot.CHEST, this.getItemBySlot(EquipmentSlot.CHEST));
-                mobEntity.setItemSlot(EquipmentSlot.LEGS, this.getItemBySlot(EquipmentSlot.LEGS));
-                mobEntity.setItemSlot(EquipmentSlot.FEET, this.getItemBySlot(EquipmentSlot.FEET));
-            }
-            entityToRenderAs.setCustomName(this.getCustomName());
-            entityToRenderAs.setCustomNameVisible(this.isCustomNameVisible());
+            entityToRenderAs.setItemSlot(EquipmentSlot.MAINHAND, this.getItemBySlot(EquipmentSlot.MAINHAND));
+            entityToRenderAs.setItemSlot(EquipmentSlot.OFFHAND, this.getItemBySlot(EquipmentSlot.OFFHAND));
+            entityToRenderAs.setItemSlot(EquipmentSlot.HEAD, this.getItemBySlot(EquipmentSlot.HEAD));
+            entityToRenderAs.setItemSlot(EquipmentSlot.CHEST, this.getItemBySlot(EquipmentSlot.CHEST));
+            entityToRenderAs.setItemSlot(EquipmentSlot.LEGS, this.getItemBySlot(EquipmentSlot.LEGS));
+            entityToRenderAs.setItemSlot(EquipmentSlot.FEET, this.getItemBySlot(EquipmentSlot.FEET));
         }
     }
 
@@ -915,6 +918,9 @@ public class NpcEntity extends PathfinderMob {
                         }
                     }
                 }
+            }
+            else {
+                setRenderedEntityItems();
             }
         }
     }

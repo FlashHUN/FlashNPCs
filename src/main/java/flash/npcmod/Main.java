@@ -29,7 +29,10 @@ import org.jetbrains.annotations.NotNull;
 @Mod(Main.MODID)
 public class Main {
 
-  // FIXME entity rotation is quite spinny in the renderer
+  // TODO scale rendered entities down in guis based on their hitbox
+  // TODO scale sitting npcs down in guis so the legs don't obstruct the text
+  // TODO make "Slim?" checkbox and pose dropdown invisible if npc model is not default
+  // TODO option to load texture from ResourceLocation instead of URL
 
   public static final String MODID = "flashnpcs";
 
