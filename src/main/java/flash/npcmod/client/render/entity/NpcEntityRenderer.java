@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -105,13 +106,21 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
 
   @Nullable
   private Method tryGetRendererMethod(@NotNull final String srgName, @NotNull final Class<?>... parameterTypes) {
+    return tryGetRendererMethod(currentRenderer.getClass(), currentEntityToRenderAs.getClass(), srgName, parameterTypes);
+  }
+
+  @Nullable
+  private Method tryGetRendererMethod(Class<?> clazz, Class<?> entityClazz, @NotNull final String srgName, @NotNull final Class<?>... parameterTypes) {
     Class<?>[] actualParameterTypes = new Class<?>[parameterTypes.length+1];
-    actualParameterTypes[0] = currentEntityToRenderAs.getClass();
+    actualParameterTypes[0] = entityClazz;
     System.arraycopy(parameterTypes, 0, actualParameterTypes, 1, parameterTypes.length);
     Method method = null;
     try {
-      method = ObfuscationReflectionHelper.findMethod(currentRenderer.getClass(), srgName, actualParameterTypes);
+      method = ObfuscationReflectionHelper.findMethod(clazz, srgName, actualParameterTypes);
     } catch (ObfuscationReflectionHelper.UnableToFindMethodException e1) {
+      if (clazz.getSuperclass() != null && clazz.getSuperclass() != LivingEntityRenderer.class) {
+        method = tryGetRendererMethod(clazz.getSuperclass(), LivingEntity.class, srgName, parameterTypes);
+      }
       Main.LOGGER.debug("Couldn't get method " + srgName + " for class " + currentRenderer.getClass().getSimpleName());
     }
     return method;
@@ -149,9 +158,8 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
       renderPlayerModel(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
     }
     else {
-      LivingEntity entityToRenderAs = entityIn.getEntityToRenderAs();
       setCurrentRenderer(entityIn);
-      this.renderCustomModel(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
+      renderCustomModel(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
     }
   }
 
@@ -217,6 +225,7 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
     } catch (Exception e) {
       this.scale(npcEntity, matrixStackIn, partialTicks);
     }
+    matrixStackIn.scale(npcEntity.getScaleX(), npcEntity.getScaleY(), npcEntity.getScaleZ());
     matrixStackIn.translate(0.0D, (double)-1.501F, 0.0D);
     float f8 = 0.0F;
     float f5 = 0.0F;
@@ -335,6 +344,7 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
     this.setupRotations(entityIn, matrixStackIn, f7, f, partialTicks);
     matrixStackIn.scale(-1.0F, -1.0F, 1.0F);
     this.scale(entityIn, matrixStackIn, partialTicks);
+    matrixStackIn.scale(entityIn.getScaleX(), entityIn.getScaleY(), entityIn.getScaleZ());
     matrixStackIn.translate(0.0D, -1.501F, 0.0D);
     float f8 = 0.0F;
     float f5 = 0.0F;

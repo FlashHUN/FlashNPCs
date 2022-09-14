@@ -1,6 +1,7 @@
 package flash.npcmod.entity;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
@@ -77,6 +78,7 @@ public class NpcEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<CompoundTag> SCALE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_DIMENSIONS).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
 
     public static final int MAX_OFFERS = 12;
@@ -90,6 +92,7 @@ public class NpcEntity extends PathfinderMob {
     @Nullable
     private TradeOffers tradeOffers;
     private LivingEntity entityToRenderAs;
+    private float scaleX = 1f, scaleY = 1f, scaleZ = 1f;
 
     public NpcEntity(EntityType<? extends PathfinderMob> type, Level world) {
         super(type, world);
@@ -125,6 +128,9 @@ public class NpcEntity extends PathfinderMob {
         compound.putBoolean("sitting", isSitting());
         compound.putBoolean("crouching", isCrouching());
         compound.putString("renderer", getRenderer());
+        compound.putFloat("scaleX", getScaleX());
+        compound.putFloat("scaleY", getScaleY());
+        compound.putFloat("scaleZ", getScaleZ());
 
         TradeOffers tradeOffers = this.getOffers();
         if (!tradeOffers.isEmpty()) {
@@ -222,6 +228,15 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.define(SLIM, false);
         this.entityData.define(SITTING, false);
         this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
+        this.entityData.define(SCALE, getDefaultScale());
+    }
+
+    private CompoundTag getDefaultScale() {
+        CompoundTag tag = new CompoundTag();
+        tag.putFloat("x", 1f);
+        tag.putFloat("y", 1f);
+        tag.putFloat("z", 1f);
+        return tag;
     }
 
     /**
@@ -269,6 +284,8 @@ public class NpcEntity extends PathfinderMob {
             case "crouching" -> npcEntity.setCrouching(true);
         }
         npcEntity.setRenderer(jsonObject.get("renderer").getAsString());
+        JsonObject scale = jsonObject.get("scale").getAsJsonObject();
+        npcEntity.setScale(scale.get("x").getAsFloat(), scale.get("y").getAsFloat(), scale.get("z").getAsFloat());
         npcEntity.tradeOffers = TradeOffers.read(jsonObject.get("trades").getAsString());
 
         JsonObject inventory = jsonObject.getAsJsonObject("inventory");
@@ -321,10 +338,11 @@ public class NpcEntity extends PathfinderMob {
      */
     @Override
     public @NotNull EntityDimensions getDimensions(@NotNull Pose pose) {
+        float horizontalScale = Math.max(scaleX, scaleZ);
         if (entityToRenderAs == null) {
-            return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
+            return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS).scale(horizontalScale, scaleY);
         }
-        return entityToRenderAs.getDimensions(pose);
+        return entityToRenderAs.getDimensions(pose).scale(horizontalScale, scaleY);
     }
 
     /**
@@ -356,6 +374,22 @@ public class NpcEntity extends PathfinderMob {
         }
 
         return this.tradeOffers;
+    }
+
+    public CompoundTag getScaleTag() {
+        return this.entityData.get(SCALE);
+    }
+
+    public float getScaleX() {
+        return scaleX;
+    }
+
+    public float getScaleY() {
+        return scaleY;
+    }
+
+    public float getScaleZ() {
+        return scaleZ;
     }
 
     /**
@@ -620,6 +654,7 @@ public class NpcEntity extends PathfinderMob {
         setTextColor(compound.getInt("textColor"));
         setTexture(compound.getString("texture"));
         setRenderer(compound.getString("renderer"));
+        setScale(compound.getFloat("scaleX"), compound.getFloat("scaleY"), compound.getFloat("scaleZ"));
 
         if (compound.contains("Offers", 10)) {
             this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
@@ -828,6 +863,22 @@ public class NpcEntity extends PathfinderMob {
         this.tradeOffers = tradeOffers;
     }
 
+    public void setScale(float x, float y, float z) {
+        if (x <= 0 || y <= 0 || z <= 0 ||
+            x > 15 || y > 15 || z > 15) return;
+
+        CompoundTag tag = getScaleTag();
+        tag.putFloat("x", x);
+        tag.putFloat("y", y);
+        tag.putFloat("z", z);
+        this.entityData.set(SCALE, tag);
+        scaleX = x;
+        scaleY = y;
+        scaleZ = z;
+
+        refreshDimensions();
+    }
+
     public void setRenderer(String renderer) {
         this.entityData.set(RENDERER, renderer);
         setEntityToRenderAs(getRendererType());
@@ -943,6 +994,11 @@ public class NpcEntity extends PathfinderMob {
         jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");
         jsonObject.addProperty("trades", getOffers().write().getAsString());
         jsonObject.addProperty("renderer", getRenderer());
+        JsonObject scale = new JsonObject();
+        scale.addProperty("x", scaleX);
+        scale.addProperty("y", scaleY);
+        scale.addProperty("z", scaleZ);
+        jsonObject.add("scale", scale);
 
         jsonObject.add("inventory", inventoryToJson());
 

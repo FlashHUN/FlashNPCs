@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 @Mod(Main.MODID)
 public class Main {
 
+  // TODO set scale tags through the NpcBuilderScreen
   // TODO scale rendered entities down in guis based on their hitbox
   // TODO scale sitting npcs down in guis so the legs don't obstruct the text
   // TODO make "Slim?" checkbox and pose dropdown invisible if npc model is not default
