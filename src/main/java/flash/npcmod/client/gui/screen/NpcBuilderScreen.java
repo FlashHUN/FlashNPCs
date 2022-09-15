@@ -8,6 +8,7 @@ import flash.npcmod.client.gui.widget.EntityDropdownWidget;
 import flash.npcmod.client.gui.widget.EnumDropdownWidget;
 import flash.npcmod.core.ColorUtil;
 import flash.npcmod.entity.NpcEntity;
+import flash.npcmod.init.EntityInit;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CEditNpc;
 import flash.npcmod.network.packets.client.CRequestContainer;
@@ -186,6 +187,7 @@ public class NpcBuilderScreen extends Screen {
     behaviorField.setValue(currentData.behavior);
 
     this.slimCheckBox = this.addRenderableWidget(new Checkbox(minX + 130 + font.width("Slim? "), 30, 20, 20, TextComponent.EMPTY, currentData.isSlim));
+    this.slimCheckBox.active = currentData.renderer == EntityInit.NPC_ENTITY.get();
 
     this.redSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX, 105, 20, 100, ColorSliderWidget.Color.RED));
     this.greenSlider = this.addRenderableWidget(new ColorSliderWidget(this, minX + 30, 105, 20, 100, ColorSliderWidget.Color.GREEN));
@@ -262,6 +264,7 @@ public class NpcBuilderScreen extends Screen {
     }));
 
     this.poseDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(currentData.pose, minX + 210, 5, 80));
+    this.poseDropdown.active = currentData.renderer == EntityInit.NPC_ENTITY.get();
 
     this.rendererDropdown = this.addRenderableWidget(new EntityDropdownWidget(currentData.renderer, minX + 125, 85, 165, 10, true));
   }
@@ -407,7 +410,7 @@ public class NpcBuilderScreen extends Screen {
     currentData.isNameVisible = nameVisibleCheckbox.selected();
     npcEntity.setCustomNameVisible(currentData.isNameVisible);
 
-    if (poseDropdown != null && poseDropdown.getSelectedOption() != currentData.pose) {
+    if (poseDropdown.getSelectedOption() != currentData.pose) {
       currentData.pose = poseDropdown.getSelectedOption();
       switch (currentData.pose) {
         case CROUCHING -> { npcEntity.setCrouching(true); npcEntity.setSitting(false); }
@@ -416,10 +419,20 @@ public class NpcBuilderScreen extends Screen {
       }
     }
 
-    if (this.rendererDropdown != null) {
-      currentData.renderer = this.rendererDropdown.getSelectedType();
-      if (!npcEntity.getRendererType().equals(currentData.renderer))
-        npcEntity.setRenderer(currentData.renderer);
+    currentData.renderer = this.rendererDropdown.getSelectedType();
+    if (!npcEntity.getRendererType().equals(currentData.renderer))
+      npcEntity.setRenderer(currentData.renderer);
+
+    if (currentData.renderer != EntityInit.NPC_ENTITY.get()) {
+      this.poseDropdown.active = false;
+      this.poseDropdown.selectOption(CEditNpc.NPCPose.STANDING);
+      this.slimCheckBox.active = false;
+      if (this.slimCheckBox.selected())
+        this.slimCheckBox.onPress();
+    }
+    else {
+      this.poseDropdown.active = true;
+      this.slimCheckBox.active = true;
     }
   }
 
@@ -431,7 +444,8 @@ public class NpcBuilderScreen extends Screen {
     {
       int x = width - 60;
       int y = height / 4 * 3;
-      int scale = height / 3;
+      float bbHeight = Math.max(npcEntity.getBbHeight(), 1f);
+      int scale = (int) (height / 3f / bbHeight);
       InventoryScreen.renderEntityInInventory(x, y, scale, 40, -20, npcEntity);
     }
 
@@ -439,7 +453,7 @@ public class NpcBuilderScreen extends Screen {
     drawString(matrixStack, font, "Name: ", 5, 5 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Visible? ", minX + 130, 5 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Texture: ", 5, 30 + center, 0xFFFFFF);
-    drawString(matrixStack, font, "Slim? ", minX + 130, 30 + center, 0xFFFFFF);
+    drawString(matrixStack, font, "Slim? ", minX + 130, 30 + center, this.slimCheckBox.active ? 0xFFFFFF : 0x7D7D7D);
     drawString(matrixStack, font, "Scale: ", minX + 130, 55 + center, 0xFFFFFF);
 
     drawString(matrixStack, font, "Dialogue: ", 5, 55 + center, 0xFFFFFF);

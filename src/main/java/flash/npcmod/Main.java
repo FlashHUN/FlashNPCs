@@ -32,7 +32,6 @@ public class Main {
   // TODO rendered entity compound tag
   // TODO scale rendered entities down in guis based on their hitbox
   // TODO scale sitting npcs down in guis so the legs don't obstruct the text
-  // TODO make "Slim?" checkbox and pose dropdown invisible if npc model is not default
   // TODO option to load texture from ResourceLocation instead of URL
 
   public static final String MODID = "flashnpcs";
