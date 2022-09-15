@@ -1,8 +1,8 @@
 package flash.npcmod.entity;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.brigadier.StringReader;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.behavior.Action;
@@ -23,6 +23,7 @@ import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.*;
 import flash.npcmod.network.packets.server.SCompleteQuest;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -45,10 +46,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -61,6 +59,7 @@ import org.jetbrains.annotations.NotNull;
 public class NpcEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<String> RENDERER = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<CompoundTag> RENDERER_TAG = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final EntityDataAccessor<String> BEHAVIOR_FILE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> CROUCHING = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> CURRENT_BEHAVIOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
@@ -93,6 +92,7 @@ public class NpcEntity extends PathfinderMob {
     private TradeOffers tradeOffers;
     private LivingEntity entityToRenderAs;
     private float scaleX = 1f, scaleY = 1f, scaleZ = 1f;
+    private CompoundTag previousRendererTag;
 
     public NpcEntity(EntityType<? extends PathfinderMob> type, Level world) {
         super(type, world);
@@ -128,6 +128,8 @@ public class NpcEntity extends PathfinderMob {
         compound.putBoolean("sitting", isSitting());
         compound.putBoolean("crouching", isCrouching());
         compound.putString("renderer", getRenderer());
+        if (getRendererTag() != null)
+            compound.put("rendererTag", getRendererTag());
         compound.putFloat("scaleX", getScaleX());
         compound.putFloat("scaleY", getScaleY());
         compound.putFloat("scaleZ", getScaleZ());
@@ -228,6 +230,7 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.define(SLIM, false);
         this.entityData.define(SITTING, false);
         this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
+        this.entityData.define(RENDERER_TAG, new CompoundTag());
         this.entityData.define(SCALE, getDefaultScale());
     }
 
@@ -272,21 +275,31 @@ public class NpcEntity extends PathfinderMob {
         npcEntity.setCustomNameVisible(jsonObject.get("nameVisibility").getAsBoolean());
         npcEntity.setDialogue(jsonObject.get("dialogue").getAsString());
         npcEntity.setCustomName(new TextComponent(jsonObject.get("name").getAsString()));
-        npcEntity.setRadius(jsonObject.get("radius").getAsInt());
+        if (jsonObject.has("radius"))
+            npcEntity.setRadius(jsonObject.get("radius").getAsInt());
         npcEntity.setSlim(jsonObject.get("slim").getAsBoolean());
-        npcEntity.setTargetBlock(BlockPos.of(jsonObject.get("targetBlock").getAsLong()));
+        if (jsonObject.has("targetBlock"))
+            npcEntity.setTargetBlock(BlockPos.of(jsonObject.get("targetBlock").getAsLong()));
         npcEntity.setTexture(jsonObject.get("texture").getAsString());
         npcEntity.setTextColor(jsonObject.get("textColor").getAsInt());
-        npcEntity.setTriggerTimer(jsonObject.get("triggerTimer").getAsInt());
+        if (jsonObject.has("triggerTimer"))
+            npcEntity.setTriggerTimer(jsonObject.get("triggerTimer").getAsInt());
         String pose = jsonObject.get("pose").getAsString();
         switch (pose) {
             case "sitting" -> npcEntity.setSitting(true);
             case "crouching" -> npcEntity.setCrouching(true);
         }
-        npcEntity.setRenderer(jsonObject.get("renderer").getAsString());
-        JsonObject scale = jsonObject.get("scale").getAsJsonObject();
-        npcEntity.setScale(scale.get("x").getAsFloat(), scale.get("y").getAsFloat(), scale.get("z").getAsFloat());
+        if (jsonObject.has("renderer"))
+            npcEntity.setRenderer(jsonObject.get("renderer").getAsString());
+        if (jsonObject.has("scale")) {
+            JsonObject scale = jsonObject.get("scale").getAsJsonObject();
+            npcEntity.setScale(scale.get("x").getAsFloat(), scale.get("y").getAsFloat(), scale.get("z").getAsFloat());
+        }
         npcEntity.tradeOffers = TradeOffers.read(jsonObject.get("trades").getAsString());
+        try {
+            npcEntity.setRendererTag(new TagParser(new StringReader(jsonObject.get("rendererTag").getAsString())).readStruct());
+        }
+        catch (Exception ignored) {}
 
         JsonObject inventory = jsonObject.getAsJsonObject("inventory");
         npcEntity.setItemSlot(EquipmentSlot.MAINHAND, ItemUtil.stackFromString(inventory.get("mainHand").getAsString()));
@@ -625,6 +638,18 @@ public class NpcEntity extends PathfinderMob {
         return this.entityData.get(RENDERER);
     }
 
+    public CompoundTag getRendererTag() {
+        CompoundTag tag = this.entityData.get(RENDERER_TAG);
+        tag.remove("id");
+        return tag;
+    }
+
+    public CompoundTag getActualRendererTag() {
+        CompoundTag tag = getRendererTag();
+        tag.putString("id", getRenderer());
+        return tag;
+    }
+
     public EntityType<?> getRendererType() {
         String renderer = getRenderer();
         return EntityType.byString(renderer).orElse(this.getType());
@@ -654,6 +679,8 @@ public class NpcEntity extends PathfinderMob {
         setTextColor(compound.getInt("textColor"));
         setTexture(compound.getString("texture"));
         setRenderer(compound.getString("renderer"));
+        if (compound.get("rendererTag") != null)
+            setRendererTag((CompoundTag) compound.get("rendererTag"));
         setScale(compound.getFloat("scaleX"), compound.getFloat("scaleY"), compound.getFloat("scaleZ"));
 
         if (compound.contains("Offers", 10)) {
@@ -881,19 +908,36 @@ public class NpcEntity extends PathfinderMob {
 
     public void setRenderer(String renderer) {
         this.entityData.set(RENDERER, renderer);
-        setEntityToRenderAs(getRendererType());
+        setEntityToRenderAs(getActualRendererTag());
     }
 
     public void setRenderer(EntityType<?> rendererType) {
         String renderer = EntityType.getKey(rendererType).toString();
         this.entityData.set(RENDERER, renderer);
-        setEntityToRenderAs(getRendererType());
+        setEntityToRenderAs(getActualRendererTag());
     }
 
-    private void setEntityToRenderAs(EntityType<?> rendererType) {
-        this.entityToRenderAs = (LivingEntity) rendererType.create(this.level);
-        setRenderedEntityItems();
-        refreshDimensions();
+    public void setRendererTag(CompoundTag tag) {
+        tag.remove("id");
+        this.entityData.set(RENDERER_TAG, tag);
+        setEntityToRenderAs(getActualRendererTag());
+    }
+
+    private void setEntityToRenderAs(CompoundTag tag) {
+        if (this.getRendererType().equals(this.getType())) {
+            this.entityToRenderAs = null;
+            this.previousRendererTag = null;
+            this.entityData.set(RENDERER_TAG, new CompoundTag());
+            return;
+        }
+
+        Optional<Entity> createOptional = EntityType.create(tag, this.level);
+        if (createOptional.isPresent()) {
+            previousRendererTag = tag;
+            this.entityToRenderAs = (LivingEntity) createOptional.get();
+            setRenderedEntityItems();
+            refreshDimensions();
+        }
     }
 
     public void setRenderedEntityItems() {
@@ -908,8 +952,10 @@ public class NpcEntity extends PathfinderMob {
     }
 
     public LivingEntity getEntityToRenderAs() {
-        if (entityToRenderAs == null || entityToRenderAs.getType() != this.getRendererType()) {
-            setEntityToRenderAs(getRendererType());
+        if (entityToRenderAs == null ||
+                entityToRenderAs.getType() != this.getRendererType() ||
+                !getActualRendererTag().equals(previousRendererTag)) {
+            setEntityToRenderAs(getActualRendererTag());
         }
         return entityToRenderAs;
     }
@@ -994,6 +1040,8 @@ public class NpcEntity extends PathfinderMob {
         jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");
         jsonObject.addProperty("trades", getOffers().write().getAsString());
         jsonObject.addProperty("renderer", getRenderer());
+        if (getRendererTag() != null)
+            jsonObject.addProperty("rendererTag", getRendererTag().getAsString());
         JsonObject scale = new JsonObject();
         scale.addProperty("x", scaleX);
         scale.addProperty("y", scaleY);

@@ -1,6 +1,7 @@
 package flash.npcmod.client.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.brigadier.StringReader;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.widget.ColorSliderWidget;
 import flash.npcmod.client.gui.widget.CustomCheckbox;
@@ -17,6 +18,8 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -46,6 +49,7 @@ public class NpcBuilderScreen extends Screen {
     private ItemStack[] items;
     private CEditNpc.NPCPose pose;
     private EntityType<?> renderer;
+    private CompoundTag rendererTag;
     private float scaleX, scaleY, scaleZ;
 
     private static NpcData fromNpc(NpcEntity npcEntity) {
@@ -63,6 +67,7 @@ public class NpcBuilderScreen extends Screen {
               npcEntity.getItemBySlot(EquipmentSlot.HEAD), npcEntity.getItemBySlot(EquipmentSlot.CHEST),
               npcEntity.getItemBySlot(EquipmentSlot.LEGS), npcEntity.getItemBySlot(EquipmentSlot.FEET)};
       data.renderer = npcEntity.getRendererType();
+      data.rendererTag = npcEntity.getRendererTag();
       data.scaleX = npcEntity.getScaleX();
       data.scaleY = npcEntity.getScaleY();
       data.scaleZ = npcEntity.getScaleZ();
@@ -90,6 +95,7 @@ public class NpcBuilderScreen extends Screen {
       npcEntity.setItemSlot(EquipmentSlot.LEGS, items[4]);
       npcEntity.setItemSlot(EquipmentSlot.FEET, items[5]);
       npcEntity.setRenderer(renderer);
+      npcEntity.setRendererTag(rendererTag);
       npcEntity.setScale(scaleX, scaleY, scaleZ);
     }
   }
@@ -97,8 +103,9 @@ public class NpcBuilderScreen extends Screen {
   private final NpcEntity npcEntity;
   private final NpcData originalData;
   private final NpcData currentData;
+  private final CompoundTag originalRendererTagCopy;
 
-  public EditBox redField, greenField, blueField, scaleXField, scaleYField, scaleZField;
+  public EditBox redField, greenField, blueField, scaleXField, scaleYField, scaleZField, rendererTagField;
   private Checkbox slimCheckBox, nameVisibleCheckbox;
   private CustomCheckbox scaleLinkCheckbox;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
@@ -148,6 +155,7 @@ public class NpcBuilderScreen extends Screen {
     this.npcEntity = npcEntity;
     this.originalData = NpcData.fromNpc(npcEntity);
     this.currentData = NpcData.fromNpc(npcEntity);
+    originalRendererTagCopy = originalData.rendererTag.copy();
 
     this.r = ColorUtil.hexToR(currentData.textColor);
     this.g = ColorUtil.hexToG(currentData.textColor);
@@ -235,7 +243,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 20, 60, 20, new TextComponent("Confirm"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.texture, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderer, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
+                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderer, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
       isConfirmClose = true;
       minecraft.setScreen(null);
     }));
@@ -244,7 +252,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 40, 60, 20, new TextComponent("Inventory"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.texture, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderer, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
+                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderer, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.NPCINVENTORY));
     }));
 
@@ -252,7 +260,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 60, 60, 20, new TextComponent("Trades"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.texture, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderer, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
+                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderer, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.TRADE_EDITOR));
     }));
 
@@ -260,13 +268,18 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 80, 60, 20, new TextComponent("Reset AI"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.texture, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, true, currentData.renderer, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
+                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, true, currentData.renderer, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ));
     }));
 
     this.poseDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(currentData.pose, minX + 210, 5, 80));
     this.poseDropdown.active = currentData.renderer == EntityInit.NPC_ENTITY.get();
 
-    this.rendererDropdown = this.addRenderableWidget(new EntityDropdownWidget(currentData.renderer, minX + 125, 85, 165, 10, true));
+    this.rendererDropdown = this.addRenderableWidget(new EntityDropdownWidget(currentData.renderer, minX + 125, 105, 165, 8, true));
+
+    this.rendererTagField = this.addRenderableWidget(new EditBox(font, minX + 125, 80, 165, 20, TextComponent.EMPTY));
+    this.rendererTagField.setResponder(this::setRendererTag);
+    this.rendererTagField.setMaxLength(1000);
+    this.rendererTagField.setValue(currentData.rendererTag.getAsString());
   }
 
   private void setName(String s) {
@@ -403,6 +416,19 @@ public class NpcBuilderScreen extends Screen {
     npcEntity.setScale(currentData.scaleX, currentData.scaleY, currentData.scaleZ);
   }
 
+  private void setRendererTag(String s) {
+    if (s.isEmpty()) {
+      currentData.rendererTag = originalRendererTagCopy;
+    } else {
+      try {
+        currentData.rendererTag = new TagParser(new StringReader(s)).readStruct();
+      } catch (Exception ignored) {
+        currentData.rendererTag = originalRendererTagCopy;
+      }
+    }
+    npcEntity.setRendererTag(currentData.rendererTag);
+  }
+
   @Override
   public void tick() {
     currentData.isSlim = slimCheckBox.selected();
@@ -429,10 +455,12 @@ public class NpcBuilderScreen extends Screen {
       this.slimCheckBox.active = false;
       if (this.slimCheckBox.selected())
         this.slimCheckBox.onPress();
+      this.rendererTagField.active = this.rendererTagField.visible = true;
     }
     else {
       this.poseDropdown.active = true;
       this.slimCheckBox.active = true;
+      this.rendererTagField.active = this.rendererTagField.visible = false;
     }
   }
 
@@ -443,7 +471,7 @@ public class NpcBuilderScreen extends Screen {
     // Render the NPC on screen
     {
       int x = width - 60;
-      int y = height / 4 * 3;
+      int y = (int) (height / 4 * 2.5f);
       float bbHeight = Math.max(npcEntity.getBbHeight(), 1f);
       int scale = (int) (height / 3f / bbHeight);
       InventoryScreen.renderEntityInInventory(x, y, scale, 40, -20, npcEntity);

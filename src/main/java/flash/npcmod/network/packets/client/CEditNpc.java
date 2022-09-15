@@ -1,6 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import flash.npcmod.entity.NpcEntity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -23,32 +24,33 @@ public class CEditNpc {
   ItemStack[] items;
   NPCPose pose;
   String renderer;
+  CompoundTag rendererTag;
   float scaleX, scaleY, scaleZ;
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
-                  String behavior, int textColor, ItemStack[] items, NPCPose pose, String renderer,
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose, String renderer, CompoundTag rendererTag,
                   float scaleX, float scaleY, float scaleZ) {
     this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
-            scaleX, scaleY, scaleZ);
+            rendererTag, scaleX, scaleY, scaleZ);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
-                  String behavior, int textColor, ItemStack[] items, NPCPose pose, EntityType<?> renderer,
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose, EntityType<?> renderer, CompoundTag rendererTag,
                   float scaleX, float scaleY, float scaleZ) {
     this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
-            scaleX, scaleY, scaleZ);
+            rendererTag, scaleX, scaleY, scaleZ);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
                   String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, EntityType<?> renderer,
-                  float scaleX, float scaleY, float scaleZ) {
+                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
     this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, resetAI, EntityType.getKey(renderer).toString(),
-            scaleX, scaleY, scaleZ);
+            rendererTag, scaleX, scaleY, scaleZ);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
                   String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, String renderer,
-                  float scaleX, float scaleY, float scaleZ) {
+                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
     this.entityid = entityid;
     this.isNameVisible = isNameVisible;
     this.name = name;
@@ -63,6 +65,7 @@ public class CEditNpc {
     this.pose = pose;
     this.resetAI = resetAI;
     this.renderer = renderer;
+    this.rendererTag = rendererTag;
     this.scaleX = scaleX;
     this.scaleY = scaleY;
     this.scaleZ = scaleZ;
@@ -80,6 +83,7 @@ public class CEditNpc {
     buf.writeInt(msg.textColor);
     buf.writeInt(msg.pose.ordinal());
     buf.writeUtf(msg.renderer);
+    buf.writeNbt(msg.rendererTag);
     buf.writeFloat(msg.scaleX);
     buf.writeFloat(msg.scaleY);
     buf.writeFloat(msg.scaleZ);
@@ -106,6 +110,7 @@ public class CEditNpc {
     int textColor = buf.readInt();
     NPCPose pose = NPCPose.values()[buf.readInt()];
     String renderer = buf.readUtf();
+    CompoundTag rendererTag = buf.readAnySizeNbt();
     float scaleX = buf.readFloat();
     float scaleY = buf.readFloat();
     float scaleZ = buf.readFloat();
@@ -115,7 +120,7 @@ public class CEditNpc {
     }
     return new CEditNpc(
             entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items.toArray(new ItemStack[0]),
-            pose, resetAI, renderer, scaleX, scaleY, scaleZ
+            pose, resetAI, renderer, rendererTag, scaleX, scaleY, scaleZ
     );
   }
 
@@ -133,6 +138,7 @@ public class CEditNpc {
           npcEntity.setBehaviorFile(msg.behavior);
           npcEntity.setTextColor(msg.textColor);
           npcEntity.setRenderer(msg.renderer);
+          npcEntity.setRendererTag(msg.rendererTag);
           npcEntity.setItemSlot(EquipmentSlot.MAINHAND, msg.items[0]);
           npcEntity.setItemSlot(EquipmentSlot.OFFHAND, msg.items[1]);
           npcEntity.setItemSlot(EquipmentSlot.HEAD, msg.items[2]);
