@@ -864,7 +864,7 @@ public class NpcEntity extends PathfinderMob {
     }
 
     public void setScale(float x, float y, float z) {
-        if (x <= 0 || y <= 0 || z <= 0 ||
+        if (x < 0.1f || y < 0.1f || z < 0.1f ||
             x > 15 || y > 15 || z > 15) return;
 
         CompoundTag tag = getScaleTag();

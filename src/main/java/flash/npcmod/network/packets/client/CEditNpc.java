@@ -23,24 +23,32 @@ public class CEditNpc {
   ItemStack[] items;
   NPCPose pose;
   String renderer;
+  float scaleX, scaleY, scaleZ;
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
-                  String behavior, int textColor, ItemStack[] items, NPCPose pose, String renderer) {
-    this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, false, renderer);
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose, String renderer,
+                  float scaleX, float scaleY, float scaleZ) {
+    this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
+            scaleX, scaleY, scaleZ);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
-                  String behavior, int textColor, ItemStack[] items, NPCPose pose, EntityType<?> renderer) {
-    this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, false, renderer);
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose, EntityType<?> renderer,
+                  float scaleX, float scaleY, float scaleZ) {
+    this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
+            scaleX, scaleY, scaleZ);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
-                  String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, EntityType<?> renderer) {
-    this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, resetAI, EntityType.getKey(renderer).toString());
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, EntityType<?> renderer,
+                  float scaleX, float scaleY, float scaleZ) {
+    this(entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items, pose, resetAI, EntityType.getKey(renderer).toString(),
+            scaleX, scaleY, scaleZ);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isSlim, String dialogue,
-                  String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, String renderer) {
+                  String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, String renderer,
+                  float scaleX, float scaleY, float scaleZ) {
     this.entityid = entityid;
     this.isNameVisible = isNameVisible;
     this.name = name;
@@ -55,6 +63,9 @@ public class CEditNpc {
     this.pose = pose;
     this.resetAI = resetAI;
     this.renderer = renderer;
+    this.scaleX = scaleX;
+    this.scaleY = scaleY;
+    this.scaleZ = scaleZ;
   }
 
   public static void encode(CEditNpc msg, FriendlyByteBuf buf) {
@@ -69,6 +80,9 @@ public class CEditNpc {
     buf.writeInt(msg.textColor);
     buf.writeInt(msg.pose.ordinal());
     buf.writeUtf(msg.renderer);
+    buf.writeFloat(msg.scaleX);
+    buf.writeFloat(msg.scaleY);
+    buf.writeFloat(msg.scaleZ);
     if (msg.items != null) {
       for (int i = 0; i < 6; i++) {
         buf.writeItem(msg.items[i]);
@@ -92,13 +106,16 @@ public class CEditNpc {
     int textColor = buf.readInt();
     NPCPose pose = NPCPose.values()[buf.readInt()];
     String renderer = buf.readUtf();
+    float scaleX = buf.readFloat();
+    float scaleY = buf.readFloat();
+    float scaleZ = buf.readFloat();
     List<ItemStack> items = new ArrayList<>();
     for (int i = 0; i < 6; i++) {
       items.add(buf.readItem());
     }
     return new CEditNpc(
             entityid, isNameVisible, name, texture, isSlim, dialogue, behavior, textColor, items.toArray(new ItemStack[0]),
-            pose, resetAI, renderer
+            pose, resetAI, renderer, scaleX, scaleY, scaleZ
     );
   }
 
@@ -123,6 +140,8 @@ public class CEditNpc {
           npcEntity.setItemSlot(EquipmentSlot.LEGS, msg.items[4]);
           npcEntity.setItemSlot(EquipmentSlot.FEET, msg.items[5]);
           npcEntity.setRenderedEntityItems();
+          if (msg.scaleX >= 0.1f && msg.scaleY >= 0.1f && msg.scaleZ >= 0.1f)
+            npcEntity.setScale(msg.scaleX, msg.scaleY, msg.scaleZ);
 
           switch (msg.pose) {
             case CROUCHING -> { npcEntity.setCrouching(true); npcEntity.setSitting(false); }

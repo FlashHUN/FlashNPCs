@@ -106,20 +106,20 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
 
   @Nullable
   private Method tryGetRendererMethod(@NotNull final String srgName, @NotNull final Class<?>... parameterTypes) {
-    return tryGetRendererMethod(currentRenderer.getClass(), currentEntityToRenderAs.getClass(), srgName, parameterTypes);
+    return tryGetRendererMethod(currentRenderer.getClass(), srgName, parameterTypes);
   }
 
   @Nullable
-  private Method tryGetRendererMethod(Class<?> clazz, Class<?> entityClazz, @NotNull final String srgName, @NotNull final Class<?>... parameterTypes) {
+  private Method tryGetRendererMethod(Class<?> clazz, @NotNull final String srgName, @NotNull final Class<?>... parameterTypes) {
     Class<?>[] actualParameterTypes = new Class<?>[parameterTypes.length+1];
-    actualParameterTypes[0] = entityClazz;
+    actualParameterTypes[0] = LivingEntity.class;
     System.arraycopy(parameterTypes, 0, actualParameterTypes, 1, parameterTypes.length);
     Method method = null;
     try {
       method = ObfuscationReflectionHelper.findMethod(clazz, srgName, actualParameterTypes);
     } catch (ObfuscationReflectionHelper.UnableToFindMethodException e1) {
       if (clazz.getSuperclass() != null && clazz.getSuperclass() != LivingEntityRenderer.class) {
-        method = tryGetRendererMethod(clazz.getSuperclass(), LivingEntity.class, srgName, parameterTypes);
+        method = tryGetRendererMethod(clazz.getSuperclass(), srgName, parameterTypes);
       }
       Main.LOGGER.debug("Couldn't get method " + srgName + " for class " + currentRenderer.getClass().getSimpleName());
     }
