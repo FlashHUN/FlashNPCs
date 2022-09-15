@@ -153,12 +153,16 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
         this.model = slimModel;
       else
         this.model = normalModel;
+      this.shadowRadius = 0.5f * Math.max(entityIn.getScaleX(), entityIn.getScaleZ());
+      this.shadowStrength = 1.0f;
 
       setModelProperties(entityIn);
       renderPlayerModel(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
     }
     else {
       setCurrentRenderer(entityIn);
+      this.shadowRadius = currentRenderer.shadowRadius * Math.max(entityIn.getScaleX(), entityIn.getScaleZ());
+      this.shadowStrength = currentRenderer.shadowStrength;
       renderCustomModel(entityIn, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
     }
   }
