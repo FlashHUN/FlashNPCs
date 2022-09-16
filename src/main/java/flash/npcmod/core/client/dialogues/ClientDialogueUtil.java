@@ -1,6 +1,5 @@
 package flash.npcmod.core.client.dialogues;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;

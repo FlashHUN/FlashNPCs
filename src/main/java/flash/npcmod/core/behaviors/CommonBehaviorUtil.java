@@ -1,6 +1,5 @@
 package flash.npcmod.core.behaviors;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
@@ -11,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CommonBehaviorUtil {
   public static final String DEFAULT_BEHAVIOR_JSON = "{\"name\":\"init\",\"dialogueName\":\"\",\"function\":\"\"}";

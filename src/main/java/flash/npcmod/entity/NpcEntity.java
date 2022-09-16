@@ -23,8 +23,21 @@ import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.*;
 import flash.npcmod.network.packets.server.SCompleteQuest;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -32,29 +45,15 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.DifficultyInstance;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
-
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.damagesource.DamageSource;
-import org.jetbrains.annotations.NotNull;
 
 public class NpcEntity extends PathfinderMob {
 
@@ -77,6 +76,7 @@ public class NpcEntity extends PathfinderMob {
 
     private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Boolean> IS_TEXTURE_RESOURCE_LOCATION = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> SCALE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_DIMENSIONS).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
 
@@ -124,6 +124,7 @@ public class NpcEntity extends PathfinderMob {
         compound.putInt("textColor", getTextColor());
         compound.putInt("triggerTimer", getTriggerTimer());
         compound.putString("texture", getTexture());
+        compound.putBoolean("is_texture_resource_loc", isTextureResourceLocation());
         compound.put("origin", NbtUtils.writeBlockPos(getOrigin()));
         compound.putBoolean("sitting", isSitting());
         compound.putBoolean("crouching", isCrouching());
@@ -227,6 +228,7 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.define(TRIGGER_TIMER, 0);
         this.entityData.define(TEXTCOLOR, 0xFFFFFF);
         this.entityData.define(TEXTURE, "");
+        this.entityData.define(IS_TEXTURE_RESOURCE_LOCATION, false);
         this.entityData.define(SLIM, false);
         this.entityData.define(SITTING, false);
         this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
@@ -281,6 +283,8 @@ public class NpcEntity extends PathfinderMob {
         if (jsonObject.has("targetBlock"))
             npcEntity.setTargetBlock(BlockPos.of(jsonObject.get("targetBlock").getAsLong()));
         npcEntity.setTexture(jsonObject.get("texture").getAsString());
+        if (jsonObject.has("is_texture_resource_loc"))
+            npcEntity.setIsTextureResourceLocation(jsonObject.get("is_texture_resource_loc").getAsBoolean());
         npcEntity.setTextColor(jsonObject.get("textColor").getAsInt());
         if (jsonObject.has("triggerTimer"))
             npcEntity.setTriggerTimer(jsonObject.get("triggerTimer").getAsInt());
@@ -489,6 +493,10 @@ public class NpcEntity extends PathfinderMob {
         return this.entityData.get(TEXTURE);
     }
 
+    public boolean isTextureResourceLocation() {
+        return this.entityData.get(IS_TEXTURE_RESOURCE_LOCATION);
+    }
+
     /**
      * Get the timer of this entity.
      * @return The timer countdown.
@@ -678,8 +686,10 @@ public class NpcEntity extends PathfinderMob {
         setTargetBlock(NbtUtils.readBlockPos(compound.getCompound("targetBlock")));
         setTextColor(compound.getInt("textColor"));
         setTexture(compound.getString("texture"));
+        if (compound.contains("is_texture_resource_loc"))
+            setIsTextureResourceLocation(compound.getBoolean("is_texture_resource_loc"));
         setRenderer(compound.getString("renderer"));
-        if (compound.get("rendererTag") != null)
+        if (compound.contains("rendererTag"))
             setRendererTag((CompoundTag) compound.get("rendererTag"));
         setScale(compound.getFloat("scaleX"), compound.getFloat("scaleY"), compound.getFloat("scaleZ"));
 
@@ -881,6 +891,10 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.set(TEXTURE, s);
     }
 
+    public void setIsTextureResourceLocation(boolean b) {
+        this.entityData.set(IS_TEXTURE_RESOURCE_LOCATION, b);
+    }
+
     /**
      * Set the trade offers of this npc.
      * @param tradeOffers The trade offers.
@@ -928,6 +942,7 @@ public class NpcEntity extends PathfinderMob {
             this.entityToRenderAs = null;
             this.previousRendererTag = null;
             this.entityData.set(RENDERER_TAG, new CompoundTag());
+            refreshDimensions();
             return;
         }
 
@@ -1035,6 +1050,7 @@ public class NpcEntity extends PathfinderMob {
         jsonObject.add("currentBehavior", Behavior.fromCompoundTag(getCurrentBehavior()).toJSON());
         jsonObject.addProperty("targetBlock", getTargetBlock().asLong());
         jsonObject.addProperty("texture", getTexture());
+        jsonObject.addProperty("is_texture_resource_loc", isTextureResourceLocation());
         jsonObject.addProperty("textColor", getTextColor());
         jsonObject.addProperty("slim", isSlim());
         jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");

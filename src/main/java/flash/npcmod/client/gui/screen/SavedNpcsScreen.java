@@ -118,7 +118,9 @@ public class SavedNpcsScreen extends Screen {
     }
 
     if (this.selected != null) {
-      InventoryScreen.renderEntityInInventory(30, 70, 30, -30, -15, selected);
+      float bbHeight = Math.max(selected.getBbHeight(), 1f);
+      int scale = (int) (54 / bbHeight);
+      InventoryScreen.renderEntityInInventory(30, 70, scale, -30, -15, selected);
       drawCenteredString(stack, this.font, this.selected.getName(), this.width / 2, 8, 0xFFFFFF);
       if (this.selected.getDialogue() != null && !this.selected.getDialogue().isEmpty()) {
         drawString(stack, this.font, "Dialogue: " + this.selected.getDialogue(), 60, 20, this.selected.getTextColor());
@@ -263,7 +265,9 @@ public class SavedNpcsScreen extends Screen {
       }
 
       public void render(PoseStack stack, int p_96490_, int y, int x, int p_96493_, int p_96494_, int p_96495_, int p_96496_, boolean p_96497_, float p_96498_) {
-        InventoryScreen.renderEntityInInventory(x+10, y+18, 10, -40, -20, npcEntity);
+        float bbHeight = Math.max(npcEntity.getBbHeight(), 1f);
+        int scale = (int) (18 / bbHeight);
+        InventoryScreen.renderEntityInInventory(x+10, y+18, scale, -40, -20, npcEntity);
         SavedNpcsScreen.this.font.draw(stack, this.name, (float)(x + 18 + 5), (float)(y + 6), 16777215);
       }
 

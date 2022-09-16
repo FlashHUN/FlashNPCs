@@ -1,11 +1,7 @@
 package flash.npcmod.network.packets.server;
 
 import flash.npcmod.Main;
-import flash.npcmod.core.EntityUtil;
-import flash.npcmod.core.behaviors.CommonBehaviorUtil;
-import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;

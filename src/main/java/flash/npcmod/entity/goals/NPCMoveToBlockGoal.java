@@ -1,6 +1,5 @@
 package flash.npcmod.entity.goals;
 
-import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.PathfinderMob;

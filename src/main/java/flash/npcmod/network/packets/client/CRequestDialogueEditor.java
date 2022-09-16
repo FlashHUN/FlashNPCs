@@ -10,9 +10,9 @@ import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SResetFunctionNames;
 import flash.npcmod.network.packets.server.SSendDialogueEditor;
 import flash.npcmod.network.packets.server.SSendFunctionName;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;

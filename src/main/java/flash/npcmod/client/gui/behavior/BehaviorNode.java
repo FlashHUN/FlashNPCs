@@ -2,7 +2,6 @@ package flash.npcmod.client.gui.behavior;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.Main;
 import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
 import flash.npcmod.client.gui.screen.BehaviorBuilderScreen;
@@ -10,7 +9,6 @@ import flash.npcmod.client.gui.screen.TreeBuilderScreen;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.core.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

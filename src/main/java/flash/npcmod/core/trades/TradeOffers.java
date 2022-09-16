@@ -2,11 +2,11 @@ package flash.npcmod.core.trades;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.nbt.TagParser;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 

@@ -29,10 +29,6 @@ import org.jetbrains.annotations.NotNull;
 @Mod(Main.MODID)
 public class Main {
 
-  // TODO scale rendered entities down in guis based on their hitbox
-  // TODO scale sitting npcs down in guis so the legs don't obstruct the text
-  // TODO option to load texture from ResourceLocation instead of URL
-
   public static final String MODID = "flashnpcs";
 
   public static final Logger LOGGER = LogManager.getLogger("Flashs NPCs");

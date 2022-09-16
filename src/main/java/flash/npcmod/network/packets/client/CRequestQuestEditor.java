@@ -2,8 +2,8 @@ package flash.npcmod.network.packets.client;
 
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;

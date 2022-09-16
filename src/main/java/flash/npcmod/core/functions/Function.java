@@ -2,8 +2,8 @@ package flash.npcmod.core.functions;
 
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 public class Function extends AbstractFunction {

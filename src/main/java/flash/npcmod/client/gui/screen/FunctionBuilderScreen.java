@@ -4,11 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CBuildFunction;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.util.Mth;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

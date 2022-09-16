@@ -2,9 +2,7 @@ package flash.npcmod.client.gui.behavior;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import flash.npcmod.Main;
 import flash.npcmod.client.gui.node.NodeData;
-import flash.npcmod.network.packets.client.CEditNpc;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.api.distmarker.Dist;
@@ -14,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
 public class Behavior extends NodeData {

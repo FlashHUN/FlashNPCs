@@ -7,21 +7,20 @@ import flash.npcmod.core.client.SkinUtil;
 import flash.npcmod.entity.NpcEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.*;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -31,11 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @OnlyIn(Dist.CLIENT)
@@ -128,16 +123,27 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
 
   @Override
   public ResourceLocation getTextureLocation(NpcEntity entity) {
-    if (shouldRenderAsNormalNpc(entity)) {
-      try {
-        return SkinUtil.loadSkin(entity.getTexture());
-      } catch (Exception e) {
+    try {
+      if (entity.isTextureResourceLocation()) {
+        return ResourceLocation.tryParse(entity.getTexture());
+      }
+      else {
+        if (shouldRenderAsNormalNpc(entity)) {
+          return SkinUtil.loadSkin(entity.getTexture(), DefaultPlayerSkin.getDefaultSkin(), true);
+        }
+        else {
+          LivingEntity entityToRenderAs = entity.getEntityToRenderAs();
+          return SkinUtil.loadSkin(entity.getTexture(), this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs), false);
+        }
+      }
+    } catch (Exception ignored) {
+      if (shouldRenderAsNormalNpc(entity)) {
         return DefaultPlayerSkin.getDefaultSkin();
       }
-    }
-    else {
-      LivingEntity entityToRenderAs = entity.getEntityToRenderAs();
-      return this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs);
+      else {
+        LivingEntity entityToRenderAs = entity.getEntityToRenderAs();
+        return this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs);
+      }
     }
   }
 
