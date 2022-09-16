@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
 import net.minecraft.network.FriendlyByteBuf;
@@ -22,7 +23,7 @@ public class CRequestQuestEditor {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
 
-      if (sender.hasPermissions(4) && sender.isCreative()) {
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.EDIT_QUEST) && sender.isCreative()) {
         PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.QUESTEDITOR, "", 0), sender);
       }
     });

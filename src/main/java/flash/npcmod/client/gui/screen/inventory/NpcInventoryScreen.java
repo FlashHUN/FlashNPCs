@@ -3,6 +3,7 @@ package flash.npcmod.client.gui.screen.inventory;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.inventory.container.NpcInventoryContainer;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -39,7 +40,6 @@ public class NpcInventoryScreen extends AbstractContainerScreen<NpcInventoryCont
 
   @Override
   protected void init() {
-    if (!minecraft.player.hasPermissions(4)) onClose();
     super.init();
   }
 

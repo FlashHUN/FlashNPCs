@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.functions.FunctionUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -28,7 +29,7 @@ public class CBuildFunction {
 
   public static void handle(CBuildFunction msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      if (ctx.get().getSender().hasPermissions(4)) {
+      if (PermissionHelper.hasPermission(ctx.get().getSender(), PermissionHelper.EDIT_FUNCTION)) {
         FunctionUtil.build(msg.name, msg.function);
 
         FunctionUtil.loadFunctionFile(msg.name);

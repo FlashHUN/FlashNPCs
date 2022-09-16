@@ -1,6 +1,7 @@
 package flash.npcmod.events;
 
 import flash.npcmod.core.EntityUtil;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.entity.NpcEntity;
@@ -14,6 +15,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.server.permission.events.PermissionGatherEvent;
 
 @Mod.EventBusSubscriber
 public class Events {
@@ -32,7 +34,7 @@ public class Events {
 
   @SubscribeEvent
   public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-    if (event.getPlayer().hasPermissions(4)) {
+    if (PermissionHelper.hasPermission(event.getPlayer(), PermissionHelper.EDIT_NPC)) {
       PacketDispatcher.sendTo(new SSyncEntityList(EntityUtil.getEntityTypes()), event.getPlayer());
     }
   }
@@ -49,6 +51,11 @@ public class Events {
     if (event.getEntity() instanceof NpcEntity) {
       event.setCanceled(true);
     }
+  }
+
+  @SubscribeEvent
+  public static void registerPermissions(PermissionGatherEvent.Nodes event) {
+    PermissionHelper.registerAll(event);
   }
 
 }

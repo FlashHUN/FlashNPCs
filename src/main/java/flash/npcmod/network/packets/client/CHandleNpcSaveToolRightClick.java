@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.saves.NpcSaveUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -58,7 +59,7 @@ public class CHandleNpcSaveToolRightClick {
   public static void handle(CHandleNpcSaveToolRightClick msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      if (sender.hasPermissions(4)) {
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.SAVE_NPC)) {
         if (sender.isDiscrete()) {
           if (msg.handleType == HandleType.ENTITY.ordinal()) {
             // If we right click on an entity and it is an NPC, save it

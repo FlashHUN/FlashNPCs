@@ -29,7 +29,6 @@ public class NpcTradeEditorScreen extends AbstractContainerScreen<NpcTradeEditor
 
   @Override
   protected void init() {
-    if (!minecraft.player.hasPermissions(4)) onClose();
     super.init();
   }
 

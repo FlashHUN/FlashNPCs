@@ -2,6 +2,7 @@ package flash.npcmod.network.packets.client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.entity.NpcEntity;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.server.permission.nodes.PermissionNode;
 
 import javax.annotation.Nullable;
 import java.util.function.Supplier;
@@ -59,7 +61,7 @@ public class CRequestContainer {
   public static void handle(CRequestContainer msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      if (sender.hasPermissions(msg.containerType.getMinPermissionLevel())) {
+      if (msg.containerType.requiredPermission() == null || PermissionHelper.hasPermission(sender, msg.containerType.requiredPermission())) {
         if (msg.entityid != -1000) {
           Entity entity = sender.level.getEntity(msg.entityid);
           if (entity instanceof NpcEntity) {
@@ -91,25 +93,25 @@ public class CRequestContainer {
   }
 
   public enum ContainerType {
-    NPCINVENTORY(4) {
+    NPCINVENTORY(PermissionHelper.EDIT_NPC) {
       @Override
       public AbstractContainerMenu createMenu(int index, Inventory playerInventory, Player player) {
         return new NpcInventoryContainer(index, playerInventory, entityid);
       }
     },
-    TRADES(0) {
+    TRADES(null) {
       @Override
       public AbstractContainerMenu createMenu(int index, Inventory playerInventory, Player player) {
         return new NpcTradeContainer(index, playerInventory, entityid);
       }
     },
-    TRADE_EDITOR(4) {
+    TRADE_EDITOR(PermissionHelper.EDIT_NPC) {
       @Override
       public AbstractContainerMenu createMenu(int index, Inventory playerInventory, Player player) {
         return new NpcTradeEditorContainer(index, playerInventory, entityid);
       }
     },
-    OBJECTIVE_STACK_SELECTOR(4) {
+    OBJECTIVE_STACK_SELECTOR(PermissionHelper.EDIT_QUEST) {
       @Override
       public AbstractContainerMenu createMenu(int index, Inventory playerInventory, Player player) {
         return new ObjectiveStackSelectorContainer(index, playerInventory, objectiveFromString(name), questFromString(name), name.split("::::::::::").length == 2 ? "" : name.split("::::::::::")[2]);
@@ -125,7 +127,7 @@ public class CRequestContainer {
         return Quest.fromJson(jsonObject);
       }
     },
-    QUEST_STACK_SELECTOR(4) {
+    QUEST_STACK_SELECTOR(PermissionHelper.EDIT_QUEST) {
       @Override
       public AbstractContainerMenu createMenu(int index, Inventory playerInventory, Player player) {
         return new QuestStackSelectorContainer(index, playerInventory, questFromString(name));
@@ -139,14 +141,15 @@ public class CRequestContainer {
 
     private static String name;
     private static int entityid;
-    private int minPermissionLevel;
+    private final PermissionNode<Boolean> requiredPermission;
 
-    ContainerType(int minPermissionLevel) {
-      this.minPermissionLevel = minPermissionLevel;
+    ContainerType(@Nullable PermissionNode<Boolean> requiredPermission) {
+      this.requiredPermission = requiredPermission;
     }
 
-    public int getMinPermissionLevel() {
-      return minPermissionLevel;
+    @Nullable
+    public PermissionNode<Boolean> requiredPermission() {
+      return requiredPermission;
     }
 
     @Nullable
