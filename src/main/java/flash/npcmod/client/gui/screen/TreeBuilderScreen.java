@@ -686,8 +686,10 @@ abstract public class TreeBuilderScreen extends Screen {
 
         for (EditType key : this.allNameFields.keySet()) {
             check = editType == key;
-            this.allNameFields.get(key).setFocus(check);
-            this.allTopLevelFrames.get(key).setVisible(check);
+            if (allNameFields.containsKey(key))
+                this.allNameFields.get(key).setFocus(check);
+            if (allTopLevelFrames.containsKey(key))
+                this.allTopLevelFrames.get(key).setVisible(check);
             if (isNodeNull) this.allNameFields.get(key).setValue("");
         }
 
