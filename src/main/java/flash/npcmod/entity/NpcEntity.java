@@ -15,6 +15,7 @@ import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.entity.goals.NPCFollowPathGoal;
+import flash.npcmod.entity.goals.NPCInteractWithBlockGoal;
 import flash.npcmod.entity.goals.NPCWanderGoal;
 import flash.npcmod.entity.goals.TalkWithPlayerGoal;
 import flash.npcmod.init.EntityInit;

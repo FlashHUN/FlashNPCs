@@ -192,7 +192,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         triggerTimerFrame.setVisible(false);
         this.triggerFrame.addWidget(triggerTimerFrame);
         this.triggerTypeDropdownWidget = this.addWidget(
-            new DropdownWidget<>(Trigger.TriggerType.DIALOGUE_TRIGGER,0,0,120,3, dropdownWidget -> {
+            new EnumDropdownWidget<>(Trigger.TriggerType.DIALOGUE_TRIGGER,0,0,120,3, dropdownWidget -> {
                 Trigger.TriggerType triggerType = (Trigger.TriggerType) dropdownWidget.getSelectedOption();
                 switch (triggerType) {
                     case ACTION_FINISH_TRIGGER, DIALOGUE_TRIGGER -> {
@@ -229,7 +229,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
 
         //  Set up the dropdown widgets
         this.poseDropdownWidget = this.addWidget(
-                new DropdownWidget<>(CEditNpc.NPCPose.STANDING,0,0,80)
+                new EnumDropdownWidget<>(CEditNpc.NPCPose.STANDING,0,0,80)
         );
 
         this.actionTypeDropdownWidget = this.addWidget(
