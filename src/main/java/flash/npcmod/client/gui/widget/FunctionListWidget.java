@@ -14,9 +14,9 @@ import javax.annotation.Nullable;
 import static net.minecraft.client.gui.GuiComponent.fill;
 
 @OnlyIn(Dist.CLIENT)
-public class FunctionListWidget<T extends BuilderNode, S extends TreeBuilderScreen> {
+public class FunctionListWidget<T extends BuilderNode> {
 
-  private S screen;
+  private TreeBuilderScreen screen;
   private Minecraft minecraft;
   @Nullable
   private T editingNode;
@@ -31,7 +31,7 @@ public class FunctionListWidget<T extends BuilderNode, S extends TreeBuilderScre
 
   private static final int lineHeight = 2+Minecraft.getInstance().font.lineHeight;
 
-  public FunctionListWidget(S screen, Minecraft minecraft) {
+  public FunctionListWidget(TreeBuilderScreen screen, Minecraft minecraft) {
     this.screen = screen;
     this.minecraft = minecraft;
 

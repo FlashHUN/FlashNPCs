@@ -9,7 +9,6 @@ import flash.npcmod.client.gui.dialogue.DialogueNode;
 import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
 import flash.npcmod.client.gui.screen.TreeBuilderScreen;
-import flash.npcmod.client.gui.widget.FunctionListWidget;
 import flash.npcmod.client.gui.widget.ListWidget;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import flash.npcmod.network.PacketDispatcher;
@@ -24,12 +23,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueBuilderScreen extends TreeBuilderScreen {
     private String newText = "", newResponse = "", newTrigger = "";
-    private ListWidget<DialogueBuilderScreen> createMenuWidget;
     @Nullable
     protected DialogueNode editingNode, selectedNode;
 
@@ -120,14 +117,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     @Override
     protected void init() {
         super.init();
-        // Initialize the function widget.
-        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
-        this.functionListWidget.calculatePositionAndDimensions();
-
-        //initialize right-click widget
-        this.createMenuWidget = new ListWidget<>(this, Minecraft.getInstance());
-
-        this.createMenuWidget.setOptions(List.of("Create Dialogue"));
 
         // Initialize our text field widgets
         EditBox textField = this.addRenderableWidget(
@@ -145,21 +134,21 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
         textField.setVisible(false);
 
         textField.setCanLoseFocus(true);
-        this.allFields.put(EditType.TEXT, textField);
+        this.allNameFields.put(EditType.TEXT, textField);
 
         EditBox responseField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         responseField.setResponder(this::setNewResponse);
         responseField.setMaxLength(500);
         responseField.setVisible(false);
         responseField.setCanLoseFocus(true);
-        this.allFields.put(EditType.RESPONSE, responseField);
+        this.allNameFields.put(EditType.RESPONSE, responseField);
 
         EditBox triggerField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         triggerField.setResponder(this::setNewTrigger);
         triggerField.setMaxLength(500);
         triggerField.setVisible(false);
         triggerField.setCanLoseFocus(true);
-        this.allFields.put(EditType.ACTION, triggerField);
+        this.allNameFields.put(EditType.ACTION, triggerField);
     }
 
     /**
@@ -205,20 +194,8 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
                         this.selectedNode = null;
                     }
                     if (button == 1) {
-                        this.createMenuWidget.setY(mouseY);
-                        this.createMenuWidget.setX(mouseX);
-                        this.createMenuWidget.setVisible(true);
+                        createNode(mouseX, mouseY);
                     }
-                }
-                if (button != 1 && this.createMenuWidget.isVisible()) {
-                    this.createMenuWidget.clickedOn(mouseX, mouseY);
-                    if (!this.createMenuWidget.getSelectedOption().isEmpty()) {
-                        String option = this.createMenuWidget.getSelectedOption();
-                        if (option.equals("Create Dialogue")) {
-                            createNode(mouseX, mouseY);
-                        }
-                    }
-                    this.createMenuWidget.setVisible(false);
                 }
                 // TODO make sure not to check during parent setting.
                 this.allNodes.forEach(node -> node.clickedOn(mouseX, mouseY, button, 0, 0, this.scrollX, this.scrollY));
@@ -259,7 +236,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     @Override
     public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         super.render(matrixStack, mouseX, mouseY, partialTicks);
-        this.createMenuWidget.draw(matrixStack);
     }
 
     /**
@@ -326,9 +302,9 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         super.setNodeBeingEdited(node, editType);
         if (node != null) {
-            this.allFields.get(EditType.TEXT).setValue(((DialogueNode) node).getText());
-            this.allFields.get(EditType.RESPONSE).setValue(((DialogueNode) node).getResponse());
-            this.allFields.get(EditType.ACTION).setValue(((DialogueNode) node).getTrigger());
+            this.allNameFields.get(EditType.TEXT).setValue(((DialogueNode) node).getText());
+            this.allNameFields.get(EditType.RESPONSE).setValue(((DialogueNode) node).getResponse());
+            this.allNameFields.get(EditType.ACTION).setValue(((DialogueNode) node).getTrigger());
         }
     }
 

@@ -45,7 +45,7 @@ public class ClientProxy extends CommonProxy {
 
   public void openScreen(SOpenScreen.EScreens screen, String data, int entityid) {
     Screen toOpen = null;
-    NpcEntity npcEntity = (NpcEntity) minecraft.player.level.getEntity(entityid);
+    NpcEntity npcEntity = (NpcEntity) minecraft.level.getEntity(entityid);
     switch (screen) {
       case DIALOGUE -> toOpen = new DialogueScreen(data, npcEntity);
       case EDITBEHAVIOR -> toOpen = new BehaviorBuilderScreen(data, npcEntity);

@@ -10,6 +10,12 @@
   "item.flashnpcs.quest_editor": "Quest Editor",
   "item.flashnpcs.npc_save_tool": "Save Tool",
 
+  "tooltip.flashnpcs.shift": "Hold §eSHIFT§r for more Information!",
+  "tooltip.flashnpcs.behavior_editor_shift": "§eRight-Click§r on an NPC to modify its behavior.\n§eRight-click§r a block to create/add to a path.\n§eRight-Click§r Air to remove the last path block.\n§eShift+Right-Click§r Air to remove Path.",
+  "tooltip.flashnpcs.npc_editor_shift": "§eRight-Click§r on an NPC to modify its general settings.\n§eShift+Right-Click§r on an NPC to open its dialogue editor.\n§eRight-Click§r Air to open a new dialogue editor.\n§eShift+Right-Click§r Air to modify a function.\n§eRight-Click§r a block to spawn a new NPC.",
+  "tooltip.flashnpcs.save_tool_shift": "§eShift+Right-Click§r on an NPC to save the NPC.\n§eShift+Right-Click§r on a block to select a saved NPC to spawn.",
+  "tooltip.flashnpcs.quest_editor_shift": "§eRight-Click§r to open the quest editor",
+
   "entity.flashnpcs.npc": "NPC",
 
   "msg.flashnpcs.objectivecomplete": "Objective Complete!",

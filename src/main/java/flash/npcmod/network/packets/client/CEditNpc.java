@@ -160,7 +160,7 @@ public class CEditNpc {
           }
 
           if(msg.resetAI) npcEntity.resetBehavior();
-          npcEntity.refreshGoals();
+          else npcEntity.refreshGoals();
         }
       }
     });

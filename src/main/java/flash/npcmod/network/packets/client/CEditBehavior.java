@@ -50,7 +50,10 @@ public class CEditBehavior {
         savedData.setDirty();
         // refresh the current npc ai.
         if (msg.entityId != -1000) {
-          ((NpcEntity) sender.level.getEntity(msg.entityId)).refreshGoals();
+          NpcEntity npc = ((NpcEntity) sender.level.getEntity(msg.entityId));
+          if (npc != null) {
+            npc.resetBehavior();
+          }
         }
         CommonBehaviorUtil.buildBehavior(msg.name, msg.behaviorJson);
         CommonBehaviorUtil.buildBehaviorEditor(msg.name, msg.behaviorEditor);

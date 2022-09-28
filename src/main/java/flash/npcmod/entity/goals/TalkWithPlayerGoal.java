@@ -30,7 +30,7 @@ public class TalkWithPlayerGoal extends Goal{
             } else if (this.mob.distanceToSqr(player) > 16.0D) {
                 return false;
             } else {
-                return player.containerMenu != null;
+                return true;
             }
         }
     }

@@ -5,9 +5,12 @@
 
   "itemGroup.flashnpcs": "Flash's NPCs",
 
+  "item.flashnpcs.behavior_editor": "Behavior Editor",
   "item.flashnpcs.npc_editor": "Editor de NPCs",
   "item.flashnpcs.quest_editor": "Editor de missions",
+  "item.flashnpcs.npc_save_tool": "Save Tool",
 
+  "item.flashnpcs.tooltip.behavior_editor": "Right-click on an NPC to modify its behavior. To Create/ Add to a Path: Right-click on the ground.\n",
   "entity.flashnpcs.npc": "NPC",
 
   "msg.flashnpcs.objectivecomplete": "Objectiu completat!",
