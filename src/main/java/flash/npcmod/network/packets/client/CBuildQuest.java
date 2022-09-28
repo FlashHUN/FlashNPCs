@@ -2,9 +2,9 @@ package flash.npcmod.network.packets.client;
 
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.ChatFormatting;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;

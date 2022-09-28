@@ -1,6 +1,5 @@
 package flash.npcmod.network.packets.client;
 
-import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;

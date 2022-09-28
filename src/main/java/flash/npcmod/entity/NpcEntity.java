@@ -2,6 +2,7 @@ package flash.npcmod.entity;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonObject;
+import com.mojang.brigadier.StringReader;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.behavior.Action;
@@ -14,7 +15,6 @@ import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
 import flash.npcmod.entity.goals.NPCFollowPathGoal;
-import flash.npcmod.entity.goals.NPCInteractWithBlockGoal;
 import flash.npcmod.entity.goals.NPCWanderGoal;
 import flash.npcmod.entity.goals.TalkWithPlayerGoal;
 import flash.npcmod.init.EntityInit;
@@ -24,7 +24,21 @@ import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.*;
 import flash.npcmod.network.packets.server.SCompleteQuest;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -33,35 +47,20 @@ import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.DifficultyInstance;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.damagesource.DamageSource;
-import org.jetbrains.annotations.NotNull;
+import java.util.*;
 
 public class NpcEntity extends PathfinderMob {
 
+    private static final EntityDataAccessor<String> RENDERER = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<CompoundTag> RENDERER_TAG = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final EntityDataAccessor<String> BEHAVIOR_FILE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> CROUCHING = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Behavior> CURRENT_BEHAVIOR = SynchedEntityData.defineId(NpcEntity.class, NpcDataSerializers.BEHAVIOR);
@@ -78,6 +77,8 @@ public class NpcEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> TRIGGER_TIMER = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Boolean> IS_TEXTURE_RESOURCE_LOCATION = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<CompoundTag> SCALE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_DIMENSIONS).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
 
     public static final int MAX_OFFERS = 12;
@@ -90,6 +91,9 @@ public class NpcEntity extends PathfinderMob {
 
     @Nullable
     private TradeOffers tradeOffers;
+    private LivingEntity entityToRenderAs;
+    private float scaleX = 1f, scaleY = 1f, scaleZ = 1f;
+    private CompoundTag previousRendererTag;
 
     public NpcEntity(EntityType<? extends PathfinderMob> type, Level world) {
         super(type, world);
@@ -121,9 +125,16 @@ public class NpcEntity extends PathfinderMob {
         compound.putInt("textColor", getTextColor());
         compound.putInt("triggerTimer", getTriggerTimer());
         compound.putString("texture", getTexture());
+        compound.putBoolean("is_texture_resource_loc", isTextureResourceLocation());
         compound.put("origin", NbtUtils.writeBlockPos(getOrigin()));
         compound.putBoolean("sitting", isSitting());
         compound.putBoolean("crouching", isCrouching());
+        compound.putString("renderer", getRenderer());
+        if (getRendererTag() != null)
+            compound.put("rendererTag", getRendererTag());
+        compound.putFloat("scaleX", getScaleX());
+        compound.putFloat("scaleY", getScaleY());
+        compound.putFloat("scaleZ", getScaleZ());
 
         TradeOffers tradeOffers = this.getOffers();
         if (!tradeOffers.isEmpty()) {
@@ -218,8 +229,20 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.define(TRIGGER_TIMER, 0);
         this.entityData.define(TEXTCOLOR, 0xFFFFFF);
         this.entityData.define(TEXTURE, "");
+        this.entityData.define(IS_TEXTURE_RESOURCE_LOCATION, false);
         this.entityData.define(SLIM, false);
         this.entityData.define(SITTING, false);
+        this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
+        this.entityData.define(RENDERER_TAG, new CompoundTag());
+        this.entityData.define(SCALE, getDefaultScale());
+    }
+
+    private CompoundTag getDefaultScale() {
+        CompoundTag tag = new CompoundTag();
+        tag.putFloat("x", 1f);
+        tag.putFloat("y", 1f);
+        tag.putFloat("z", 1f);
+        return tag;
     }
 
     /**
@@ -254,18 +277,33 @@ public class NpcEntity extends PathfinderMob {
         npcEntity.setCustomNameVisible(jsonObject.get("nameVisibility").getAsBoolean());
         npcEntity.setDialogue(jsonObject.get("dialogue").getAsString());
         npcEntity.setCustomName(new TextComponent(jsonObject.get("name").getAsString()));
-        npcEntity.setRadius(jsonObject.get("radius").getAsInt());
+        if (jsonObject.has("radius"))
+            npcEntity.setRadius(jsonObject.get("radius").getAsInt());
         npcEntity.setSlim(jsonObject.get("slim").getAsBoolean());
-        npcEntity.setTargetBlock(BlockPos.of(jsonObject.get("targetBlock").getAsLong()));
+        if (jsonObject.has("targetBlock"))
+            npcEntity.setTargetBlock(BlockPos.of(jsonObject.get("targetBlock").getAsLong()));
         npcEntity.setTexture(jsonObject.get("texture").getAsString());
+        if (jsonObject.has("is_texture_resource_loc"))
+            npcEntity.setIsTextureResourceLocation(jsonObject.get("is_texture_resource_loc").getAsBoolean());
         npcEntity.setTextColor(jsonObject.get("textColor").getAsInt());
-        npcEntity.setTriggerTimer(jsonObject.get("triggerTimer").getAsInt());
+        if (jsonObject.has("triggerTimer"))
+            npcEntity.setTriggerTimer(jsonObject.get("triggerTimer").getAsInt());
         String pose = jsonObject.get("pose").getAsString();
         switch (pose) {
             case "sitting" -> npcEntity.setSitting(true);
             case "crouching" -> npcEntity.setCrouching(true);
         }
+        if (jsonObject.has("renderer"))
+            npcEntity.setRenderer(jsonObject.get("renderer").getAsString());
+        if (jsonObject.has("scale")) {
+            JsonObject scale = jsonObject.get("scale").getAsJsonObject();
+            npcEntity.setScale(scale.get("x").getAsFloat(), scale.get("y").getAsFloat(), scale.get("z").getAsFloat());
+        }
         npcEntity.tradeOffers = TradeOffers.read(jsonObject.get("trades").getAsString());
+        try {
+            npcEntity.setRendererTag(new TagParser(new StringReader(jsonObject.get("rendererTag").getAsString())).readStruct());
+        }
+        catch (Exception ignored) {}
 
         JsonObject inventory = jsonObject.getAsJsonObject("inventory");
         npcEntity.setItemSlot(EquipmentSlot.MAINHAND, ItemUtil.stackFromString(inventory.get("mainHand").getAsString()));
@@ -300,7 +338,11 @@ public class NpcEntity extends PathfinderMob {
 
     @Override
     public @NotNull EntityDimensions getDimensions(@NotNull Pose pose) {
-        return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS);
+        float horizontalScale = Math.max(scaleX, scaleZ);
+        if (entityToRenderAs == null) {
+            return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS).scale(horizontalScale, scaleY);
+        }
+        return entityToRenderAs.getDimensions(pose).scale(horizontalScale, scaleY);
     }
 
     /**
@@ -334,6 +376,22 @@ public class NpcEntity extends PathfinderMob {
         return this.tradeOffers;
     }
 
+    public CompoundTag getScaleTag() {
+        return this.entityData.get(SCALE);
+    }
+
+    public float getScaleX() {
+        return scaleX;
+    }
+
+    public float getScaleY() {
+        return scaleY;
+    }
+
+    public float getScaleZ() {
+        return scaleZ;
+    }
+
     /**
      * Get this npc's block pos origin.
      * @return The block position.
@@ -356,7 +414,10 @@ public class NpcEntity extends PathfinderMob {
 
     @Override
     protected float getStandingEyeHeight(@NotNull Pose poseIn, @NotNull EntityDimensions sizeIn) {
-        return getDimensions(poseIn).height * 0.85F;
+        if (entityToRenderAs == null) {
+            return getDimensions(poseIn).height * 0.85F;
+        }
+        return entityToRenderAs.getEyeHeightAccess(poseIn, sizeIn);
     }
 
     /**
@@ -413,6 +474,10 @@ public class NpcEntity extends PathfinderMob {
      */
     public String getTexture() {
         return this.entityData.get(TEXTURE);
+    }
+
+    public boolean isTextureResourceLocation() {
+        return this.entityData.get(IS_TEXTURE_RESOURCE_LOCATION);
     }
 
     /**
@@ -560,6 +625,27 @@ public class NpcEntity extends PathfinderMob {
         return this.entityData.get(SLIM);
     }
 
+    public String getRenderer() {
+        return this.entityData.get(RENDERER);
+    }
+
+    public CompoundTag getRendererTag() {
+        CompoundTag tag = this.entityData.get(RENDERER_TAG);
+        tag.remove("id");
+        return tag;
+    }
+
+    public CompoundTag getActualRendererTag() {
+        CompoundTag tag = getRendererTag();
+        tag.putString("id", getRenderer());
+        return tag;
+    }
+
+    public EntityType<?> getRendererType() {
+        String renderer = getRenderer();
+        return EntityType.byString(renderer).orElse(this.getType());
+    }
+
     public boolean isTooFar() {
         return this.blockPosition().distManhattan(this.getTargetBlock()) > this.getRadius();
     }
@@ -584,6 +670,12 @@ public class NpcEntity extends PathfinderMob {
         setTargetBlock(NbtUtils.readBlockPos(compound.getCompound("targetBlock")));
         setTextColor(compound.getInt("textColor"));
         setTexture(compound.getString("texture"));
+        if (compound.contains("is_texture_resource_loc"))
+            setIsTextureResourceLocation(compound.getBoolean("is_texture_resource_loc"));
+        setRenderer(compound.getString("renderer"));
+        if (compound.contains("rendererTag"))
+            setRendererTag((CompoundTag) compound.get("rendererTag"));
+        setScale(compound.getFloat("scaleX"), compound.getFloat("scaleY"), compound.getFloat("scaleZ"));
 
         if (compound.contains("Offers", 10)) {
             this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
@@ -785,6 +877,10 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.set(TEXTURE, s);
     }
 
+    public void setIsTextureResourceLocation(boolean b) {
+        this.entityData.set(IS_TEXTURE_RESOURCE_LOCATION, b);
+    }
+
     /**
      * Set the trade offers of this npc.
      * @param tradeOffers The trade offers.
@@ -792,6 +888,77 @@ public class NpcEntity extends PathfinderMob {
     @OnlyIn(Dist.CLIENT)
     public void setTradeOffers(@Nullable TradeOffers tradeOffers) {
         this.tradeOffers = tradeOffers;
+    }
+
+    public void setScale(float x, float y, float z) {
+        if (x < 0.1f || y < 0.1f || z < 0.1f ||
+            x > 15 || y > 15 || z > 15) return;
+
+        CompoundTag tag = getScaleTag();
+        tag.putFloat("x", x);
+        tag.putFloat("y", y);
+        tag.putFloat("z", z);
+        this.entityData.set(SCALE, tag);
+        scaleX = x;
+        scaleY = y;
+        scaleZ = z;
+
+        refreshDimensions();
+    }
+
+    public void setRenderer(String renderer) {
+        this.entityData.set(RENDERER, renderer);
+        setEntityToRenderAs(getActualRendererTag());
+    }
+
+    public void setRenderer(EntityType<?> rendererType) {
+        String renderer = EntityType.getKey(rendererType).toString();
+        this.entityData.set(RENDERER, renderer);
+        setEntityToRenderAs(getActualRendererTag());
+    }
+
+    public void setRendererTag(CompoundTag tag) {
+        tag.remove("id");
+        this.entityData.set(RENDERER_TAG, tag);
+        setEntityToRenderAs(getActualRendererTag());
+    }
+
+    private void setEntityToRenderAs(CompoundTag tag) {
+        if (this.getRendererType().equals(this.getType())) {
+            this.entityToRenderAs = null;
+            this.previousRendererTag = null;
+            this.entityData.set(RENDERER_TAG, new CompoundTag());
+            refreshDimensions();
+            return;
+        }
+
+        Optional<Entity> createOptional = EntityType.create(tag, this.level);
+        if (createOptional.isPresent()) {
+            previousRendererTag = tag;
+            this.entityToRenderAs = (LivingEntity) createOptional.get();
+            setRenderedEntityItems();
+            refreshDimensions();
+        }
+    }
+
+    public void setRenderedEntityItems() {
+        if (entityToRenderAs != null) {
+            entityToRenderAs.setItemSlot(EquipmentSlot.MAINHAND, this.getItemBySlot(EquipmentSlot.MAINHAND));
+            entityToRenderAs.setItemSlot(EquipmentSlot.OFFHAND, this.getItemBySlot(EquipmentSlot.OFFHAND));
+            entityToRenderAs.setItemSlot(EquipmentSlot.HEAD, this.getItemBySlot(EquipmentSlot.HEAD));
+            entityToRenderAs.setItemSlot(EquipmentSlot.CHEST, this.getItemBySlot(EquipmentSlot.CHEST));
+            entityToRenderAs.setItemSlot(EquipmentSlot.LEGS, this.getItemBySlot(EquipmentSlot.LEGS));
+            entityToRenderAs.setItemSlot(EquipmentSlot.FEET, this.getItemBySlot(EquipmentSlot.FEET));
+        }
+    }
+
+    public LivingEntity getEntityToRenderAs() {
+        if (entityToRenderAs == null ||
+                entityToRenderAs.getType() != this.getRendererType() ||
+                !getActualRendererTag().equals(previousRendererTag)) {
+            setEntityToRenderAs(getActualRendererTag());
+        }
+        return entityToRenderAs;
     }
 
     /**
@@ -852,6 +1019,9 @@ public class NpcEntity extends PathfinderMob {
                     }
                 }
             }
+            else {
+                setRenderedEntityItems();
+            }
         }
     }
 
@@ -868,10 +1038,19 @@ public class NpcEntity extends PathfinderMob {
         jsonObject.add("currentBehavior", getCurrentBehavior().toJSON());
         jsonObject.addProperty("targetBlock", getTargetBlock().asLong());
         jsonObject.addProperty("texture", getTexture());
+        jsonObject.addProperty("is_texture_resource_loc", isTextureResourceLocation());
         jsonObject.addProperty("textColor", getTextColor());
         jsonObject.addProperty("slim", isSlim());
         jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");
         jsonObject.addProperty("trades", getOffers().write().getAsString());
+        jsonObject.addProperty("renderer", getRenderer());
+        if (getRendererTag() != null)
+            jsonObject.addProperty("rendererTag", getRendererTag().getAsString());
+        JsonObject scale = new JsonObject();
+        scale.addProperty("x", scaleX);
+        scale.addProperty("y", scaleY);
+        scale.addProperty("z", scaleZ);
+        jsonObject.add("scale", scale);
 
         jsonObject.add("inventory", inventoryToJson());
 

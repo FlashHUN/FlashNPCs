@@ -10,7 +10,7 @@ import flash.npcmod.client.gui.behavior.Trigger;
 import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.node.NodeData;
 import flash.npcmod.client.gui.widget.DirectionalFrame;
-import flash.npcmod.client.gui.widget.DropdownWidget;
+import flash.npcmod.client.gui.widget.EnumDropdownWidget;
 import flash.npcmod.client.gui.widget.TextWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.entity.NpcEntity;
@@ -30,7 +30,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,9 +48,9 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
      */
     protected int[] intArgs;
     private final NpcEntity npcEntity;
-    private DropdownWidget<CEditNpc.NPCPose> poseDropdownWidget;
-    private DropdownWidget<Action.ActionType> actionTypeDropdownWidget;
-    private DropdownWidget<Trigger.TriggerType> triggerTypeDropdownWidget;
+    private EnumDropdownWidget<CEditNpc.NPCPose> poseDropdownWidget;
+    private EnumDropdownWidget<Action.ActionType> actionTypeDropdownWidget;
+    private EnumDropdownWidget<Trigger.TriggerType> triggerTypeDropdownWidget;
     private EditBox triggerChildField, triggerTimerField;
     /**
      * 0-2 Block Pos, 3 Radius
@@ -230,7 +233,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         );
 
         this.actionTypeDropdownWidget = this.addWidget(
-                new DropdownWidget<>(
+                new EnumDropdownWidget<>(
                         Action.ActionType.STANDSTILL,0,0,100, Action.ActionType.values().length, dropdownWidget -> {
                             Action.ActionType actionType = (Action.ActionType) dropdownWidget.getSelectedOption();
                             switch (actionType) {

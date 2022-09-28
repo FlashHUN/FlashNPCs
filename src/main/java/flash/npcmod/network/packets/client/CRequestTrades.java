@@ -2,9 +2,9 @@ package flash.npcmod.network.packets.client;
 
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.entity.NpcEntity;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;

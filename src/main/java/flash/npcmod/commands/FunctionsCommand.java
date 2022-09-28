@@ -6,22 +6,17 @@ import flash.npcmod.core.functions.Function;
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.EntityInit;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.network.chat.HoverEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.ComponentUtils;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
-
-import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public class FunctionsCommand extends Command {
   @Override

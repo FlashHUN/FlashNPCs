@@ -1,7 +1,7 @@
 package flash.npcmod.core.client;
 
-import com.mojang.blaze3d.vertex.*;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import net.minecraft.client.renderer.GameRenderer;
 

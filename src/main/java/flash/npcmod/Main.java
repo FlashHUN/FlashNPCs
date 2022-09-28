@@ -47,7 +47,7 @@ public class Main {
     IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
     // Set up proxies
-    PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
+    PROXY = DistExecutor.runForDist(() -> ClientProxy::new, () -> CommonProxy::new);
 
     // Register the setup method for modloading
     modEventBus.addListener(this::setup);

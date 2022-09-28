@@ -6,8 +6,8 @@ import flash.npcmod.client.gui.node.BuilderNode;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

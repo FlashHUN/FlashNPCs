@@ -12,8 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 
-import static net.minecraft.commands.Commands.literal;
 import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public class DebugCommand extends Command {
 

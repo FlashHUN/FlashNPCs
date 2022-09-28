@@ -1,15 +1,15 @@
 package flash.npcmod.client.gui.screen.inventory;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.inventory.container.NpcInventoryContainer;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -51,7 +51,9 @@ public class NpcInventoryScreen extends AbstractContainerScreen<NpcInventoryCont
     int i = this.leftPos;
     int j = this.topPos;
     this.blit(matrixStack, i, j, 0, 0, this.imageWidth, this.imageHeight);
-    renderEntityInInventory(i + 89, j + 75, 30, (float) (i + 89) - this.oldMouseX, (float) (j + 75 - 50) - this.oldMouseY, npcEntity);
+    float bbHeight = Math.max(npcEntity.getBbHeight(), 1f);
+    int scale = (int) (54 / bbHeight);
+    renderEntityInInventory(i + 89, j + 75, scale, (float) (i + 89) - this.oldMouseX, (float) (j + 75 - 50) - this.oldMouseY, npcEntity);
     if (this.menu.slots.get(0).getItem().isEmpty()) { // have to do this because for some reason Slot#getNoItemIcon doesn't want to work
       RenderSystem.setShaderTexture(0, EMPTY_ARMOR_SLOT_SWORD);
       blit(matrixStack, i + 115, j + 44, 16, 16, 0, 0, 16, 16, 16, 16);

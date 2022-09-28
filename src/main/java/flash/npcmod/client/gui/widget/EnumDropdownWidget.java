@@ -1,7 +1,7 @@
 package flash.npcmod.client.gui.widget;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -9,19 +9,20 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
+public class EnumDropdownWidget<T extends Enum<T>> extends AbstractWidget {
 
   private static final Minecraft minecraft = Minecraft.getInstance();
 
   private static final ResourceLocation TEXTURE = new ResourceLocation(Main.MODID, "textures/gui/quest_objective_builder.png");
 
-  private final DropdownWidget.OnSelect onSelect;
+  private final EnumDropdownWidget.OnSelect onSelect;
 
   T myEnum;
   Enum selectedOption;
@@ -31,11 +32,11 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
   private int scrollY;
   private final int maxDisplayedOptions;
 
-  public DropdownWidget(T defaultOption, int x, int y, int width) {
+  public EnumDropdownWidget(T defaultOption, int x, int y, int width) {
     this(defaultOption, x, y, width, 0, null);
   }
 
-  public DropdownWidget(T defaultOption, int x, int y, int width, int maxDisplayedOptions, OnSelect onSelect) {
+  public EnumDropdownWidget(T defaultOption, int x, int y, int width, int maxDisplayedOptions, OnSelect onSelect) {
     super(x, y, Mth.clamp(width, 0, 200), 13, new TextComponent(defaultOption.name()));
     myEnum = defaultOption;
     selectedOption = defaultOption;
@@ -161,7 +162,7 @@ public class DropdownWidget<T extends Enum<T>> extends AbstractWidget {
 
   @OnlyIn(Dist.CLIENT)
   public interface OnSelect {
-    void onSelect(DropdownWidget dropdownWidget);
+    void onSelect(EnumDropdownWidget dropdownWidget);
   }
 
   @Override

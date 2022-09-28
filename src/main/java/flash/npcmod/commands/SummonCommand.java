@@ -7,7 +7,8 @@ import flash.npcmod.init.EntityInit;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.TextComponent;
+
 import static net.minecraft.commands.Commands.argument;
 
 public class SummonCommand extends Command {
