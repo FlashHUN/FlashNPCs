@@ -162,7 +162,7 @@ public class EnumDropdownWidget<T extends Enum<T>> extends AbstractWidget {
 
   @OnlyIn(Dist.CLIENT)
   public interface OnSelect {
-    void onSelect(DropdownWidget dropdownWidget);
+    void onSelect(EnumDropdownWidget dropdownWidget);
   }
 
   @Override
