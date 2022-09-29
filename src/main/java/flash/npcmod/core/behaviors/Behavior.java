@@ -1,8 +1,8 @@
-package flash.npcmod.client.gui.behavior;
+package flash.npcmod.core.behaviors;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import flash.npcmod.client.gui.node.NodeData;
+import flash.npcmod.core.node.NodeData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.api.distmarker.Dist;

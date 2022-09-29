@@ -2,7 +2,7 @@ package flash.npcmod.network.packets.client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import flash.npcmod.client.gui.behavior.Behavior;
+import flash.npcmod.core.behaviors.Behavior;
 import flash.npcmod.core.behaviors.BehaviorSavedData;
 import flash.npcmod.core.behaviors.CommonBehaviorUtil;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;

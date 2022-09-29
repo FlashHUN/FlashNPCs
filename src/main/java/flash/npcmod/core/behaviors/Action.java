@@ -1,4 +1,4 @@
-package flash.npcmod.client.gui.behavior;
+package flash.npcmod.core.behaviors;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -7,13 +7,10 @@ import flash.npcmod.network.packets.client.CEditNpc;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Actions are properties of NPC behaviors. An action describes fully how the npc should move/ interact/ pose in the world.
  */
-@OnlyIn(Dist.CLIENT)
 public class Action {
   private final ActionType actionType;
   private final BlockPos targetBlockPos;

@@ -1,7 +1,7 @@
 package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.client.gui.node.BuilderNode;
+import flash.npcmod.core.node.BuilderNode;
 import flash.npcmod.client.gui.screen.TreeBuilderScreen;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;

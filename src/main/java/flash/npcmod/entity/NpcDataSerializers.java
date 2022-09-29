@@ -2,7 +2,7 @@ package flash.npcmod.entity;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import flash.npcmod.client.gui.behavior.Behavior;
+import flash.npcmod.core.behaviors.Behavior;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.EntityDataSerializers;
