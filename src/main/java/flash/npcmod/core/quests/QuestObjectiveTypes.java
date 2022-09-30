@@ -383,6 +383,32 @@ public class QuestObjectiveTypes {
     }
   }
 
+  public static class CraftItemObjective extends QuestObjective {
+    private final ItemStack itemStack;
+
+    public CraftItemObjective(int id, String name, ItemStack itemStack, int amount) {
+      super(id, name, ObjectiveType.CraftItem, amount);
+      this.itemStack = itemStack;
+    }
+
+    @Override
+    public ItemStack getObjective() {
+      return itemStack;
+    }
+
+    @Override
+    public String primaryToString() {
+      return stackToString(itemStack);
+    }
+
+    @Override
+    public CraftItemObjective copy() {
+      CraftItemObjective copy = new CraftItemObjective(getId(), getName(), itemStack, getAmount());
+      copyTo(copy);
+      return copy;
+    }
+  }
+
   public static String entityToString(LivingEntity livingEntity) {
     return livingEntity.getEncodeId();
   }

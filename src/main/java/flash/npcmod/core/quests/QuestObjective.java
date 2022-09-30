@@ -81,6 +81,10 @@ public abstract class QuestObjective {
     this.progress = Mth.clamp(progress, 0, amount);
   }
 
+  public void progress(int amount) {
+    this.progress = Mth.clamp(this.progress + amount, 0, this.amount);
+  }
+
   public boolean isComplete() {
     if (forceComplete && !completed) progress = amount;
     this.completed = progress == amount;
@@ -244,7 +248,8 @@ public abstract class QuestObjective {
     UseOnEntity,
     UseOnBlock,
     Use,
-    Scoreboard;
+    Scoreboard,
+    CraftItem;
 
     ObjectiveType() {}
 
@@ -290,43 +295,30 @@ public abstract class QuestObjective {
     String secondaryObjective = "";
     if (jsonObject.has("secondaryObjective"))
       secondaryObjective = jsonObject.get("secondaryObjective").getAsString();
-    QuestObjective questObjective;
-    switch (objectiveType) {
-      default:
-        questObjective = new QuestObjectiveTypes.GatherObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
-        break;
-      case Kill:
-        questObjective = new QuestObjectiveTypes.KillObjective(id, objectiveName, primaryObjective, objectiveAmount);
-        break;
-      case DeliverToEntity:
-        questObjective = new QuestObjectiveTypes.DeliverToEntityObjective(id, objectiveName, stackFromString(primaryObjective), secondaryObjective, objectiveAmount);
-        break;
-      case DeliverToLocation:
-        questObjective = new QuestObjectiveTypes.DeliverToLocationObjective(id, objectiveName, stackFromString(primaryObjective), QuestObjectiveTypes.areaFromString(secondaryObjective), objectiveAmount);
-        break;
-      case Escort:
+    QuestObjective questObjective = switch (objectiveType) {
+      default ->
+              new QuestObjectiveTypes.GatherObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
+      case Kill -> new QuestObjectiveTypes.KillObjective(id, objectiveName, primaryObjective, objectiveAmount);
+      case DeliverToEntity ->
+              new QuestObjectiveTypes.DeliverToEntityObjective(id, objectiveName, stackFromString(primaryObjective), secondaryObjective, objectiveAmount);
+      case DeliverToLocation ->
+              new QuestObjectiveTypes.DeliverToLocationObjective(id, objectiveName, stackFromString(primaryObjective), QuestObjectiveTypes.areaFromString(secondaryObjective), objectiveAmount);
+      case Escort ->
         // TODO figure out how this should work
-        questObjective = new QuestObjectiveTypes.EscortObjective(id, objectiveName, primaryObjective, Path.fromString(secondaryObjective));
-        break;
-      case Talk:
-        questObjective = new QuestObjectiveTypes.TalkObjective(id, objectiveName, primaryObjective, secondaryObjective);
-        break;
-      case Find:
-        questObjective = new QuestObjectiveTypes.FindObjective(id, objectiveName, QuestObjectiveTypes.areaFromString(primaryObjective));
-        break;
-      case UseOnEntity:
-        questObjective = new QuestObjectiveTypes.UseOnEntityObjective(id, objectiveName, stackFromString(primaryObjective), secondaryObjective, objectiveAmount);
-        break;
-      case UseOnBlock:
-        questObjective = new QuestObjectiveTypes.UseOnBlockObjective(id, objectiveName, stackFromString(primaryObjective), QuestObjectiveTypes.blockStateFromString(secondaryObjective), objectiveAmount);
-        break;
-      case Use:
-        questObjective = new QuestObjectiveTypes.UseObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
-        break;
-      case Scoreboard:
-        questObjective = new QuestObjectiveTypes.ScoreboardObjective(id, objectiveName, primaryObjective, objectiveAmount);
-        break;
-    }
+              new QuestObjectiveTypes.EscortObjective(id, objectiveName, primaryObjective, Path.fromString(secondaryObjective));
+      case Talk -> new QuestObjectiveTypes.TalkObjective(id, objectiveName, primaryObjective, secondaryObjective);
+      case Find ->
+              new QuestObjectiveTypes.FindObjective(id, objectiveName, QuestObjectiveTypes.areaFromString(primaryObjective));
+      case UseOnEntity ->
+              new QuestObjectiveTypes.UseOnEntityObjective(id, objectiveName, stackFromString(primaryObjective), secondaryObjective, objectiveAmount);
+      case UseOnBlock ->
+              new QuestObjectiveTypes.UseOnBlockObjective(id, objectiveName, stackFromString(primaryObjective), QuestObjectiveTypes.blockStateFromString(secondaryObjective), objectiveAmount);
+      case Use ->
+              new QuestObjectiveTypes.UseObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
+      case Scoreboard ->
+              new QuestObjectiveTypes.ScoreboardObjective(id, objectiveName, primaryObjective, objectiveAmount);
+      case CraftItem -> new QuestObjectiveTypes.CraftItemObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
+    };
 
     if (jsonObject.has("isHidden"))
       questObjective.setHidden(jsonObject.get("isHidden").getAsBoolean());
