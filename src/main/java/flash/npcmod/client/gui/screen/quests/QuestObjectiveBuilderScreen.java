@@ -360,7 +360,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
   private boolean canCreateObjective() {
     return switch (typeDropdown.getSelectedOption()) {
-      case Gather, Use -> itemStackObjective != null && !itemStackObjective.isEmpty() && amount > 0;
+      case Gather, Use, CraftItem -> itemStackObjective != null && !itemStackObjective.isEmpty() && amount > 0;
       case Kill -> entityObjective != null && amount > 0;
       case DeliverToEntity, UseOnEntity ->
               itemStackObjective != null && !itemStackObjective.isEmpty() && entityObjective != null && amount > 0;
