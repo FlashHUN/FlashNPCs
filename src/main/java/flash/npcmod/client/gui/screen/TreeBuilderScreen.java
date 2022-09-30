@@ -686,10 +686,13 @@ abstract public class TreeBuilderScreen extends Screen {
 
         for (EditType key : this.allNameFields.keySet()) {
             check = editType == key;
-            if (allNameFields.containsKey(key))
+            if (allNameFields.containsKey(key)) {
                 this.allNameFields.get(key).setFocus(check);
-            if (allTopLevelFrames.containsKey(key))
+                this.allNameFields.get(key).setVisible(check);
+            }
+            if (allTopLevelFrames.containsKey(key)) {
                 this.allTopLevelFrames.get(key).setVisible(check);
+            }
             if (isNodeNull) this.allNameFields.get(key).setValue("");
         }
 
@@ -702,7 +705,7 @@ abstract public class TreeBuilderScreen extends Screen {
             this.confirmButton.x = this.functionParamsField.x;
             this.confirmButton.y = this.functionParamsField.y + 22;
             this.cancelButton.x = this.functionParamsField.x + this.functionParamsField.getWidth() - confirmButton.getWidth();
-            this. cancelButton.y = this.functionParamsField.y + 22;
+            this.cancelButton.y = this.functionParamsField.y + 22;
         }
         this.mainVFrame.recalculateSize();
         this.setEditingNode(node);

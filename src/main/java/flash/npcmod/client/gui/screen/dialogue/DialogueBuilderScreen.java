@@ -118,20 +118,10 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
         super.init();
 
         // Initialize our text field widgets
-        EditBox textField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        this.width / 2 - 60,
-                        this.height / 2 - 10,
-                        120,
-                        20,
-                        TextComponent.EMPTY
-                )
-        );
+        EditBox textField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         textField.setResponder(this::setNewText);
         textField.setMaxLength(500);
         textField.setVisible(false);
-
         textField.setCanLoseFocus(true);
         this.allNameFields.put(EditType.TEXT, textField);
 
