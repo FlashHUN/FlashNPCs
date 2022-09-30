@@ -225,6 +225,8 @@ public abstract class QuestObjective {
       questObjective = new QuestObjectiveTypes.UseOnBlockObjective(id, name, itemStack, getSecondaryObjective(), amount);
     else if (type.equals(ObjectiveType.Use))
       questObjective = new QuestObjectiveTypes.UseObjective(id, name, itemStack, amount);
+    else if (type.equals(ObjectiveType.CraftItem))
+      questObjective = new QuestObjectiveTypes.CraftItemObjective(id, name, itemStack, amount);
 
     if (questObjective != this) {
       questObjective.setQuest(this.getQuest());

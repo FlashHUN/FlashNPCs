@@ -292,7 +292,8 @@ public class QuestObjectiveBuilderScreen extends Screen {
         || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.DeliverToLocation)
         || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnEntity)
         || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnBlock)
-        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Use);
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Use)
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.CraftItem);
     itemFromInventoryButton.active = !typeDropdown.isShowingOptions();
 
 
@@ -421,6 +422,9 @@ public class QuestObjectiveBuilderScreen extends Screen {
         break;
       case Scoreboard:
         questObjective = new QuestObjectiveTypes.ScoreboardObjective(id, name, primaryObjective, amount);
+        break;
+      case CraftItem:
+        questObjective = new QuestObjectiveTypes.CraftItemObjective(id, name, itemStackObjective, amount);
         break;
     }
     if (questObjective != null) {
