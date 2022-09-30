@@ -296,7 +296,7 @@ public abstract class QuestObjective {
     if (jsonObject.has("secondaryObjective"))
       secondaryObjective = jsonObject.get("secondaryObjective").getAsString();
     QuestObjective questObjective = switch (objectiveType) {
-      default ->
+      case Gather ->
               new QuestObjectiveTypes.GatherObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
       case Kill -> new QuestObjectiveTypes.KillObjective(id, objectiveName, primaryObjective, objectiveAmount);
       case DeliverToEntity ->
