@@ -11,6 +11,7 @@ import flash.npcmod.core.behaviors.Trigger;
 import flash.npcmod.core.ItemUtil;
 import flash.npcmod.core.behaviors.BehaviorSavedData;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
+import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
@@ -505,7 +506,10 @@ public class NpcEntity extends PathfinderMob {
                 List<QuestInstance> markedForCompletion = new ArrayList<>();
 
                 for (QuestInstance questInstance : questCapability.getAcceptedQuests()) {
-                    if (questInstance.getPickedUpFrom().equals(this.getUUID()) && questInstance.getQuest().canComplete()) {
+                    if ((questInstance.getTurnInType() == QuestInstance.TurnInType.QuestGiver ||
+                            questInstance.getTurnInType() == QuestInstance.TurnInType.NpcByUuid) &&
+                            questInstance.getPickedUpFrom().equals(this.getUUID()) &&
+                            questInstance.getQuest().canComplete()) {
                         markedForCompletion.add(questInstance);
                     }
                 }

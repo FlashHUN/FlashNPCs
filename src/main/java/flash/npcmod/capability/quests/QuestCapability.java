@@ -96,7 +96,7 @@ public class QuestCapability implements IQuestCapability {
   public void completeQuest(QuestInstance quest) {
     if (acceptedQuests.contains(quest)) {
       if (quest.getQuest().canComplete()) {
-        quest.getQuest().complete(quest.getPlayer(), quest.getPickedUpFrom(), quest.getPickedUpFromName());
+        quest.getQuest().complete(quest.getPlayer(), quest.getPickedUpFrom(), quest.getPickedUpFromName(), quest.getTurnInType());
 
         abandonQuest(quest);
 
@@ -163,6 +163,7 @@ public class QuestCapability implements IQuestCapability {
       tag2.putString("quest", quest.getQuest().getName());
       tag2.putUUID("uuid", quest.getPickedUpFrom());
       tag2.putString("npcname", quest.getPickedUpFromName());
+      tag2.putInt("turnintype", quest.getTurnInType().ordinal());
       acceptedQuests.add(tag2);
     });
     tag.put("acceptedQuests", acceptedQuests);
@@ -195,8 +196,12 @@ public class QuestCapability implements IQuestCapability {
     for (int i = 0; i < acceptedQuestsTag.size(); i++) {
       CompoundTag tag2 = acceptedQuestsTag.getCompound(i);
       Quest quest = CommonQuestUtil.fromName(tag2.getString("quest"));
+      QuestInstance.TurnInType turnInType = QuestInstance.TurnInType.QuestGiver;
+      try {
+        turnInType = QuestInstance.TurnInType.values()[tag2.getInt("turnintype")];
+      } catch (Exception ignored) {}
       if (quest != null)
-        acceptedQuests.add(new QuestInstance(quest, tag2.getUUID("uuid"), tag2.getString("npcname")));
+        acceptedQuests.add(new QuestInstance(quest, tag2.getUUID("uuid"), tag2.getString("npcname"), turnInType));
     }
     setAcceptedQuests(acceptedQuests);
 

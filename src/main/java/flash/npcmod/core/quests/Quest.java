@@ -18,13 +18,13 @@ import static flash.npcmod.core.ItemUtil.*;
 
 public class Quest {
 
-  private String name;
-  private String displayName;
-  private List<QuestObjective> objectives;
-  private int xpReward;
+  private final String name;
+  private final String displayName;
+  private final List<QuestObjective> objectives;
+  private final int xpReward;
   private List<ItemStack> itemRewards;
-  private boolean repeatable;
-  private List<String> runOnComplete;
+  private final boolean repeatable;
+  private final List<String> runOnComplete;
 
   public Quest(String name, String displayName, List<QuestObjective> objectives) {
     this(name, displayName, objectives, 0);
@@ -78,10 +78,6 @@ public class Quest {
     return repeatable;
   }
 
-  public void setRepeatable(boolean b) {
-    this.repeatable = repeatable;
-  }
-
   public List<String> getRunOnComplete() {
     return runOnComplete;
   }
@@ -93,7 +89,7 @@ public class Quest {
     return true;
   }
 
-  public void complete(Player player, UUID pickedUpFrom, String pickedUpFromName) {
+  public void complete(Player player, UUID pickedUpFrom, String pickedUpFromName, QuestInstance.TurnInType turnInType) {
     if (!canComplete()) return;
 
     for (QuestObjective objective : objectives) {
@@ -121,7 +117,7 @@ public class Quest {
       } else if (command.startsWith("acceptQuest:")) {
         Quest quest = CommonQuestUtil.fromName(command.substring(12));
         if (quest != null)
-          QuestCapabilityProvider.getCapability(player).acceptQuest(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, player));
+          QuestCapabilityProvider.getCapability(player).acceptQuest(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, turnInType, player));
       }
     }
   }

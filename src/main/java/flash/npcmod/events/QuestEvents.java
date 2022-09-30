@@ -2,9 +2,11 @@ package flash.npcmod.events;
 
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.network.PacketDispatcher;
+import flash.npcmod.network.packets.server.SCompleteQuest;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -84,7 +86,15 @@ public class QuestEvents {
         IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
         ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
         Map<QuestObjective, Integer> progressMap = capability.getQuestProgressMap();
+        List<QuestInstance> markedForCompletion = new ArrayList<>();
         for (QuestInstance questInstance : acceptedQuests) {
+          // Mark for Auto Turn-In
+          if (questInstance.getTurnInType() == QuestInstance.TurnInType.AutoTurnIn &&
+                  questInstance.getQuest().canComplete()) {
+            markedForCompletion.add(questInstance);
+          }
+
+          // Update objective progress
           List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
           for (QuestObjective objective : objectives) {
             if (!objective.isHidden()) {
@@ -124,6 +134,12 @@ public class QuestEvents {
           }
         }
         PacketDispatcher.sendTo(new SSyncQuestCapability(capability.getAcceptedQuests().toArray(new QuestInstance[0])), player);
+
+        // Auto Turn-In
+        for (QuestInstance questInstance : markedForCompletion) {
+          capability.completeQuest(questInstance);
+          PacketDispatcher.sendTo(new SCompleteQuest(questInstance.getQuest().getName(), questInstance.getPickedUpFrom()), player);
+        }
       }
     }
   }
