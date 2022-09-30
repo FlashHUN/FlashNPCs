@@ -54,9 +54,6 @@ public class Main {
     modEventBus.addListener(this::registerEntityAttributes);
     modEventBus.addListener(this::registerCapabilites);
 
-    // Register the config
-    ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHolder.COMMON_SPEC);
-
     // Register all the DeferredRegisters
     ItemInit.ITEMS.register(modEventBus);
     EntityInit.ENTITIES.register(modEventBus);
