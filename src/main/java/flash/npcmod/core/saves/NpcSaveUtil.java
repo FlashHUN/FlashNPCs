@@ -1,6 +1,5 @@
 package flash.npcmod.core.saves;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;

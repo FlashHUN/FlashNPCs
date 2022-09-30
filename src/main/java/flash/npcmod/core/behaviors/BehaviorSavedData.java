@@ -1,14 +1,9 @@
 package flash.npcmod.core.behaviors;
 
-import flash.npcmod.Main;
-import flash.npcmod.client.gui.behavior.Behavior;
-import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.IOException;
 
 public class BehaviorSavedData extends SavedData {
     private Behavior[] behaviors;

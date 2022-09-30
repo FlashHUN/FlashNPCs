@@ -1,15 +1,14 @@
 package flash.npcmod.network.packets.client;
 
 import com.google.gson.JsonObject;
-import flash.npcmod.Main;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSendDialogue;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;

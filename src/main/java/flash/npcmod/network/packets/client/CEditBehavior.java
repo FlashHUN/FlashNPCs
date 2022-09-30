@@ -2,7 +2,7 @@ package flash.npcmod.network.packets.client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import flash.npcmod.client.gui.behavior.Behavior;
+import flash.npcmod.core.behaviors.Behavior;
 import flash.npcmod.core.behaviors.BehaviorSavedData;
 import flash.npcmod.core.behaviors.CommonBehaviorUtil;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
@@ -50,7 +50,10 @@ public class CEditBehavior {
         savedData.setDirty();
         // refresh the current npc ai.
         if (msg.entityId != -1000) {
-          ((NpcEntity) sender.level.getEntity(msg.entityId)).refreshGoals();
+          NpcEntity npc = ((NpcEntity) sender.level.getEntity(msg.entityId));
+          if (npc != null) {
+            npc.resetBehavior();
+          }
         }
         CommonBehaviorUtil.buildBehavior(msg.name, msg.behaviorJson);
         CommonBehaviorUtil.buildBehaviorEditor(msg.name, msg.behaviorEditor);

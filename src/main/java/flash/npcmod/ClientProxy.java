@@ -2,7 +2,10 @@ package flash.npcmod;
 
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
-import flash.npcmod.client.gui.screen.*;
+import flash.npcmod.client.gui.screen.BehaviorBuilderScreen;
+import flash.npcmod.client.gui.screen.FunctionBuilderScreen;
+import flash.npcmod.client.gui.screen.NpcBuilderScreen;
+import flash.npcmod.client.gui.screen.SavedNpcsScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.client.gui.screen.quests.QuestEditorScreen;
@@ -20,9 +23,11 @@ import flash.npcmod.network.packets.server.SOpenScreen;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -33,12 +38,14 @@ import java.util.*;
 public class ClientProxy extends CommonProxy {
 
   public static List<String> SAVED_NPCS = new ArrayList<>();
+  public static Map<String, EntityType<?>> ENTITY_TYPES = new HashMap<>();
+  public static Map<String, EntityType<?>> RENDER_ENTITY_TYPES = new HashMap<>();
 
   Minecraft minecraft = Minecraft.getInstance();
 
   public void openScreen(SOpenScreen.EScreens screen, String data, int entityid) {
     Screen toOpen = null;
-    NpcEntity npcEntity = (NpcEntity) minecraft.player.level.getEntity(entityid);
+    NpcEntity npcEntity = (NpcEntity) minecraft.level.getEntity(entityid);
     switch (screen) {
       case DIALOGUE -> toOpen = new DialogueScreen(data, npcEntity);
       case EDITBEHAVIOR -> toOpen = new BehaviorBuilderScreen(data, npcEntity);
@@ -253,5 +260,17 @@ public class ClientProxy extends CommonProxy {
 
   public void loadSavedNpcs(List<String> savedNpcs) {
     SAVED_NPCS = savedNpcs;
+  }
+
+  public void loadEntities(String[] entities) {
+    ENTITY_TYPES.clear();
+    RENDER_ENTITY_TYPES.clear();
+    for (String name : entities) {
+      EntityType.byString(name).ifPresent(entityType -> {
+        ENTITY_TYPES.put(name, entityType);
+        if (minecraft.getEntityRenderDispatcher().renderers.get(entityType) instanceof LivingEntityRenderer<?,?>)
+          RENDER_ENTITY_TYPES.put(name, entityType);
+      });
+    }
   }
 }

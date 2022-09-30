@@ -13,8 +13,8 @@ import flash.npcmod.network.packets.client.CRequestQuestCapabilitySync;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -157,8 +157,9 @@ public class DialogueScreen extends Screen {
     // Render the NPC on screen
     {
       int x = width-60;
-      int y = height/4*3;
-      int scale = height/3;
+      int y = (int) (height/4*2.5f);
+      float bbHeight = Math.max(npcEntity.getBbHeight(), 1f);
+      int scale = (int) (height / 3f / bbHeight);
       InventoryScreen.renderEntityInInventory(x, y, scale, 40, -20, npcEntity);
     }
 

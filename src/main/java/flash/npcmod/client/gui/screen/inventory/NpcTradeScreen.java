@@ -1,7 +1,7 @@
 package flash.npcmod.client.gui.screen.inventory;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.widget.TradeWidget;
 import flash.npcmod.core.trades.TradeOffer;
@@ -10,12 +10,12 @@ import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.inventory.container.NpcTradeContainer;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -138,7 +138,9 @@ public class NpcTradeScreen extends AbstractContainerScreen<NpcTradeContainer> {
       if (this.scrollOffset < maxScrollOffset)
         this.blit(matrixStack, i+8, j+68, 0, 166, 153, 10);
     }
-    renderEntityInInventory(i + imageWidth + 45, j + 140, 60, 40, -5, npcEntity);
+    float bbHeight = Math.max(npcEntity.getBbHeight(), 1f);
+    int scale = (int) (108 / bbHeight);
+    renderEntityInInventory(i + imageWidth + 45, j + 140, scale, 40, -5, npcEntity);
   }
 
   @Override

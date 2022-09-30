@@ -4,7 +4,10 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextComponent;
 
 import java.util.ArrayList;
 import java.util.List;

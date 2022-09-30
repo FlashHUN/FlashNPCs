@@ -1,6 +1,5 @@
 package flash.npcmod.core.dialogues;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
@@ -11,10 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CommonDialogueUtil {
-
 
   public static final String DEFAULT_DIALOGUE_JSON = "{\"name\":\"init\",\"text\":\"Hi @p!\",\"function\":\"\",\"children\":[{\"name\":\"hello\",\"text\":\"Hey @npc.\"}]}";
   public static final String DEFAULT_DIALOGUE_EDITOR_JSON = "{\"entries\":[{\"name\":\"init\",\"x\":10,\"y\":10},{\"name\":\"hello\",\"x\":150,\"y\":10}]}";

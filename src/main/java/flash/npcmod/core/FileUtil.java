@@ -1,7 +1,6 @@
 package flash.npcmod.core;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import flash.npcmod.Main;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -11,7 +10,6 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class FileUtil {
   

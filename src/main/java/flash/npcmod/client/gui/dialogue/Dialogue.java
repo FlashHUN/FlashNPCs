@@ -2,8 +2,7 @@ package flash.npcmod.client.gui.dialogue;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import flash.npcmod.client.gui.behavior.Trigger;
-import flash.npcmod.client.gui.node.NodeData;
+import flash.npcmod.core.node.NodeData;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

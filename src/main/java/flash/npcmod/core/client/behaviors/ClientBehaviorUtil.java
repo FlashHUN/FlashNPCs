@@ -1,8 +1,6 @@
 package flash.npcmod.core.client.behaviors;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CRequestBehaviorEditor;

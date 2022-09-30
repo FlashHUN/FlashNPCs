@@ -1,8 +1,6 @@
 package flash.npcmod.core.client.quests;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import flash.npcmod.Main;
 import flash.npcmod.core.FileUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.network.PacketDispatcher;

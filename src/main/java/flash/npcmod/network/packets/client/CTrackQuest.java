@@ -5,8 +5,8 @@ import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.List;

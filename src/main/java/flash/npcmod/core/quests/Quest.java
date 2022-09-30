@@ -4,9 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.config.ConfigHolder;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;

@@ -1,9 +1,8 @@
-package flash.npcmod.client.gui.node;
+package flash.npcmod.core.node;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
 import flash.npcmod.client.gui.screen.TreeBuilderScreen;
-import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -473,7 +472,7 @@ abstract public class BuilderNode {
      * Check if this node is the init node.
      * @return True if init node.
      */
-    public boolean isInit() { return getName().equals(ClientDialogueUtil.INIT_DIALOGUE_NAME); }
+    public boolean isInit() { return getName().equals(NodeData.INIT_NODE_NAME); }
 
     /**
      * Check if this node is visible.

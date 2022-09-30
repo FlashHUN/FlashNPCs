@@ -1,6 +1,5 @@
 package flash.npcmod.core.client.dialogues;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
@@ -8,6 +7,8 @@ import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.core.FileUtil;
+import flash.npcmod.core.dialogues.CommonDialogueUtil;
+import flash.npcmod.core.node.NodeData;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.network.PacketDispatcher;
@@ -30,8 +31,6 @@ import java.util.Objects;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientDialogueUtil {
-
-  public static final String INIT_DIALOGUE_NAME = "init";
 
   public static final List<String> FUNCTION_NAMES = new ArrayList<>();
 
@@ -79,7 +78,7 @@ public class ClientDialogueUtil {
   }
 
   public static void initDialogue() {
-    loadDialogueOption(INIT_DIALOGUE_NAME);
+    loadDialogueOption(NodeData.INIT_NODE_NAME);
   }
 
   public static void loadDialogueOption(String name) {

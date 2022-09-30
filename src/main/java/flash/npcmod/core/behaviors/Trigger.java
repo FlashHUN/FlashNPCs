@@ -1,11 +1,8 @@
-package flash.npcmod.client.gui.behavior;
+package flash.npcmod.core.behaviors;
 
 import com.google.gson.JsonObject;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class Trigger {
     private String name;
     private String nextBehaviorName;
