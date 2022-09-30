@@ -136,6 +136,14 @@ public class QuestCapability implements IQuestCapability {
     }
   }
 
+  @Override
+  public void resetAllQuestProgress() {
+    trackedQuest = "";
+    acceptedQuests.clear();
+    completedQuests.clear();
+    questProgressMap.clear();
+  }
+
   private String objectiveToString(QuestObjective objective) {
     return objective.getQuest().getName()+":::"+objective.getName();
   }

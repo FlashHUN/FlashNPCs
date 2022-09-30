@@ -61,8 +61,10 @@ public class QuestsCommand extends Command {
 
     builder.then(literal("reset")
         .then(argument("player", EntityArgument.player())
-        .then(argument("quest", StringArgumentType.string())
-            .executes(context -> reset(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest"))))));
+        .then(literal("quest").then(argument("quest", StringArgumentType.string())
+                .executes(context -> reset(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest")))))
+        .then(literal("all")
+                .executes(context -> resetAll(context.getSource(), EntityArgument.getPlayer(context, "player"))))));
   }
 
   @Override
@@ -192,6 +194,15 @@ public class QuestsCommand extends Command {
       }
       else
         source.sendSuccess(new TextComponent(quest + " does not exist").withStyle(ChatFormatting.RED), true);
+    }
+    return 0;
+  }
+
+  private int resetAll(CommandSourceStack source, Player player) {
+    if (player != null && player.isAlive()) {
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+      capability.resetAllQuestProgress();
+      source.sendSuccess(new TextComponent("Reset " + player.getName().getString() + "'s quest data").withStyle(ChatFormatting.GREEN), true);
     }
     return 0;
   }
