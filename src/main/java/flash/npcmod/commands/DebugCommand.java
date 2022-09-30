@@ -3,8 +3,10 @@ package flash.npcmod.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.TextComponent;
@@ -38,6 +40,8 @@ public class DebugCommand extends Command {
                     )
             )
     );
+
+    builder.then(literal("functions").executes(context -> toggleFunctionDebugMode(context.getSource())));
   }
 
   @Override
@@ -82,6 +86,13 @@ public class DebugCommand extends Command {
       source.sendSuccess(new TextComponent(sb.toString()), false);
       return 1;
     }
+    return 0;
+  }
+
+  private int toggleFunctionDebugMode(CommandSourceStack source) {
+    FunctionUtil.toggleDebugMode();
+    boolean debugMode = FunctionUtil.isDebugMode();
+    source.sendSuccess(new TextComponent("Toggled Debug Mode to " + debugMode).withStyle(debugMode ? ChatFormatting.GREEN : ChatFormatting.RED), true);
     return 0;
   }
 }

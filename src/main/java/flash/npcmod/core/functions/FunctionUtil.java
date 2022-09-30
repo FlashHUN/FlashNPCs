@@ -14,6 +14,8 @@ import java.util.List;
 
 public class FunctionUtil {
 
+  private static boolean DEBUG_MODE = false;
+
   public static final List<AbstractFunction> FUNCTIONS = new ArrayList<>();
 
   private static final AcceptQuestFunction ACCEPT_QUEST = new AcceptQuestFunction();
@@ -40,6 +42,14 @@ public class FunctionUtil {
     FUNCTIONS.add(OPEN_TRADES);
     FUNCTIONS.add(PLAY_SOUND);
     FUNCTIONS.add(RANDOM_OPTION);
+  }
+
+  public static void toggleDebugMode() {
+    DEBUG_MODE = !DEBUG_MODE;
+  }
+
+  public static boolean isDebugMode() {
+    return DEBUG_MODE;
   }
 
   public static void build(String name, String function) {
