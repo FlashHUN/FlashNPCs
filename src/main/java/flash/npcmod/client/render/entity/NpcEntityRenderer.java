@@ -73,7 +73,9 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
     if (currentEntityToRenderAs != entityToRenderAs) {
       currentEntityToRenderAs = entityToRenderAs;
       currentRenderer = (LivingEntityRenderer<?, ?>) this.entityRenderDispatcher.getRenderer(entityToRenderAs);
-      if (getBobMethodMap.containsKey(currentRenderer)) {
+      if (getBobMethodMap.containsKey(currentRenderer) ||
+              scaleMethodMap.containsKey(currentRenderer) ||
+              getWhiteOverlayProgressMethodMap.containsKey(currentRenderer)) {
         currentGetBobMethod = getBobMethodMap.get(currentRenderer);
         currentScaleMethod = scaleMethodMap.get(currentRenderer);
         currentGetWhiteOverlayProgressMethod = getWhiteOverlayProgressMethodMap.get(currentRenderer);
@@ -86,15 +88,27 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
         getBobMethodMap.put(currentRenderer, getBobMethod);
         currentGetBobMethod = getBobMethod;
       }
+      else {
+        getBobMethodMap.put(currentRenderer, null);
+        currentGetBobMethod = null;
+      }
       Method scaleMethod = tryGetRendererMethod("m_7546_", PoseStack.class, float.class);
       if (scaleMethod != null) {
         scaleMethodMap.put(currentRenderer, scaleMethod);
         currentScaleMethod = scaleMethod;
       }
+      else {
+        scaleMethodMap.put(currentRenderer, null);
+        currentScaleMethod = null;
+      }
       Method getWhiteOverlayProgressMethod = tryGetRendererMethod("m_6931_", float.class);
       if (getWhiteOverlayProgressMethod != null) {
         getWhiteOverlayProgressMethodMap.put(currentRenderer, getWhiteOverlayProgressMethod);
         currentGetWhiteOverlayProgressMethod = getWhiteOverlayProgressMethod;
+      }
+      else {
+        getWhiteOverlayProgressMethodMap.put(currentRenderer, null);
+        currentGetWhiteOverlayProgressMethod = null;
       }
     }
   }
@@ -124,6 +138,9 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
   @Override
   public ResourceLocation getTextureLocation(NpcEntity entity) {
     try {
+      if (entity.getTexture().isEmpty() || entity.getTexture().isBlank()) {
+        return getDefaultTexture(entity);
+      }
       if (entity.isTextureResourceLocation()) {
         return ResourceLocation.tryParse(entity.getTexture());
       }
@@ -137,14 +154,16 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
         }
       }
     } catch (Exception ignored) {
-      if (shouldRenderAsNormalNpc(entity)) {
-        return DefaultPlayerSkin.getDefaultSkin();
-      }
-      else {
-        LivingEntity entityToRenderAs = entity.getEntityToRenderAs();
-        return this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs);
-      }
+      return getDefaultTexture(entity);
     }
+  }
+
+  private ResourceLocation getDefaultTexture(NpcEntity entity) {
+    if (shouldRenderAsNormalNpc(entity)) {
+      return DefaultPlayerSkin.getDefaultSkin();
+    }
+    LivingEntity entityToRenderAs = entity.getEntityToRenderAs();
+    return this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs);
   }
 
   private void setModelProperties(NpcEntity npcEntity) {
