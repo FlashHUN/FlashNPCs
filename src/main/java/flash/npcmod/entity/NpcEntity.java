@@ -506,7 +506,13 @@ public class NpcEntity extends PathfinderMob {
     @Override
     protected float getStandingEyeHeight(@NotNull Pose poseIn, @NotNull EntityDimensions sizeIn) {
         if (entityToRenderAs == null) {
-            return getDimensions(poseIn).height * 0.85F;
+            // Player#getStandingEyeHeight
+            return switch (poseIn) {
+                case SWIMMING, FALL_FLYING -> 0.4f;
+                case SPIN_ATTACK -> 1.1F;
+                case CROUCHING -> 1.27F;
+                default -> 1.62F;
+            };
         }
         return entityToRenderAs.getEyeHeightAccess(poseIn, sizeIn);
     }
