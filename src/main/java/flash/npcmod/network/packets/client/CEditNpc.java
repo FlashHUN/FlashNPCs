@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 public class CEditNpc {
 
   int entityid;
-  String name, texture, dialogue, behavior;
+  String name, title, texture, dialogue, behavior;
   boolean isSlim, isNameVisible, resetAI, isTextureResourceLocation;
   int textColor;
   ItemStack[] items;
@@ -27,33 +27,34 @@ public class CEditNpc {
   CompoundTag rendererTag;
   float scaleX, scaleY, scaleZ;
 
-  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isTextureResourceLocation, boolean isSlim,
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, String renderer,
                   CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
-    this(entityid, isNameVisible, name, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
+    this(entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
             rendererTag, scaleX, scaleY, scaleZ);
   }
 
-  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isTextureResourceLocation, boolean isSlim,
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, EntityType<?> renderer,
                   CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
-    this(entityid, isNameVisible, name, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
+    this(entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
             rendererTag, scaleX, scaleY, scaleZ);
   }
 
-  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isTextureResourceLocation, boolean isSlim,
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI,
                   EntityType<?> renderer, CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
-    this(entityid, isNameVisible, name, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, resetAI, EntityType.getKey(renderer).toString(),
+    this(entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, resetAI, EntityType.getKey(renderer).toString(),
             rendererTag, scaleX, scaleY, scaleZ);
   }
 
-  public CEditNpc(int entityid, boolean isNameVisible, String name, String texture, boolean isTextureResourceLocation, boolean isSlim,
+  public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, String renderer,
                   CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
     this.entityid = entityid;
     this.isNameVisible = isNameVisible;
     this.name = name;
+    this.title = title;
     this.texture = texture;
     this.isTextureResourceLocation = isTextureResourceLocation;
     this.isSlim = isSlim;
@@ -76,6 +77,7 @@ public class CEditNpc {
     buf.writeInt(msg.entityid);
     buf.writeBoolean(msg.isNameVisible);
     buf.writeUtf(msg.name);
+    buf.writeUtf(msg.title);
     buf.writeUtf(msg.texture);
     buf.writeBoolean(msg.isTextureResourceLocation);
     buf.writeBoolean(msg.isSlim);
@@ -104,6 +106,7 @@ public class CEditNpc {
     int entityid = buf.readInt();
     boolean isNameVisible = buf.readBoolean();
     String name = buf.readUtf(201);
+    String title = buf.readUtf(201);
     String texture = buf.readUtf(201);
     boolean isTextureResourceLocation = buf.readBoolean();
     boolean isSlim = buf.readBoolean();
@@ -122,7 +125,7 @@ public class CEditNpc {
       items.add(buf.readItem());
     }
     return new CEditNpc(
-            entityid, isNameVisible, name, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items.toArray(new ItemStack[0]),
+            entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items.toArray(new ItemStack[0]),
             pose, resetAI, renderer, rendererTag, scaleX, scaleY, scaleZ
     );
   }
@@ -135,6 +138,7 @@ public class CEditNpc {
         if (entity instanceof NpcEntity npcEntity) {
           npcEntity.setCustomNameVisible(msg.isNameVisible);
           npcEntity.setCustomName(new TextComponent(msg.name));
+          npcEntity.setTitle(msg.title);
           npcEntity.setTexture(msg.texture);
           npcEntity.setIsTextureResourceLocation(msg.isTextureResourceLocation);
           npcEntity.setSlim(msg.isSlim);

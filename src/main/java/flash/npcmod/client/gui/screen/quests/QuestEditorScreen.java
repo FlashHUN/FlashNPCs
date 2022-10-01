@@ -86,9 +86,7 @@ public class QuestEditorScreen extends Screen {
     questEditorScreen.name = quest.getName();
     questEditorScreen.displayName = quest.getDisplayName();
 
-    for (QuestObjective questObjective : quest.getObjectives()) {
-      questEditorScreen.objectives.add(questObjective);
-    }
+    questEditorScreen.objectives.addAll(quest.getObjectives());
 
     questEditorScreen.xpReward = quest.getXpReward();
     questEditorScreen.itemRewards = quest.getItemRewards();

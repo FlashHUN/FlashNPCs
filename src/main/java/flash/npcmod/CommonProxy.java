@@ -34,7 +34,7 @@ public class CommonProxy {
   public void syncCompletedQuests(ArrayList<String> completedQuests) {}
   public void syncQuestProgressMap(Map<QuestObjective, Integer> progressMap) {}
 
-  public void acceptQuest(String name, int entityid) {}
+  public void acceptQuest(String name, int entityid, QuestInstance.TurnInType turnInType, UUID uuid) {}
   public void completeQuest(String name, UUID uuid) {}
 
   public Player getPlayer() {

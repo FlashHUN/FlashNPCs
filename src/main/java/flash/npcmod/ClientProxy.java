@@ -139,14 +139,14 @@ public class ClientProxy extends CommonProxy {
   }
 
 
-  public void acceptQuest(String name, int entityid) {
+  public void acceptQuest(String name, int entityid, QuestInstance.TurnInType turnInType, UUID uuid) {
     PacketDispatcher.sendToServer(new CRequestQuestInfo(name));
     Quest quest = ClientQuestUtil.fromName(name);
     Entity entity = minecraft.player.level.getEntity(entityid);
     if (quest != null && entity instanceof NpcEntity) {
       IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
 
-      QuestInstance questInstance = new QuestInstance(quest, entity.getUUID(), entity.getName().getString(), minecraft.player);
+      QuestInstance questInstance = new QuestInstance(quest, uuid, entity.getName().getString(), turnInType, minecraft.player);
       capability.acceptQuest(questInstance);
     }
   }
@@ -200,9 +200,10 @@ public class ClientProxy extends CommonProxy {
           String questName = buf.readUtf(51);
           UUID pickedUpFrom = buf.readUUID();
           String pickedUpFromName = buf.readUtf(200);
+          QuestInstance.TurnInType turnInType = QuestInstance.TurnInType.values()[buf.readInt()];
           Quest quest = ClientQuestUtil.fromName(questName);
           if (quest != null) {
-            acceptedQuests.add(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, minecraft.player));
+            acceptedQuests.add(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, turnInType, minecraft.player, false));
             for (int j = 0; j < quest.getObjectives().size(); j++) {
               int id = buf.readInt();
               for (int k = 0; k < quest.getObjectives().size(); k++) {

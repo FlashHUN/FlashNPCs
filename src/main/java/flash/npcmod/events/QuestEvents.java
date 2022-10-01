@@ -1,12 +1,16 @@
 package flash.npcmod.events;
 
+import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
+import flash.npcmod.core.quests.QuestObjectiveTypes;
 import flash.npcmod.network.PacketDispatcher;
+import flash.npcmod.network.packets.server.SCompleteQuest;
 import flash.npcmod.network.packets.server.SSyncQuestCapability;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -22,9 +26,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static flash.npcmod.core.ItemUtil.*;
 
@@ -84,7 +86,15 @@ public class QuestEvents {
         IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
         ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
         Map<QuestObjective, Integer> progressMap = capability.getQuestProgressMap();
+        List<QuestInstance> markedForCompletion = new ArrayList<>();
         for (QuestInstance questInstance : acceptedQuests) {
+          // Mark for Auto Turn-In
+          if (questInstance.getTurnInType() == QuestInstance.TurnInType.AutoTurnIn &&
+                  questInstance.getQuest().canComplete()) {
+            markedForCompletion.add(questInstance);
+          }
+
+          // Update objective progress
           List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
           for (QuestObjective objective : objectives) {
             if (!objective.isHidden()) {
@@ -106,7 +116,7 @@ public class QuestEvents {
                   BlockPos[] deliveryArea = objective.getSecondaryObjective();
                   if (isPlayerInArea(player, deliveryArea) && hasItem(player, toDeliver)) {
                     int prevProgress = objective.getProgress();
-                    objective.setProgress(objective.getProgress() + getAmount(player, toDeliver));
+                    objective.progress(getAmount(player, toDeliver));
                     takeStack(player, toDeliver, objective.getAmount() - prevProgress);
                   }
                 }
@@ -124,6 +134,12 @@ public class QuestEvents {
           }
         }
         PacketDispatcher.sendTo(new SSyncQuestCapability(capability.getAcceptedQuests().toArray(new QuestInstance[0])), player);
+
+        // Auto Turn-In
+        for (QuestInstance questInstance : markedForCompletion) {
+          capability.completeQuest(questInstance);
+          PacketDispatcher.sendTo(new SCompleteQuest(questInstance.getQuest().getName(), questInstance.getPickedUpFrom()), player);
+        }
       }
     }
   }
@@ -137,8 +153,9 @@ public class QuestEvents {
         for (QuestObjective objective : progressMap.keySet()) {
           if (!objective.isHidden()) {
             if (objective.getType().equals(QuestObjective.ObjectiveType.Kill)) {
-              if (EntityType.getKey(event.getEntityLiving().getType()).toString().equals(objective.getObjective()))
-                objective.setProgress(objective.getProgress() + 1);
+              if (areEntitiesEqual(event.getEntityLiving(), objective)) {
+                objective.progress(1);
+              }
             }
           }
         }
@@ -161,20 +178,21 @@ public class QuestEvents {
               switch (type) {
                 case DeliverToEntity:
                   if (matches(objective.getObjective(), event.getItemStack())
-                      && EntityType.getKey(event.getTarget().getType()).toString().equals(objective.getSecondaryObjective())) {
+                      && areEntitiesEqual(event.getTarget(), objective)) {
                     int prevProgress = objective.getProgress();
-                    objective.setProgress(objective.getProgress() + getAmount(player, objective.getObjective()));
+                    objective.progress(getAmount(player, objective.getObjective()));
                     takeStack(player, objective.getObjective(), objective.getAmount() - prevProgress);
                   }
                   break;
                 case UseOnEntity:
                   if (matches(objective.getObjective(), event.getItemStack())
-                      && EntityType.getKey(event.getTarget().getType()).toString().equals(objective.getSecondaryObjective()))
-                    objective.setProgress(objective.getProgress() + 1);
+                      && areEntitiesEqual(event.getTarget(), objective)) {
+                    objective.progress(1);
+                  }
                   break;
                 case Use:
                   if (event.getItemStack().getUseDuration() == 0 && matches(objective.getObjective(), event.getItemStack())) {
-                    objective.setProgress(objective.getProgress() + 1);
+                    objective.progress(1);
                   }
               }
             }
@@ -196,10 +214,10 @@ public class QuestEvents {
           if (!objective.isHidden()) {
             if (objective.getType().equals(QuestObjective.ObjectiveType.UseOnBlock)) {
               if (matches(objective.getObjective(), event.getItemStack()) && event.getWorld().getBlockState(event.getHitVec().getBlockPos()).equals(objective.getSecondaryObjective()))
-                objective.setProgress(objective.getProgress() + 1);
+                objective.progress(1);
             } else if (objective.getType().equals(QuestObjective.ObjectiveType.Use)) {
               if (event.getItemStack().getUseDuration() == 0 && matches(objective.getObjective(), event.getItemStack()))
-                objective.setProgress(objective.getProgress() + 1);
+                objective.progress(1);
             }
           }
         }
@@ -223,7 +241,7 @@ public class QuestEvents {
               if (!objective.isHidden()) {
                 if (objective.getType().equals(QuestObjective.ObjectiveType.Use)) {
                   if (matches(objective.getObjective(), itemStack))
-                    objective.setProgress(objective.getProgress() + 1);
+                    objective.progress(1);
                 }
               }
             }
@@ -248,8 +266,30 @@ public class QuestEvents {
               if (!objective.isHidden()) {
                 if (objective.getType().equals(QuestObjective.ObjectiveType.Use)) {
                   if (matches(objective.getObjective(), itemStack))
-                    objective.setProgress(objective.getProgress() + 1);
+                    objective.progress(1);
                 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @SubscribeEvent
+  public void itemCrafted(PlayerEvent.ItemCraftedEvent event) {
+    Player player = event.getPlayer();
+    if (player.isAlive() && !player.level.isClientSide) {
+      ItemStack itemStack = event.getCrafting();
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+      ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
+      for (QuestInstance questInstance : acceptedQuests) {
+        List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+        for (QuestObjective objective : objectives) {
+          if (!objective.isHidden()) {
+            if (objective.getType().equals(QuestObjective.ObjectiveType.CraftItem)) {
+              if (matches(objective.getObjective(), itemStack)) {
+                objective.progress(itemStack.getCount());
               }
             }
           }
@@ -281,6 +321,46 @@ public class QuestEvents {
 
     PacketDispatcher.sendTo(new SSyncQuestCapability(questCapability.getAcceptedQuests().toArray(new QuestInstance[0])), player);
     PacketDispatcher.sendTo(new SSyncQuestCapability(questCapability.getCompletedQuests().toArray(new String[0])), player);
+  }
+
+  private static boolean areEntitiesEqual(Entity entity, QuestObjective objective) {
+    String entityKey = EntityType.getKey(entity.getType()).toString();
+    CompoundTag entityTag = entity.saveWithoutId(new CompoundTag());
+    switch (objective.getType()) {
+      case Kill -> {
+        QuestObjectiveTypes.KillObjective killObjective = (QuestObjectiveTypes.KillObjective) objective;
+        boolean areTagsValid = doesTagContainTag(entityTag, killObjective.getEntityTag());
+        boolean areKeysValid = entityKey.equals(killObjective.getEntityKey());
+        Main.LOGGER.debug("Killed entity " + entityKey + "  " + entityTag.getAsString());
+        Main.LOGGER.debug("Objective key: " + killObjective.getEntityKey() + ", is valid:" + areKeysValid);
+        Main.LOGGER.debug("Objective tag: " + killObjective.getEntityTag().getAsString() + ", is valid:" + areTagsValid);
+        return areKeysValid
+                && areTagsValid;
+      }
+      case DeliverToEntity -> {
+        QuestObjectiveTypes.DeliverToEntityObjective deliverToEntityObjective = (QuestObjectiveTypes.DeliverToEntityObjective) objective;
+        return EntityType.getKey(entity.getType()).toString().equals(deliverToEntityObjective.getEntityKey())
+                && entity.saveWithoutId(new CompoundTag()).equals(deliverToEntityObjective.getEntityTag());
+      }
+      case UseOnEntity -> {
+        QuestObjectiveTypes.UseOnEntityObjective useOnEntityObjective = (QuestObjectiveTypes.UseOnEntityObjective) objective;
+        return EntityType.getKey(entity.getType()).toString().equals(useOnEntityObjective.getEntityKey())
+                && entity.saveWithoutId(new CompoundTag()).equals(useOnEntityObjective.getEntityTag());
+      }
+      default -> {
+        return false;
+      }
+    }
+  }
+
+  private static boolean doesTagContainTag(CompoundTag entityTag, CompoundTag checkTag) {
+    Set<String> checkTagKeys = checkTag.getAllKeys();
+    for (String key : checkTagKeys) {
+      if (!entityTag.contains(key) || !Objects.equals(checkTag.get(key), entityTag.get(key)))
+        return false;
+    }
+
+    return true;
   }
 
 }

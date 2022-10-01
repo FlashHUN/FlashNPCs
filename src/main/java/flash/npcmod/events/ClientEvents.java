@@ -306,9 +306,7 @@ public class ClientEvents {
   @SubscribeEvent
   public void renderQuestIconAboveNpc(RenderNameplateEvent event) {
     if (minecraft.player == null || !minecraft.player.isAlive()) return;
-    if (!(event.getEntity() instanceof NpcEntity)) return;
-
-    NpcEntity npcEntity = (NpcEntity) event.getEntity();
+    if (!(event.getEntity() instanceof NpcEntity npcEntity)) return;
 
     IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
 
@@ -339,7 +337,7 @@ public class ClientEvents {
 
     float size = 12f;
     float xOffset = -size/2;
-    float yOffset = -4f - size - Mth.sin(((float) npcEntity.tickCount + partialTicks) / 10.0F);
+    float yOffset = -4f - size - Mth.sin(((float) npcEntity.tickCount + partialTicks) / 10.0F) - (npcEntity.isTitleVisible() ? 10 : 0);
 
     VertexConsumer builder = bufferIn.getBuffer(RenderType.text(icon));
     int alpha = 32;
