@@ -109,9 +109,6 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
       if (questObjective.getObjective() instanceof ItemStack) {
         itemStackObjective = questObjective.getObjective();
-      } else if (questObjective.getObjective() instanceof LivingEntity) {
-        entityObjective = ((LivingEntity) questObjective.getObjective()).getType();
-        entityObjectiveTag = ((LivingEntity) questObjective.getObjective()).saveWithoutId(new CompoundTag());
       } else if (questObjective.getObjective() instanceof BlockState) {
         blockStateObjective = questObjective.getObjective();
       }
@@ -119,16 +116,53 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
       if (questObjective.getSecondaryObjective() instanceof ItemStack) {
         itemStackObjective = questObjective.getSecondaryObjective();
-      } else if (questObjective.getSecondaryObjective() instanceof LivingEntity) {
-        entityObjective = ((LivingEntity) questObjective.getSecondaryObjective()).getType();
-        entityObjectiveTag = ((LivingEntity) questObjective.getSecondaryObjective()).saveWithoutId(new CompoundTag());
       } else if (questObjective.getSecondaryObjective() instanceof BlockState) {
         blockStateObjective = questObjective.getSecondaryObjective();
       }
       secondaryObjective = questObjective.secondaryToString();
 
+      if (isEntityObjective(questObjective)) {
+        // TODO class EntityQuestObjective extends QuestObjective
+        switch (questObjective.getType()) {
+          case Kill -> {
+            QuestObjectiveTypes.KillObjective killObjective = (QuestObjectiveTypes.KillObjective) questObjective;
+            try {
+              entityObjective = EntityType.byString(killObjective.getEntityKey()).get();
+            } catch (Exception e) {
+              entityObjective = EntityType.PIG;
+            }
+            entityObjectiveTag = killObjective.getEntityTag();
+          }
+          case UseOnEntity -> {
+            QuestObjectiveTypes.UseOnEntityObjective useOnEntityObjective = (QuestObjectiveTypes.UseOnEntityObjective) questObjective;
+            try {
+              entityObjective = EntityType.byString(useOnEntityObjective.getEntityKey()).get();
+            } catch (Exception e) {
+              entityObjective = EntityType.PIG;
+            }
+            entityObjectiveTag = useOnEntityObjective.getEntityTag();
+          }
+          case DeliverToEntity -> {
+            QuestObjectiveTypes.DeliverToEntityObjective deliverToEntityObjective = (QuestObjectiveTypes.DeliverToEntityObjective) questObjective;
+            try {
+              entityObjective = EntityType.byString(deliverToEntityObjective.getEntityKey()).get();
+            } catch (Exception e) {
+              entityObjective = EntityType.PIG;
+            }
+            entityObjectiveTag = deliverToEntityObjective.getEntityTag();
+          }
+        }
+      }
+
       objectiveType = questObjective.getType();
     }
+  }
+
+  private boolean isEntityObjective(QuestObjective objective) {
+    return switch (objective.getType()) {
+      case Kill, UseOnEntity, DeliverToEntity -> true;
+      default -> false;
+    };
   }
 
   @Override
