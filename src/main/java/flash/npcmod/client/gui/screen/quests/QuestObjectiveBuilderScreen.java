@@ -1,6 +1,8 @@
 package flash.npcmod.client.gui.screen.quests;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.brigadier.StringReader;
+import flash.npcmod.Main;
 import flash.npcmod.client.gui.widget.EntityDropdownWidget;
 import flash.npcmod.client.gui.widget.EnumDropdownWidget;
 import flash.npcmod.core.quests.QuestObjective;
@@ -11,8 +13,11 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -31,7 +36,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
   private EnumDropdownWidget<QuestObjective.ObjectiveType> typeDropdown;
   private EntityDropdownWidget entityDropdown;
-  private EditBox nameField, amountField, primaryObjectiveField, secondaryObjectiveField, runOnCompleteField;
+  private EditBox nameField, amountField, primaryObjectiveField, secondaryObjectiveField, entityObjectiveTagField, runOnCompleteField;
   private Checkbox optionalCheckbox, hiddenCheckbox, displayProgressCheckbox;
   private Button itemFromInventoryButton, plusRunOnCompleteButton;
   private Button[] removeRunOnCompletionButtons;
@@ -41,6 +46,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
   private ItemStack itemStackObjective;
   private EntityType<?> entityObjective;
+  private CompoundTag entityObjectiveTag;
   private BlockState blockStateObjective;
 
   private QuestObjective.ObjectiveType objectiveType;
@@ -86,6 +92,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
     this.itemStackObjective = ItemStack.EMPTY;
     this.displayProgress = true;
     this.runOnComplete = new ArrayList<>();
+    this.entityObjectiveTag = new CompoundTag();
     this.amount = 1;
     this.tip1 = "";
     this.tip2 = "";
@@ -104,6 +111,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
         itemStackObjective = questObjective.getObjective();
       } else if (questObjective.getObjective() instanceof LivingEntity) {
         entityObjective = ((LivingEntity) questObjective.getObjective()).getType();
+        entityObjectiveTag = ((LivingEntity) questObjective.getObjective()).saveWithoutId(new CompoundTag());
       } else if (questObjective.getObjective() instanceof BlockState) {
         blockStateObjective = questObjective.getObjective();
       }
@@ -113,6 +121,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
         itemStackObjective = questObjective.getSecondaryObjective();
       } else if (questObjective.getSecondaryObjective() instanceof LivingEntity) {
         entityObjective = ((LivingEntity) questObjective.getSecondaryObjective()).getType();
+        entityObjectiveTag = ((LivingEntity) questObjective.getSecondaryObjective()).saveWithoutId(new CompoundTag());
       } else if (questObjective.getSecondaryObjective() instanceof BlockState) {
         blockStateObjective = questObjective.getSecondaryObjective();
       }
@@ -145,15 +154,23 @@ public class QuestObjectiveBuilderScreen extends Screen {
     this.displayProgressCheckbox = this.addRenderableWidget(new Checkbox(5+font.width(HIDDEN)+25+font.width(DISPLAY_PROGRESS), 52-6, 20, 20, TextComponent.EMPTY, displayProgress));
 
     this.primaryObjectiveField = this.addRenderableWidget(new EditBox(font, 5+font.width(PRIMARY), 82-6, 100, 20, TextComponent.EMPTY));
-    this.primaryObjectiveField.setValue(primaryObjective);
     this.primaryObjectiveField.setResponder(this::setPrimaryObjective);
+    this.primaryObjectiveField.setValue(primaryObjective);
     this.primaryObjectiveField.setMaxLength(600);
     this.primaryObjectiveField.setCanLoseFocus(true);
 
     this.secondaryObjectiveField = this.addRenderableWidget(new EditBox(font, 5+font.width(SECONDARY), 112-6, 100, 20, TextComponent.EMPTY));
-    this.secondaryObjectiveField.setValue(secondaryObjective);
     this.secondaryObjectiveField.setResponder(this::setSecondaryObjective);
+    this.secondaryObjectiveField.setValue(secondaryObjective);
     this.secondaryObjectiveField.setMaxLength(600);
+    this.secondaryObjectiveField.setCanLoseFocus(true);
+
+    this.entityObjectiveTagField = this.addRenderableWidget(new EditBox(font, 5+font.width(PRIMARY) + 200, 82-6, 100, 20, TextComponent.EMPTY));
+    this.entityObjectiveTagField.setResponder(this::setEntityObjectiveTag);
+    if (this.entityObjectiveTag.contains("id"))
+      entityObjectiveTag.remove("id");
+    this.entityObjectiveTagField.setValue(entityObjectiveTag.getAsString());
+    this.secondaryObjectiveField.setMaxLength(1000);
     this.secondaryObjectiveField.setCanLoseFocus(true);
 
     this.itemFromInventoryButton = this.addRenderableWidget(new Button(5+font.width(PRIMARY), 82-6, 100, 20, new TextComponent("From Inventory"), btn -> {
@@ -221,6 +238,24 @@ public class QuestObjectiveBuilderScreen extends Screen {
     this.secondaryObjective = secondaryObjective;
   }
 
+  public void setEntityObjectiveTag(String s) {
+    if (s.isEmpty()) {
+      entityObjectiveTag = new CompoundTag();
+    } else {
+      try {
+        entityObjectiveTag = new TagParser(new StringReader(s)).readStruct();
+      } catch (Exception ignored) {
+        entityObjectiveTag = new CompoundTag();
+      }
+    }
+  }
+
+  private String getActualEntityObjective() {
+    String actualEntityObjective = EntityType.getKey(entityObjective) + "::" + entityObjectiveTag.getAsString();
+    Main.LOGGER.debug(actualEntityObjective);
+    return actualEntityObjective;
+  }
+
   public void setRunOnComplete(String runOnComplete) {
     this.currentRunOnComplete = runOnComplete;
   }
@@ -231,6 +266,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
     this.amountField.tick();
     this.primaryObjectiveField.tick();
     this.secondaryObjectiveField.tick();
+    this.entityObjectiveTagField.tick();
     this.runOnCompleteField.tick();
 
     for (int i = 0; i < removeRunOnCompletionButtons.length; i++) {
@@ -277,14 +313,19 @@ public class QuestObjectiveBuilderScreen extends Screen {
             || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnEntity);
     entityDropdown.active = !typeDropdown.isShowingOptions();
     entityDropdown.visible = isPrimaryEntityObjective || isSecondaryEntityObjective;
+    entityObjectiveTagField.visible = isPrimaryEntityObjective || isSecondaryEntityObjective;
     if (isPrimaryEntityObjective) {
       entityDropdown.x = 5 + font.width(PRIMARY);
       entityDropdown.y = 82 - 2;
       entityObjective = entityDropdown.getSelectedType();
+      entityObjectiveTagField.x = entityDropdown.x + 210;
+      entityObjectiveTagField.y = entityDropdown.y - 4;
     } else if (isSecondaryEntityObjective) {
       entityDropdown.x = 5 + font.width(SECONDARY);
       entityDropdown.y = 112 - 2;
       entityObjective = entityDropdown.getSelectedType();
+      entityObjectiveTagField.x = entityDropdown.x + 210;
+      entityObjectiveTagField.y = entityDropdown.y - 4;
     }
 
     itemFromInventoryButton.visible = typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Gather)
@@ -394,10 +435,10 @@ public class QuestObjectiveBuilderScreen extends Screen {
         questObjective = new QuestObjectiveTypes.GatherObjective(id, name, itemStackObjective, amount);
         break;
       case Kill:
-        questObjective = new QuestObjectiveTypes.KillObjective(id, name, EntityType.getKey(entityObjective).toString(), amount);
+        questObjective = new QuestObjectiveTypes.KillObjective(id, name, getActualEntityObjective(), amount);
         break;
       case DeliverToEntity:
-        questObjective = new QuestObjectiveTypes.DeliverToEntityObjective(id, name, itemStackObjective, EntityType.getKey(entityObjective).toString(), amount);
+        questObjective = new QuestObjectiveTypes.DeliverToEntityObjective(id, name, itemStackObjective, getActualEntityObjective(), amount);
         break;
       case DeliverToLocation:
         questObjective = new QuestObjectiveTypes.DeliverToLocationObjective(id, name, itemStackObjective, QuestObjectiveTypes.areaFromString(secondaryObjective), amount);
@@ -412,7 +453,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
         questObjective = new QuestObjectiveTypes.FindObjective(id, name, QuestObjectiveTypes.areaFromString(primaryObjective));
         break;
       case UseOnEntity:
-        questObjective = new QuestObjectiveTypes.UseOnEntityObjective(id, name, itemStackObjective, EntityType.getKey(entityObjective).toString(), amount);
+        questObjective = new QuestObjectiveTypes.UseOnEntityObjective(id, name, itemStackObjective, getActualEntityObjective(), amount);
         break;
       case UseOnBlock:
         questObjective = new QuestObjectiveTypes.UseOnBlockObjective(id, name, itemStackObjective, blockStateObjective, amount);

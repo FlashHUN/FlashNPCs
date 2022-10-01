@@ -303,6 +303,8 @@ public class NpcBuilderScreen extends Screen {
     this.rendererTagField = this.addRenderableWidget(new EditBox(font, minX + 125, 80, 165, 20, TextComponent.EMPTY));
     this.rendererTagField.setResponder(this::setRendererTag);
     this.rendererTagField.setMaxLength(1000);
+    if (currentData.rendererTag.contains("id"))
+      currentData.rendererTag.remove("id");
     this.rendererTagField.setValue(currentData.rendererTag.getAsString());
   }
 

@@ -20,7 +20,14 @@ public class QuestInstance {
   }
 
   public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, TurnInType turnInType, @Nullable Player player) {
-    this.quest = quest.copy();
+    this(quest, pickedUpFrom, pickedUpFromName, turnInType, player, true);
+  }
+
+  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, TurnInType turnInType, @Nullable Player player, boolean copy) {
+    if (copy)
+      this.quest = quest.copy();
+    else
+      this.quest = quest;
     this.pickedUpFrom = pickedUpFrom;
     this.pickedUpFromName = pickedUpFromName;
     this.turnInType = turnInType;

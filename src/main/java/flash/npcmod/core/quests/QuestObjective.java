@@ -2,9 +2,14 @@ package flash.npcmod.core.quests;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.brigadier.StringReader;
+import com.mojang.datafixers.util.Pair;
+import flash.npcmod.Main;
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.core.pathing.Path;
 import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Mth;
@@ -288,6 +293,7 @@ public abstract class QuestObjective {
   }
 
   public static QuestObjective fromJson(JsonObject jsonObject) {
+    Main.LOGGER.debug("Loading quest from json");
     int id = jsonObject.get("index").getAsInt();
     String objectiveName = jsonObject.get("name").getAsString();
     int type = Mth.clamp(jsonObject.get("type").getAsInt(), 0, QuestObjective.ObjectiveType.values().length);
@@ -299,8 +305,9 @@ public abstract class QuestObjective {
       secondaryObjective = jsonObject.get("secondaryObjective").getAsString();
     QuestObjective questObjective = switch (objectiveType) {
       case Gather ->
-              new QuestObjectiveTypes.GatherObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
-      case Kill -> new QuestObjectiveTypes.KillObjective(id, objectiveName, primaryObjective, objectiveAmount);
+        new QuestObjectiveTypes.GatherObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
+      case Kill ->
+              new QuestObjectiveTypes.KillObjective(id, objectiveName, primaryObjective, objectiveAmount);
       case DeliverToEntity ->
               new QuestObjectiveTypes.DeliverToEntityObjective(id, objectiveName, stackFromString(primaryObjective), secondaryObjective, objectiveAmount);
       case DeliverToLocation ->

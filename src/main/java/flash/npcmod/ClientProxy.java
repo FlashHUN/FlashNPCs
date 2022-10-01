@@ -203,7 +203,7 @@ public class ClientProxy extends CommonProxy {
           QuestInstance.TurnInType turnInType = QuestInstance.TurnInType.values()[buf.readInt()];
           Quest quest = ClientQuestUtil.fromName(questName);
           if (quest != null) {
-            acceptedQuests.add(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, turnInType, minecraft.player));
+            acceptedQuests.add(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, turnInType, minecraft.player, false));
             for (int j = 0; j < quest.getObjectives().size(); j++) {
               int id = buf.readInt();
               for (int k = 0; k < quest.getObjectives().size(); k++) {
