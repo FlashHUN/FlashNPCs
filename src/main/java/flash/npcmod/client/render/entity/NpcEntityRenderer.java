@@ -2,10 +2,12 @@ package flash.npcmod.client.render.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Matrix4f;
 import flash.npcmod.Main;
 import flash.npcmod.core.client.SkinUtil;
 import flash.npcmod.entity.NpcEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
@@ -73,7 +75,9 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
     if (currentEntityToRenderAs != entityToRenderAs) {
       currentEntityToRenderAs = entityToRenderAs;
       currentRenderer = (LivingEntityRenderer<?, ?>) this.entityRenderDispatcher.getRenderer(entityToRenderAs);
-      if (getBobMethodMap.containsKey(currentRenderer)) {
+      if (getBobMethodMap.containsKey(currentRenderer) ||
+              scaleMethodMap.containsKey(currentRenderer) ||
+              getWhiteOverlayProgressMethodMap.containsKey(currentRenderer)) {
         currentGetBobMethod = getBobMethodMap.get(currentRenderer);
         currentScaleMethod = scaleMethodMap.get(currentRenderer);
         currentGetWhiteOverlayProgressMethod = getWhiteOverlayProgressMethodMap.get(currentRenderer);
@@ -86,15 +90,27 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
         getBobMethodMap.put(currentRenderer, getBobMethod);
         currentGetBobMethod = getBobMethod;
       }
+      else {
+        getBobMethodMap.put(currentRenderer, null);
+        currentGetBobMethod = null;
+      }
       Method scaleMethod = tryGetRendererMethod("m_7546_", PoseStack.class, float.class);
       if (scaleMethod != null) {
         scaleMethodMap.put(currentRenderer, scaleMethod);
         currentScaleMethod = scaleMethod;
       }
+      else {
+        scaleMethodMap.put(currentRenderer, null);
+        currentScaleMethod = null;
+      }
       Method getWhiteOverlayProgressMethod = tryGetRendererMethod("m_6931_", float.class);
       if (getWhiteOverlayProgressMethod != null) {
         getWhiteOverlayProgressMethodMap.put(currentRenderer, getWhiteOverlayProgressMethod);
         currentGetWhiteOverlayProgressMethod = getWhiteOverlayProgressMethod;
+      }
+      else {
+        getWhiteOverlayProgressMethodMap.put(currentRenderer, null);
+        currentGetWhiteOverlayProgressMethod = null;
       }
     }
   }
@@ -124,6 +140,9 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
   @Override
   public ResourceLocation getTextureLocation(NpcEntity entity) {
     try {
+      if (entity.getTexture().isEmpty() || entity.getTexture().isBlank()) {
+        return getDefaultTexture(entity);
+      }
       if (entity.isTextureResourceLocation()) {
         return ResourceLocation.tryParse(entity.getTexture());
       }
@@ -137,14 +156,16 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
         }
       }
     } catch (Exception ignored) {
-      if (shouldRenderAsNormalNpc(entity)) {
-        return DefaultPlayerSkin.getDefaultSkin();
-      }
-      else {
-        LivingEntity entityToRenderAs = entity.getEntityToRenderAs();
-        return this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs);
-      }
+      return getDefaultTexture(entity);
     }
+  }
+
+  private ResourceLocation getDefaultTexture(NpcEntity entity) {
+    if (shouldRenderAsNormalNpc(entity)) {
+      return DefaultPlayerSkin.getDefaultSkin();
+    }
+    LivingEntity entityToRenderAs = entity.getEntityToRenderAs();
+    return this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs);
   }
 
   private void setModelProperties(NpcEntity npcEntity) {
@@ -417,6 +438,37 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
   @Override
   protected void renderNameTag(NpcEntity entityIn, Component displayNameIn, PoseStack matrixStackIn,
                             MultiBufferSource bufferIn, int packedLightIn) {
-    if (entityIn.isCustomNameVisible()) super.renderNameTag(entityIn, displayNameIn, matrixStackIn, bufferIn, packedLightIn);
+    if (entityIn.isCustomNameVisible()) {
+      double d0 = this.entityRenderDispatcher.distanceToSqr(entityIn);
+      if (net.minecraftforge.client.ForgeHooksClient.isNameplateInRenderDistance(entityIn, d0)) {
+        boolean flag = !entityIn.isDiscrete();
+        boolean isTitleVisible = entityIn.isTitleVisible();
+        float f = entityIn.getBbHeight() + 0.5F;
+        int i = isTitleVisible ? -10 : 0;
+        matrixStackIn.pushPose();
+        matrixStackIn.translate(0.0D, (double)f, 0.0D);
+        matrixStackIn.mulPose(this.entityRenderDispatcher.cameraOrientation());
+        matrixStackIn.scale(-0.025F, -0.025F, 0.025F);
+        Matrix4f matrix4f = matrixStackIn.last().pose();
+        float f1 = Minecraft.getInstance().options.getBackgroundOpacity(0.25F);
+        int j = (int)(f1 * 255.0F) << 24;
+        Font font = this.getFont();
+        float f2 = (float)(-font.width(displayNameIn) / 2);
+        font.drawInBatch(displayNameIn, f2, (float)i, 553648127, false, matrix4f, bufferIn, flag, j, packedLightIn);
+        if (flag) {
+          font.drawInBatch(displayNameIn, f2, (float)i, -1, false, matrix4f, bufferIn, false, 0, packedLightIn);
+        }
+        if (isTitleVisible) {
+          Component title = entityIn.getTitleComponent();
+          float f3 = (float)(-font.width(title) / 2);
+          font.drawInBatch(title, f3, 0f, 553648127, false, matrix4f, bufferIn, flag, j, packedLightIn);
+          if (flag) {
+            font.drawInBatch(title, f3, 0f, -1, false, matrix4f, bufferIn, false, 0, packedLightIn);
+          }
+        }
+
+        matrixStackIn.popPose();
+      }
+    }
   }
 }
