@@ -56,7 +56,6 @@ public class QuestObjectiveTypes {
     public KillObjective(int id, String name, String entityObjective, int amount) {
       super(id, name, ObjectiveType.Kill, amount);
       this.entityObjective = entityObjective;
-      Main.LOGGER.debug("Creating kill objective with " + entityObjective);
       Pair<String, CompoundTag> keyAndTagPair = getEntityObjectiveFromString(entityObjective);
       this.livingEntityKey = keyAndTagPair.getFirst();
       this.livingEntityTag = keyAndTagPair.getSecond();
@@ -82,7 +81,6 @@ public class QuestObjectiveTypes {
 
     @Override
     public KillObjective copy() {
-      Main.LOGGER.debug("Creating killObjective copy");
       KillObjective copy = new KillObjective(getId(), getName(), entityObjective, getAmount());
       copyTo(copy);
       return copy;

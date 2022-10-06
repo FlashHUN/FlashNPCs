@@ -286,7 +286,6 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
   private String getActualEntityObjective() {
     String actualEntityObjective = EntityType.getKey(entityObjective) + "::" + entityObjectiveTag.getAsString();
-    Main.LOGGER.debug(actualEntityObjective);
     return actualEntityObjective;
   }
 
