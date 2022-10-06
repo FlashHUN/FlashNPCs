@@ -39,7 +39,7 @@ public class Function extends AbstractFunction {
           command = FunctionUtil.replaceSelectors(command, sender, npcEntity);
 
           MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-          CommandSourceStack source = server.createCommandSourceStack();
+          CommandSourceStack source = npcEntity.createCommandSourceStack().withPermission(4);
           if (!FunctionUtil.isDebugMode()) {
             source = source.withSuppressedOutput();
           }
