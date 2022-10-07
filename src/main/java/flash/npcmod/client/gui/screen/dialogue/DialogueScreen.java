@@ -14,6 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -145,7 +146,7 @@ public class DialogueScreen extends Screen {
     displayedText.add(splitTextIntoLines(newText));
   }
 
-  private String[] splitTextIntoLines(String text) {
+  public static String[] splitTextIntoLines(String text) {
     if (text.contains("\\n")) {
       List<String> lines = new ArrayList<>();
       while (text.contains("\\n")) {

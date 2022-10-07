@@ -40,7 +40,7 @@ public class DialogueDisplayWidget extends AbstractWidget {
     int prevHeight = 0;
     for (int i = screen.displayedText.size()-1-scrollY; i >= 0; i--) {
       String[] lines = screen.displayedText.get(i);
-      int textColor = lines[0].startsWith(screen.playerName) ? 0xFFFFFF : screen.getNpcTextColor();
+      int textColor = lines[lines.length-1].startsWith(screen.playerName) ? 0xFFFFFF : screen.getNpcTextColor();
       int lineHeight = fontrenderer.lineHeight+1;
 
       for (String line : lines) {
