@@ -18,16 +18,16 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueScreen extends Screen {
 
   private static final Random RND = new Random();
 
-  public List<String> displayedText;
+  public List<String[]> displayedText;
   private String[] currentOptions, currentOptionNames;
 
   private final NpcEntity npcEntity;
@@ -35,7 +35,7 @@ public class DialogueScreen extends Screen {
 
   private int npcTextColor;
   private String dialogueName;
-  private String playerName;
+  public String playerName;
 
   public DialogueScreen(String name, NpcEntity npcEntity) {
     super(TextComponent.EMPTY);
@@ -142,7 +142,22 @@ public class DialogueScreen extends Screen {
 
   private void addDisplayedText(String name, String text) {
     String newText = name + ": " + text.replaceAll("@p", playerName).replaceAll("@npc", getNpcName());
-    displayedText.add(newText);
+    displayedText.add(splitTextIntoLines(newText));
+  }
+
+  private String[] splitTextIntoLines(String text) {
+    if (text.contains("\\n")) {
+      List<String> lines = new ArrayList<>();
+      while (text.contains("\\n")) {
+        int index = text.lastIndexOf("\\n");
+        String s = text.substring(index + 2);
+        lines.add(s);
+        text = text.substring(0, index);
+      }
+      lines.add(text);
+      return lines.toArray(String[]::new);
+    }
+    return new String[]{text};
   }
 
   @Override
