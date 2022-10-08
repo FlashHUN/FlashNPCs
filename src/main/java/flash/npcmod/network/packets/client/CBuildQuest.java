@@ -5,6 +5,7 @@ import flash.npcmod.core.quests.Quest;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -35,14 +36,17 @@ public class CBuildQuest {
 
   public static void handle(CBuildQuest msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      if (ctx.get().getSender().hasPermissions(4)) {
+      ServerPlayer sender = ctx.get().getSender();
+      if (sender.hasPermissions(4)) {
         CommonQuestUtil.buildQuest(msg.name, msg.jsonText);
 
         Quest quest = CommonQuestUtil.loadQuestFile(msg.name);
-        if (quest != null)
-          ctx.get().getSender().displayClientMessage(new TextComponent("Successfully built quest \'" + msg.name + "\'").withStyle(ChatFormatting.GREEN), false);
-        else
-          ctx.get().getSender().displayClientMessage(new TextComponent("Couldn't build quest \'" + msg.name + "\'").withStyle(ChatFormatting.RED), false);
+        if (quest != null) {
+          sender.displayClientMessage(new TextComponent("Successfully built quest '" + msg.name + "'").withStyle(ChatFormatting.GREEN), false);
+
+        } else {
+          sender.displayClientMessage(new TextComponent("Couldn't build quest '" + msg.name + "'").withStyle(ChatFormatting.RED), false);
+        }
       }
     });
     ctx.get().setPacketHandled(true);

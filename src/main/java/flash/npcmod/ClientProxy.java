@@ -11,6 +11,7 @@ import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import flash.npcmod.client.gui.screen.quests.QuestEditorScreen;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import flash.npcmod.core.client.quests.ClientQuestUtil;
+import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.quests.QuestObjective;
@@ -57,7 +58,7 @@ public class ClientProxy extends CommonProxy {
           toOpen = new QuestEditorScreen();
         else {
           PacketDispatcher.sendToServer(new CRequestQuestInfo(data));
-          Quest quest = ClientQuestUtil.fromName(data);
+          Quest quest = ClientQuestUtil.loadQuest(data);
           if (quest != null)
             toOpen = QuestEditorScreen.fromQuest(quest);
         }
@@ -141,7 +142,7 @@ public class ClientProxy extends CommonProxy {
 
   public void acceptQuest(String name, int entityid, QuestInstance.TurnInType turnInType, UUID uuid) {
     PacketDispatcher.sendToServer(new CRequestQuestInfo(name));
-    Quest quest = ClientQuestUtil.fromName(name);
+    Quest quest = ClientQuestUtil.loadQuest(name);
     Entity entity = minecraft.player.level.getEntity(entityid);
     if (quest != null && entity instanceof NpcEntity) {
       IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
@@ -185,7 +186,7 @@ public class ClientProxy extends CommonProxy {
       default -> {
         String trackedName = buf.readUtf(51);
         if (!trackedName.isEmpty()) {
-          Quest quest = ClientQuestUtil.fromName(trackedName);
+          Quest quest = ClientQuestUtil.loadQuest(trackedName);
           if (quest != null)
             return new SSyncQuestCapability(trackedName);
           else
@@ -201,7 +202,7 @@ public class ClientProxy extends CommonProxy {
           UUID pickedUpFrom = buf.readUUID();
           String pickedUpFromName = buf.readUtf(200);
           QuestInstance.TurnInType turnInType = QuestInstance.TurnInType.values()[buf.readInt()];
-          Quest quest = ClientQuestUtil.fromName(questName);
+          Quest quest = ClientQuestUtil.loadQuest(questName);
           if (quest != null) {
             acceptedQuests.add(new QuestInstance(quest, pickedUpFrom, pickedUpFromName, turnInType, minecraft.player, false));
             for (int j = 0; j < quest.getObjectives().size(); j++) {
@@ -238,7 +239,7 @@ public class ClientProxy extends CommonProxy {
           String key = buf.readUtf();
           String[] splitKey = key.split(":::");
           int progress = buf.readInt();
-          Quest quest = ClientQuestUtil.fromName(splitKey[0]);
+          Quest quest = ClientQuestUtil.loadQuest(splitKey[0]);
           if (quest != null) {
             QuestObjective objective = Quest.getObjectiveFromName(quest, splitKey[1]);
             if (objective != null) {
@@ -273,5 +274,10 @@ public class ClientProxy extends CommonProxy {
           RENDER_ENTITY_TYPES.put(name, entityType);
       });
     }
+  }
+
+  @Override
+  public void getQuestInfo(String name, String questInfo) {
+    CommonQuestUtil.buildQuest(name, questInfo);
   }
 }

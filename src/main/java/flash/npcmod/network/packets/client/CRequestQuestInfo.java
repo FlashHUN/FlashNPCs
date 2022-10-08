@@ -31,7 +31,7 @@ public class CRequestQuestInfo {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
 
-      JsonObject quest = CommonQuestUtil.loadQuest(msg.name);
+      JsonObject quest = CommonQuestUtil.loadQuestAsJson(msg.name);
 
       if (quest != null) {
         PacketDispatcher.sendTo(new SSendQuestInfo(msg.name, quest.toString()), sender);
