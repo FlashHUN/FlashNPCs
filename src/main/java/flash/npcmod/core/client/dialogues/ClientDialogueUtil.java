@@ -57,7 +57,9 @@ public class ClientDialogueUtil {
 
       currentDialogue = FileUtil.GSON.fromJson(is, JsonObject.class);
       is.close();
+      Main.LOGGER.debug("Loaded dialogue file " + name);
     } catch (Exception e) {
+      Main.LOGGER.debug("Requesting dialogue file " + name);
       PacketDispatcher.sendToServer(new CRequestDialogue(name));
     }
   }
@@ -89,21 +91,18 @@ public class ClientDialogueUtil {
     if (!currentObject.has("entries")) {
       boolean result;
       if (name.equals(currentObject.get("name").getAsString())) {
+        currentDialogue = currentObject;
         setVars(currentObject);
         return true;
-      } else {
-        if (currentObject.has("children")) {
-          JsonArray children = currentObject.getAsJsonArray("children");
-          for (int i = 0; i < children.size(); i++) {
-            JsonObject currentChild = children.get(i).getAsJsonObject();
+      } else if (currentObject.has("children")) {
+        JsonArray children = currentObject.getAsJsonArray("children");
+        for (int i = 0; i < children.size(); i++) {
+          JsonObject currentChild = children.get(i).getAsJsonObject();
 
-            result = findText(name, currentChild);
+          result = findText(name, currentChild);
 
-            if (result) {
-              currentDialogue = currentChild;
-              setVars(currentChild);
-              return true;
-            }
+          if (result) {
+            return true;
           }
         }
       }
@@ -133,7 +132,6 @@ public class ClientDialogueUtil {
   }
 
   private static void setVars(JsonObject object) {
-
     currentText = object.get("text").getAsString();
     if (object.has("response")) {
       currentResponse = object.get("response").getAsString();
@@ -150,7 +148,6 @@ public class ClientDialogueUtil {
     } else {
       currentTrigger = "";
     }
-    Main.LOGGER.info("current trigger is " + currentTrigger);
     if (object.has("children")) {
       currentChildren = object.getAsJsonArray("children");
     } else {

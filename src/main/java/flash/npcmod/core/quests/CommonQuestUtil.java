@@ -43,7 +43,7 @@ public class CommonQuestUtil {
       List<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
       List<QuestInstance> markedForRemoval = new ArrayList<>();
       acceptedQuests.forEach(questInstance -> {
-        JsonObject quest = loadQuest(questInstance.getQuest().getName());
+        JsonObject quest = loadQuestAsJson(questInstance.getQuest().getName());
         if (quest != null) {
           PacketDispatcher.sendTo(new SSendQuestInfo(questInstance.getQuest().getName(), quest.toString()), player);
         } else {
@@ -57,6 +57,7 @@ public class CommonQuestUtil {
   }
 
   public static void buildQuest(String name, String jsonText) {
+    removeQuest(name);
     try {
       File jsonFile = FileUtil.getJsonFileForWriting("quests", name);
       JsonObject jsonObject = FileUtil.GSON.fromJson(jsonText, JsonObject.class);
@@ -85,7 +86,7 @@ public class CommonQuestUtil {
   }
 
   @Nullable
-  public static JsonObject loadQuest(String name) {
+  public static JsonObject loadQuestAsJson(String name) {
     Quest fromName = fromName(name);
     if (fromName != null) return fromName.toJson();
 
@@ -100,8 +101,7 @@ public class CommonQuestUtil {
       is.close();
 
       Quest quest = Quest.fromJson(object);
-      QUESTS.remove(quest);
-
+      removeQuest(name);
       QUESTS.add(quest);
 
       return quest;
@@ -111,6 +111,18 @@ public class CommonQuestUtil {
     }
 
     return null;
+  }
+
+  private static void removeQuest(String name) {
+    int toRemoveIndex = -1;
+    for (int i = 0; i < QUESTS.size(); i++) {
+      if (QUESTS.get(i).getName().equals(name)) {
+        toRemoveIndex = i;
+        break;
+      }
+    }
+    if (toRemoveIndex != -1)
+      QUESTS.remove(toRemoveIndex);
   }
 
 }

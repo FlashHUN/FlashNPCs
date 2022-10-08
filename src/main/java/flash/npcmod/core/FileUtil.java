@@ -84,7 +84,7 @@ public class FileUtil {
     if (globalFile != null && globalFile.exists()) {
       return globalFile;
     }
-    return getJsonFileForWriting(path, name);
+    return getFileForWriting(path, name, extension);
   }
 
   private static File getFileForWriting(String path, String name, String extension) {

@@ -403,7 +403,6 @@ abstract public class TreeBuilderScreen extends Screen {
                 confirmEdits();
                 this.getEditingNode().calculateDimensions();
             }
-            Main.LOGGER.info("Confirm hit");
             this.setNodeBeingEdited(null, EditType.NONE);
         }));
         this.cancelButton = this.addWidget(new Button(width / 2 + 10, height / 2 + 15, 50, 20, new TextComponent("Cancel"),
@@ -457,6 +456,20 @@ abstract public class TreeBuilderScreen extends Screen {
         this.functionParamsField.setVisible(false);
         this.functionParamsField.setCanLoseFocus(true);
         this.functionListWidget.setVisible(false);
+    }
+
+    @Override
+    public boolean keyPressed(int p_96552_, int p_96553_, int p_96554_) {
+        if (p_96552_ == 256 && !shouldCloseOnEsc()) {
+            this.setNodeBeingEdited(null, EditType.NONE);
+            return true;
+        }
+        return super.keyPressed(p_96552_, p_96553_, p_96554_);
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return !isAnyTextFieldVisible();
     }
 
     /**

@@ -2,6 +2,7 @@ package flash.npcmod.core.functions;
 
 import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.entity.NpcEntity;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.server.ServerLifecycleHooks;
@@ -38,12 +39,16 @@ public class Function extends AbstractFunction {
           command = FunctionUtil.replaceSelectors(command, sender, npcEntity);
 
           MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-          server.getCommands().performCommand(server.createCommandSourceStack().withSuppressedOutput(), command);
+          CommandSourceStack source = npcEntity.createCommandSourceStack().withPermission(4);
+          if (!FunctionUtil.isDebugMode()) {
+            source = source.withSuppressedOutput();
+          }
+          server.getCommands().performCommand(source, command);
         }
       }
       debugUsage(sender, npcEntity);
     } else {
-      warnParameterAmount(npcEntity);
+      warnParameterAmount(sender, npcEntity);
     }
   }
 }

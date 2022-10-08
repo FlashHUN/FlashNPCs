@@ -25,10 +25,9 @@ public class PlaySoundFunction extends AbstractFunction {
         sender.connection.send(new ClientboundCustomSoundPacket(sound, SoundSource.MASTER, new Vec3(x, y, z), 1f, 1f));
         debugUsage(sender, npcEntity);
       } else {
-        warnParameterAmount(npcEntity);
+        warnParameterAmount(sender, npcEntity);
       }
-    } catch (NumberFormatException e) {
-      return;
+    } catch (NumberFormatException ignored) {
     }
   }
 }

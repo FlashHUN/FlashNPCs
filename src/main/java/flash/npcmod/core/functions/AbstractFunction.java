@@ -2,7 +2,11 @@ package flash.npcmod.core.functions;
 
 import flash.npcmod.Main;
 import flash.npcmod.entity.NpcEntity;
+import net.minecraft.Util;
+import net.minecraft.network.chat.ChatType;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 public abstract class AbstractFunction {
   protected static final String[] empty = new String[0];
@@ -31,8 +35,12 @@ public abstract class AbstractFunction {
     return paramNames;
   }
 
-  protected void warnParameterAmount(NpcEntity npcEntity) {
-    Main.LOGGER.warn("Function " + name + " in " + npcEntity.getName().getString() + " does not have the right amount of parameters");
+  protected void warnParameterAmount(ServerPlayer sender, NpcEntity npcEntity) {
+    String warningMessage = "Function " + name + " in " + npcEntity.getName().getString() + " does not have the right amount of parameters";
+    if (FunctionUtil.isDebugMode()) {
+      sender.sendMessage(new TextComponent("[FlashNPCs] ".concat(warningMessage)), ChatType.SYSTEM, Util.NIL_UUID);
+    }
+    Main.LOGGER.warn(warningMessage);
   }
 
   protected void debugUsage(ServerPlayer sender, NpcEntity npcEntity) {

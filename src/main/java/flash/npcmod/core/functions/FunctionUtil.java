@@ -14,6 +14,8 @@ import java.util.List;
 
 public class FunctionUtil {
 
+  private static boolean DEBUG_MODE = false;
+
   public static final List<AbstractFunction> FUNCTIONS = new ArrayList<>();
 
   private static final AcceptQuestFunction ACCEPT_QUEST = new AcceptQuestFunction();
@@ -21,6 +23,8 @@ public class FunctionUtil {
   private static final MoveOnAcceptedQuestFunction MOVE_ON_ACCEPTED_QUEST = new MoveOnAcceptedQuestFunction();
   private static final MoveOnCompleteQuestFunction MOVE_ON_COMPLETE_QUEST = new MoveOnCompleteQuestFunction();
   private static final MoveOnScoreboardFunction MOVE_ON_SCOREBOARD = new MoveOnScoreboardFunction();
+  private static final MoveOnTagFunction MOVE_ON_TAG = new MoveOnTagFunction();
+  private static final MoveOnTeamFunction MOVE_ON_TEAM = new MoveOnTeamFunction();
   private static final MoveToDialogueFunction MOVE_TO_DIALOGUE = new MoveToDialogueFunction();
   private static final OpenTradesFunction OPEN_TRADES = new OpenTradesFunction();
   private static final PlaySoundFunction PLAY_SOUND = new PlaySoundFunction();
@@ -32,10 +36,20 @@ public class FunctionUtil {
     FUNCTIONS.add(MOVE_ON_ACCEPTED_QUEST);
     FUNCTIONS.add(MOVE_ON_COMPLETE_QUEST);
     FUNCTIONS.add(MOVE_ON_SCOREBOARD);
+    FUNCTIONS.add(MOVE_ON_TAG);
+    FUNCTIONS.add(MOVE_ON_TEAM);
     FUNCTIONS.add(MOVE_TO_DIALOGUE);
     FUNCTIONS.add(OPEN_TRADES);
     FUNCTIONS.add(PLAY_SOUND);
     FUNCTIONS.add(RANDOM_OPTION);
+  }
+
+  public static void toggleDebugMode() {
+    DEBUG_MODE = !DEBUG_MODE;
+  }
+
+  public static boolean isDebugMode() {
+    return DEBUG_MODE;
   }
 
   public static void build(String name, String function) {

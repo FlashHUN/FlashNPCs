@@ -18,7 +18,7 @@ public class MoveToDialogueFunction extends AbstractFunction {
       PacketDispatcher.sendTo(new SMoveToDialogue(params[0], npcEntity.getId()), sender);
       debugUsage(sender, npcEntity);
     } else {
-      warnParameterAmount(npcEntity);
+      warnParameterAmount(sender, npcEntity);
     }
   }
 }

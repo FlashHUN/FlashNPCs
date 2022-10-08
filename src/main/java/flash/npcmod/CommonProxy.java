@@ -49,4 +49,5 @@ public class CommonProxy {
 
   public void loadEntities(String[] entities) {}
 
+  public void getQuestInfo(String name, String questInfo) {}
 }

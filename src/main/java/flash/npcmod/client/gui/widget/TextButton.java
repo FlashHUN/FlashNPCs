@@ -2,6 +2,7 @@ package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
@@ -13,16 +14,25 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class TextButton extends Button {
-  List<FormattedCharSequence> trimmedText;
+  List<List<FormattedCharSequence>> trimmedTexts;
 
   public TextButton(int x, int y, int width, Component title, OnPress pressedAction) {
     super(x, y, width, 9, title, pressedAction);
-    trimmedText = Minecraft.getInstance().font.split(new TextComponent("> " + title.getString()), width);
-    this.setHeight(9 * trimmedText.size());
+    trimmedTexts = new ArrayList<>();
+    String[] lines = DialogueScreen.splitTextIntoLines(title.getString());
+    int height = 0;
+    for (int i = lines.length - 1; i >= 0; i--) {
+      String line = i == lines.length - 1 ? "> " + lines[i] : lines[i];
+      List<FormattedCharSequence> trimmedText = Minecraft.getInstance().font.split(new TextComponent(line), width);
+      trimmedTexts.add(trimmedText);
+      height += 9 * trimmedText.size();
+    }
+    this.setHeight(height);
   }
 
   @Override
@@ -46,10 +56,15 @@ public class TextButton extends Button {
   }
 
   private void drawMultilineText(PoseStack matrixStack, Font font, int x, int y, int color) {
-    for (int i = 0; i < trimmedText.size(); i++) {
-      FormattedCharSequence processor = trimmedText.get(i);
-      int j = i > 0 ? 4 : 0;
-      font.draw(matrixStack, processor, x+j, y+((font.lineHeight+1)*i), color);
+    int h = 0;
+    for (int i = 0; i < trimmedTexts.size(); i++) {
+      List<FormattedCharSequence> trimmedText = trimmedTexts.get(i);
+      for (int j = 0; j < trimmedText.size(); j++) {
+        FormattedCharSequence processor = trimmedText.get(j);
+        int k = i != 0 || j > 0 ? 4 : 0;
+        font.draw(matrixStack, processor, x+k, y+h, color);
+        h += font.lineHeight + 1;
+      }
     }
   }
 }

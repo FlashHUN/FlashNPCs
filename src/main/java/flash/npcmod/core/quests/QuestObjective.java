@@ -293,7 +293,6 @@ public abstract class QuestObjective {
   }
 
   public static QuestObjective fromJson(JsonObject jsonObject) {
-    Main.LOGGER.debug("Loading quest from json");
     int id = jsonObject.get("index").getAsInt();
     String objectiveName = jsonObject.get("name").getAsString();
     int type = Mth.clamp(jsonObject.get("type").getAsInt(), 0, QuestObjective.ObjectiveType.values().length);

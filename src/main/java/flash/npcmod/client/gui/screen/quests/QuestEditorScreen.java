@@ -185,7 +185,7 @@ public class QuestEditorScreen extends Screen {
     this.loadButton = this.addRenderableWidget(new Button(width-105, 30, 100, 20, new TextComponent("Load"), btn -> {
       if (!questToLoad.isEmpty()) {
         PacketDispatcher.sendToServer(new CRequestQuestInfo(questToLoad));
-        Quest quest = ClientQuestUtil.fromName(questToLoad);
+        Quest quest = ClientQuestUtil.loadQuest(questToLoad);
         if (quest != null) {
           QuestEditorScreen questEditorScreen = QuestEditorScreen.fromQuest(quest);
           questEditorScreen.updateObjectiveId();

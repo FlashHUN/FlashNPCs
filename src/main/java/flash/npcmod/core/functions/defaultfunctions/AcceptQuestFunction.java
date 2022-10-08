@@ -47,7 +47,7 @@ public class AcceptQuestFunction extends AbstractFunction {
       }
       debugUsage(sender, npcEntity);
     } else {
-      warnParameterAmount(npcEntity);
+      warnParameterAmount(sender, npcEntity);
     }
   }
 

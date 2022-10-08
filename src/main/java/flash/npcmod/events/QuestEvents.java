@@ -324,18 +324,11 @@ public class QuestEvents {
   }
 
   private static boolean areEntitiesEqual(Entity entity, QuestObjective objective) {
-    String entityKey = EntityType.getKey(entity.getType()).toString();
-    CompoundTag entityTag = entity.saveWithoutId(new CompoundTag());
     switch (objective.getType()) {
       case Kill -> {
         QuestObjectiveTypes.KillObjective killObjective = (QuestObjectiveTypes.KillObjective) objective;
-        boolean areTagsValid = doesTagContainTag(entityTag, killObjective.getEntityTag());
-        boolean areKeysValid = entityKey.equals(killObjective.getEntityKey());
-        Main.LOGGER.debug("Killed entity " + entityKey + "  " + entityTag.getAsString());
-        Main.LOGGER.debug("Objective key: " + killObjective.getEntityKey() + ", is valid:" + areKeysValid);
-        Main.LOGGER.debug("Objective tag: " + killObjective.getEntityTag().getAsString() + ", is valid:" + areTagsValid);
-        return areKeysValid
-                && areTagsValid;
+        return EntityType.getKey(entity.getType()).toString().equals(killObjective.getEntityKey())
+                && doesTagContainTag(entity.saveWithoutId(new CompoundTag()), killObjective.getEntityTag());
       }
       case DeliverToEntity -> {
         QuestObjectiveTypes.DeliverToEntityObjective deliverToEntityObjective = (QuestObjectiveTypes.DeliverToEntityObjective) objective;
