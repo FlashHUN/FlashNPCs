@@ -78,7 +78,8 @@ public class CHandleNpcSaveToolRightClick {
           }
           else if (msg.handleType == HandleType.BLOCK.ordinal()) {
             // If we right click on a block, open the saved npcs gui
-            PacketDispatcher.sendTo(new SSyncSavedNpcs(NpcSaveUtil.load(sender.getStringUUID())), sender);
+            PacketDispatcher.sendTo(new SSyncSavedNpcs(NpcSaveUtil.loadGlobal(), true), sender);
+            PacketDispatcher.sendTo(new SSyncSavedNpcs(NpcSaveUtil.load(sender.getStringUUID()), false), sender);
             PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.SAVEDNPCS, msg.pos.getX()+";"+msg.pos.getY()+";"+msg.pos.getZ(), msg.entityid), sender);
           }
         }

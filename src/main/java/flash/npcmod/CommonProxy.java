@@ -45,7 +45,7 @@ public class CommonProxy {
   public SSyncQuestCapability decodeQuestCapabilitySync(FriendlyByteBuf buf) { return new SSyncQuestCapability(); }
   public void syncTrades(int entityid, TradeOffers tradeOffers) {}
 
-  public void loadSavedNpcs(List<String> savedNpcs) {}
+  public void loadSavedNpcs(List<String> savedNpcs, boolean isGlobal) {}
 
   public void loadEntities(String[] entities) {}
 

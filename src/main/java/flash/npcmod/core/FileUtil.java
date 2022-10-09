@@ -125,7 +125,7 @@ public class FileUtil {
     return out;
   }
 
-  private static File[] getAllFromGlobal(String path) {
+  public static File[] getAllFromGlobal(String path) {
     try {
       return FileUtil.getOrCreateDirectory(FileUtil.getGlobalDirectoryName()+"/"+path).listFiles();
     }
@@ -135,7 +135,7 @@ public class FileUtil {
     return new File[0];
   }
 
-  private static File[] getAllFromWorld(String path) {
+  public static File[] getAllFromWorld(String path) {
     try {
       return FileUtil.getOrCreateDirectory((shouldGetFromWorld() ? FileUtil.getWorldDirectory() + "/" : "") + Main.MODID + "/" + path).listFiles();
     }

@@ -10,9 +10,11 @@ import java.util.function.Supplier;
 
 public class SSyncSavedNpcs {
   List<String> savedNpcs;
+  boolean isGlobal;
 
-  public SSyncSavedNpcs(List<String> savedNpcs) {
+  public SSyncSavedNpcs(List<String> savedNpcs, boolean isGlobal) {
     this.savedNpcs = savedNpcs;
+    this.isGlobal = isGlobal;
   }
 
   public static void encode(SSyncSavedNpcs msg, FriendlyByteBuf buf) {
@@ -20,6 +22,7 @@ public class SSyncSavedNpcs {
     for (String s : msg.savedNpcs) {
       buf.writeUtf(s, 32767);
     }
+    buf.writeBoolean(msg.isGlobal);
   }
 
   public static SSyncSavedNpcs decode(FriendlyByteBuf buf) {
@@ -28,12 +31,13 @@ public class SSyncSavedNpcs {
     for (int i = 0; i < size; i++) {
       savedNpcs.add(buf.readUtf());
     }
-    return new SSyncSavedNpcs(savedNpcs);
+    boolean isGlobal = buf.readBoolean();
+    return new SSyncSavedNpcs(savedNpcs, isGlobal);
   }
 
   public static void handle(SSyncSavedNpcs msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      Main.PROXY.loadSavedNpcs(msg.savedNpcs);
+      Main.PROXY.loadSavedNpcs(msg.savedNpcs, msg.isGlobal);
     });
     ctx.get().setPacketHandled(true);
   }
