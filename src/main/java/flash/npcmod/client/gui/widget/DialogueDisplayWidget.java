@@ -2,6 +2,7 @@ package flash.npcmod.client.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import flash.npcmod.Main;
 import flash.npcmod.client.gui.screen.dialogue.DialogueScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -14,6 +15,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueDisplayWidget extends AbstractWidget {
@@ -37,13 +39,20 @@ public class DialogueDisplayWidget extends AbstractWidget {
     RenderSystem.enableDepthTest();
     int prevHeight = 0;
     for (int i = screen.displayedText.size()-1-scrollY; i >= 0; i--) {
-      List<FormattedCharSequence> trimmedText = fontrenderer.split(new TextComponent(screen.displayedText.get(i)), width);
-
+      String[] lines = screen.displayedText.get(i);
+      int textColor = lines[lines.length-1].startsWith(screen.playerName) ? 0xFFFFFF : screen.getNpcTextColor();
       int lineHeight = fontrenderer.lineHeight+1;
 
-      drawMultilineText(matrixStack, trimmedText, fontrenderer, x, y+height-prevHeight-lineHeight*trimmedText.size(), (i & 1) == 0 ? screen.getNpcTextColor() : 0xFFFFFF);
-
-      prevHeight += lineHeight*trimmedText.size()+lineHeight;
+      for (String line : lines) {
+        if (line.isEmpty()) {
+          prevHeight += lineHeight;
+        } else {
+          List<FormattedCharSequence> trimmedText = fontrenderer.split(new TextComponent(line), width);
+          drawMultilineText(matrixStack, trimmedText, fontrenderer, x, y + height - prevHeight - lineHeight * trimmedText.size(), textColor);
+          prevHeight += lineHeight * trimmedText.size();
+        }
+      }
+      prevHeight += lineHeight;
     }
     matrixStack.popPose();
   }
@@ -73,9 +82,12 @@ public class DialogueDisplayWidget extends AbstractWidget {
     int lineHeight = fontRenderer.lineHeight+1;
     int numOfLines = 0;
     for (int i = 0; i < screen.displayedText.size(); i++) {
-      List<FormattedCharSequence> trimmedText = fontRenderer.split(new TextComponent(screen.displayedText.get(i)), width);
-
-      numOfLines += trimmedText.size()+1;
+      String[] lines = screen.displayedText.get(i);
+      for (String line : lines) {
+        List<FormattedCharSequence> trimmedText = fontRenderer.split(new TextComponent(line), width);
+        numOfLines += trimmedText.size();
+      }
+      numOfLines += 1;
     }
     int maxLinesInHeight = height/lineHeight;
     int max = numOfLines - maxLinesInHeight;

@@ -23,5 +23,6 @@ public interface IQuestCapability extends INBTSerializable<CompoundTag> {
   void acceptQuest(QuestInstance quest);
   void completeQuest(QuestInstance quest);
   void abandonQuest(QuestInstance quest);
+  void resetAllQuestProgress();
 
 }

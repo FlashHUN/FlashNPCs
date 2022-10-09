@@ -8,25 +8,12 @@ import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 
-public class NPCInteractWithBlockGoal extends NPCMoveToBlockGoal {
+public class NPCInteractWithBlockGoal extends NPCFollowPathGoal {
 
     private boolean interactOnce;
     public NPCInteractWithBlockGoal(NpcEntity npc, double speed_modifier) {
         super(npc, speed_modifier);
         this.interactOnce = true;
-    }
-
-    /**
-     * Check if this goal can be used.
-     * @return Boolean.
-     */
-    public boolean canUse() {
-        if(super.canUse()){
-            if (this.npc.isNotMovingToBlock())
-                stop();
-            else return true;
-        }
-        return false;
     }
 
     public double acceptedDistance() {
@@ -38,8 +25,7 @@ public class NPCInteractWithBlockGoal extends NPCMoveToBlockGoal {
      */
     public void tick() {
         super.tick();
-        if (this.reachedTarget && interactOnce) {
-
+        if (interactOnce) {
             BlockState blockState = this.npc.level.getBlockState(this.npc.getTargetBlock());
             if (blockState.is(BlockTags.BUTTONS) || blockState.is(BlockTags.WOODEN_BUTTONS)) {
                 ((ButtonBlock)blockState.getBlock()).press(blockState, this.npc.level, this.npc.getTargetBlock());

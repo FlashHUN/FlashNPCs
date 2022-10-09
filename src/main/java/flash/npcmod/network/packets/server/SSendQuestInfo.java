@@ -1,6 +1,6 @@
 package flash.npcmod.network.packets.server;
 
-import flash.npcmod.core.quests.CommonQuestUtil;
+import flash.npcmod.Main;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -27,7 +27,7 @@ public class SSendQuestInfo {
 
   public static void handle(SSendQuestInfo msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      CommonQuestUtil.buildQuest(msg.name, msg.questInfo);
+      Main.PROXY.getQuestInfo(msg.name, msg.questInfo);
     });
     ctx.get().setPacketHandled(true);
   }

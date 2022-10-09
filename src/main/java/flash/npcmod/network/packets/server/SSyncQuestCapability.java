@@ -59,6 +59,7 @@ public class SSyncQuestCapability {
           buf.writeUtf(questInstance.getQuest().getName(), 51);
           buf.writeUUID(questInstance.getPickedUpFrom());
           buf.writeUtf(questInstance.getPickedUpFromName(), 200);
+          buf.writeInt(questInstance.getTurnInType().ordinal());
           for (int i = 0; i < questInstance.getQuest().getObjectives().size(); i++) {
             QuestObjective objective = questInstance.getQuest().getObjectives().get(i);
             buf.writeInt(objective.getId());
@@ -90,18 +91,10 @@ public class SSyncQuestCapability {
   public static void handle(SSyncQuestCapability msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       switch (msg.type) {
-        case TRACKED_QUEST:
-          Main.PROXY.syncTrackedQuest(msg.trackedQuest);
-          break;
-        case ACCEPTED_QUESTS:
-          Main.PROXY.syncAcceptedQuests(new ArrayList<>(Arrays.asList(msg.acceptedQuests)));
-          break;
-        case COMPLETED_QUESTS:
-          Main.PROXY.syncCompletedQuests(new ArrayList<>(Arrays.asList(msg.completedQuests)));
-          break;
-        case PROGRESS_MAP:
-          Main.PROXY.syncQuestProgressMap(msg.objectiveProgressMap);
-          break;
+        case TRACKED_QUEST -> Main.PROXY.syncTrackedQuest(msg.trackedQuest);
+        case ACCEPTED_QUESTS -> Main.PROXY.syncAcceptedQuests(new ArrayList<>(Arrays.asList(msg.acceptedQuests)));
+        case COMPLETED_QUESTS -> Main.PROXY.syncCompletedQuests(new ArrayList<>(Arrays.asList(msg.completedQuests)));
+        case PROGRESS_MAP -> Main.PROXY.syncQuestProgressMap(msg.objectiveProgressMap);
       }
     });
     ctx.get().setPacketHandled(true);

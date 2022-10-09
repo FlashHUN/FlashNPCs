@@ -7,17 +7,29 @@ import net.minecraft.world.entity.ai.goal.Goal;
 
 import java.util.EnumSet;
 
-public class NPCMoveToBlockGoal  extends Goal {
-    public final double speedModifier;
+public class NPCFollowPathGoal extends Goal {
     protected int nextStartTick;
+    public final double speedModifier;
     protected int tryTicks;
+    protected int index;
+    protected int pathSize;
     protected boolean reachedTarget;
 
     protected final NpcEntity npc;
-    public NPCMoveToBlockGoal(NpcEntity npc, double speedModifier) {
+    public NPCFollowPathGoal(NpcEntity npc, double speedModifier) {
         this.npc = npc;
         this.speedModifier = speedModifier;
         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.JUMP));
+        this.index = 0;
+        this.pathSize = 0;
+    }
+
+    /** For some ungodly reason, the path navigator checks if the manhattan distance is less than 1.0f
+     * which is not necessarily true for the tick check. So if accepted distance is <3, the npc will get
+     * stuck just outside the range accepted check.
+     */
+    public double acceptedDistance() {
+        return 3D;
     }
 
     public boolean canUse() {
@@ -34,10 +46,6 @@ public class NPCMoveToBlockGoal  extends Goal {
         }
     }
 
-    protected int nextStartTick(PathfinderMob p_25618_) {
-        return reducedTickDelay(50 + p_25618_.getRandom().nextInt(20));
-    }
-
     public boolean canContinueToUse() {
         return !this.reachedTarget;
     }
@@ -46,18 +54,21 @@ public class NPCMoveToBlockGoal  extends Goal {
         BlockPos blockpos = this.getMoveToTarget();
         this.moveMobToBlock(blockpos);
         this.tryTicks = 0;
+        this.index = 0;
     }
-
     protected void moveMobToBlock(BlockPos blockPos) {
-        this.npc.getNavigation().moveTo((double)((float)blockPos.getX()) + 0.5D, blockPos.getY() + 1, (double)((float)blockPos.getZ()) + 0.5D, this.speedModifier);
+        this.npc.getNavigation().moveTo((float)blockPos.getX() + 0.5D, blockPos.getY()+0.5D, (float)blockPos.getZ() + 0.5D, this.speedModifier);
     }
 
-    public double acceptedDistance() {
-        return 0.5D;
+    protected int nextStartTick(PathfinderMob p_25618_) {
+        return reducedTickDelay(50 + p_25618_.getRandom().nextInt(20));
     }
 
     protected BlockPos getMoveToTarget() {
-        return this.npc.getTargetBlock().above();
+        long[] path = this.npc.getCurrentBehavior().getAction().getPath();
+        this.pathSize = path.length;
+        if (path.length == 0 || this.index >= path.length) return this.npc.blockPosition();
+        return BlockPos.of(path[index]).above();
     }
 
     public boolean requiresUpdateEveryTick() {
@@ -69,9 +80,11 @@ public class NPCMoveToBlockGoal  extends Goal {
         if (!blockpos.closerToCenterThan(this.npc.position(), this.acceptedDistance())) {
             this.reachedTarget = false;
             ++this.tryTicks;
-            if (this.tryTicks % 40 == 0) { // Limit recalculating.
+            if (this.tryTicks % 40 == 0 || this.npc.getNavigation().isDone()) { // Limit recalculating.
                 moveMobToBlock(blockpos);
             }
+        } else if (index < pathSize){
+            index++;
         } else {
             stop();
             --this.tryTicks;

@@ -34,7 +34,7 @@ public class CommonProxy {
   public void syncCompletedQuests(ArrayList<String> completedQuests) {}
   public void syncQuestProgressMap(Map<QuestObjective, Integer> progressMap) {}
 
-  public void acceptQuest(String name, int entityid) {}
+  public void acceptQuest(String name, int entityid, QuestInstance.TurnInType turnInType, UUID uuid) {}
   public void completeQuest(String name, UUID uuid) {}
 
   public Player getPlayer() {
@@ -45,8 +45,9 @@ public class CommonProxy {
   public SSyncQuestCapability decodeQuestCapabilitySync(FriendlyByteBuf buf) { return new SSyncQuestCapability(); }
   public void syncTrades(int entityid, TradeOffers tradeOffers) {}
 
-  public void loadSavedNpcs(List<String> savedNpcs) {}
+  public void loadSavedNpcs(List<String> savedNpcs, boolean isGlobal) {}
 
   public void loadEntities(String[] entities) {}
 
+  public void getQuestInfo(String name, String questInfo) {}
 }

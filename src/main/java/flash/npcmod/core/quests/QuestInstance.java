@@ -7,20 +7,30 @@ import java.util.UUID;
 
 public class QuestInstance {
 
-  private Quest quest;
-  private UUID pickedUpFrom;
-  private String pickedUpFromName;
+  private final Quest quest;
+  private final UUID pickedUpFrom;
+  private final String pickedUpFromName;
+  private final TurnInType turnInType;
   @Nullable
   private Player player;
 
-  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName) {
-    this(quest, pickedUpFrom, pickedUpFromName, null);
+
+  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, TurnInType turnInType) {
+    this(quest, pickedUpFrom, pickedUpFromName, turnInType, null);
   }
 
-  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, @Nullable Player player) {
-    this.quest = quest.copy();
+  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, TurnInType turnInType, @Nullable Player player) {
+    this(quest, pickedUpFrom, pickedUpFromName, turnInType, player, true);
+  }
+
+  public QuestInstance(Quest quest, UUID pickedUpFrom, String pickedUpFromName, TurnInType turnInType, @Nullable Player player, boolean copy) {
+    if (copy)
+      this.quest = quest.copy();
+    else
+      this.quest = quest;
     this.pickedUpFrom = pickedUpFrom;
     this.pickedUpFromName = pickedUpFromName;
+    this.turnInType = turnInType;
     this.player = player;
   }
 
@@ -44,6 +54,10 @@ public class QuestInstance {
     return pickedUpFromName;
   }
 
+  public TurnInType getTurnInType() {
+    return turnInType;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -52,6 +66,12 @@ public class QuestInstance {
     if ((player != null && that.player == null) || (player == null && that.player != null)) return false;
     boolean playerNamesMatch = true;
     if (player != null && that.player != null) playerNamesMatch = player.getName().getString().equals(that.player.getName().getString());
-    return playerNamesMatch && quest.getName().equals(that.quest.getName()) && pickedUpFrom.equals(that.pickedUpFrom);
+    return playerNamesMatch && quest.getName().equals(that.quest.getName()) && pickedUpFrom.equals(that.pickedUpFrom) && turnInType.equals(that.turnInType);
+  }
+
+  public enum TurnInType {
+    QuestGiver,
+    NpcByUuid,
+    AutoTurnIn
   }
 }

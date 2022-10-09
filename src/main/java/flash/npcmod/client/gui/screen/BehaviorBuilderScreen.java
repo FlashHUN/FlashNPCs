@@ -2,30 +2,32 @@ package flash.npcmod.client.gui.screen;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.mojang.blaze3d.vertex.PoseStack;
 import flash.npcmod.Main;
-import flash.npcmod.client.gui.behavior.Action;
-import flash.npcmod.client.gui.behavior.Behavior;
+import flash.npcmod.core.behaviors.Action;
+import flash.npcmod.core.behaviors.Behavior;
 import flash.npcmod.client.gui.behavior.BehaviorNode;
-import flash.npcmod.client.gui.behavior.Trigger;
-import flash.npcmod.client.gui.node.BuilderNode;
-import flash.npcmod.client.gui.node.NodeData;
+import flash.npcmod.core.behaviors.Trigger;
+import flash.npcmod.core.node.BuilderNode;
+import flash.npcmod.core.node.NodeData;
+import flash.npcmod.client.gui.widget.DirectionalFrame;
 import flash.npcmod.client.gui.widget.EnumDropdownWidget;
-import flash.npcmod.client.gui.widget.FunctionListWidget;
+import flash.npcmod.client.gui.widget.TextWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CEditBehavior;
 import flash.npcmod.network.packets.client.CEditNpc;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 @OnlyIn(Dist.CLIENT)
 public class BehaviorBuilderScreen extends TreeBuilderScreen {
     protected String newDialogueName = "", newActionName = "", newTriggerName = "", newTriggerChild = "";
+    protected long[] waitingPath;
     /**
      * 0-2 Block Pos, 3 Radius, 4 Timer
      */
@@ -49,12 +52,18 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     private EnumDropdownWidget<Action.ActionType> actionTypeDropdownWidget;
     private EnumDropdownWidget<Trigger.TriggerType> triggerTypeDropdownWidget;
     private EditBox triggerChildField, triggerTimerField;
+    /**
+     * 0-2 Block Pos, 3 Radius
+     */
     private final List<EditBox> actionFields;
     @Nullable
     protected BehaviorNode editingNode, selectedNode;
 
+    protected DirectionalFrame actionRadiusFrame, actionTargetAndPathFrame, actionTargetBlockFrame, actionPathFrame;
+    protected DirectionalFrame actionVFrame, dialogueFrame, triggerFrame;
+
     protected final Predicate<String> numberFilter = (text) -> {
-        Pattern pattern = Pattern.compile("-?\\d*");
+        Pattern pattern = Pattern.compile("~?-?\\d*");
         Matcher matcher = pattern.matcher(text);
         return matcher.matches();
     };
@@ -65,6 +74,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         actionFields = new ArrayList<>();
         this.intArgs = new int[5];
         Arrays.fill(this.intArgs, 0);
+        this.waitingPath = new long[0];
     }
 
     /**
@@ -78,36 +88,28 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         super.confirmEdits();
 
         this.editingNode.getNodeData().setDialogueName(this.newDialogueName);
-        if (this.editingNode.isEditingTrigger())
+        if (this.editingNode.isEditingTrigger()) {
             this.editingNode.setEditTrigger(
                     new Trigger(
                             this.newTriggerName,
                             this.triggerTypeDropdownWidget.getSelectedOption(),
                             this.intArgs[4],
-                            this.newTriggerChild));
-
+                            this.newTriggerChild)
+            );
+        }
         BlockPos blockPos = new BlockPos(this.intArgs[0], this.intArgs[1], this.intArgs[2]);
         Action action = new Action(
                 newActionName, poseDropdownWidget.getSelectedOption(), actionTypeDropdownWidget.getSelectedOption(),
-                blockPos, intArgs[3]);
+                blockPos, intArgs[3], this.waitingPath);
         this.editingNode.getNodeData().setAction(action);
         this.editingNode.setEditTriggerIndex(-1);
     }
 
-    /**
-     * Get the background to draw.
-     * @return The background.
-     */
     @Override
     protected ResourceLocation getBackground() {
         return new ResourceLocation(Main.MODID, "textures/gui/edit_behavior/background.png");
     }
 
-
-    /**
-     * Get the editing node.
-     * @return The editing node.
-     */
     @Override
     public @Nullable BehaviorNode getEditingNode() {
         return this.editingNode;
@@ -123,98 +125,10 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
         return ClientBehaviorUtil.currentBehaviorEditor.getAsJsonArray("entries");
     }
 
-    /**
-     * Get the selected Behavior node.
-     * @return The selected node.
-     */
     @Override
     public @Nullable BehaviorNode getSelectedNode() {
         return this.selectedNode;
     }
-
-    /**
-     * Calculate the maximum number of widget rows that can fit in a height.
-     * @param height The max height.
-     * @return The max num of rows.
-     */
-    public static int getNumWidgetRows(int height) {
-        // 20 = row height. 10 = row padding.
-        return height / (20 + 10);
-    }
-
-    /**
-     * Calculate the maximum number of widget columns that can fit in a width.
-     * @param indexSize The index size.
-     * @return The max num of rows.
-     */
-    public static int getNumWidgetCols(int width, int indexSize) {
-        // 20 = row height. 10 = row padding.
-        return width / (indexSize + 10);
-    }
-
-    /**
-     * Function to calculate the position of an index in a certain space size given a default index size and padding.
-     * If indexSizes is used, then it will be used to replace defaultIndexSize. Padding is assumed to be constant.
-     * Index 0 is in the center of the space. Negative Indices result in smaller coordinates. Positive, larger.
-     * @param indexNum The index of the position. Essentially the row/col number.
-     * @param size The size of the space.
-     * @param defaultIndexSize The default size taken by an index.
-     * @param padding The size of the padding around an index.
-     * @param indexSizes Int array of actual sizes used. Replaces defaultIndexSize. Contains the sizes starting from
-     *                   index 0 in the desired direction.
-     * @return Return the coordinate of the index.
-     */
-    public static int get1DWidgetCoordinate(int indexNum, int size, int defaultIndexSize, int padding, @Nullable int[] indexSizes) {
-        int space = size / 2 - defaultIndexSize / 2;
-        int direction = indexNum > 0 ? -1 : 1;
-        indexNum = Mth.abs(indexNum);
-        if (indexSizes != null) {
-            // If indexSize of this object is known, use that.
-            if (indexSizes.length > 0) space = size / 2 - indexSizes[0] / 2;
-            int i = 1;
-            for(; i <= indexNum && i < indexSizes.length; i++) {
-                space += (indexSizes[i] + padding) * direction;
-            }
-            // In case the row heights provided is too small.
-            for (; i < indexNum; i++) {
-                space += (defaultIndexSize + padding) * direction;
-            }
-        }else {
-            space += ((defaultIndexSize + padding) * indexNum) * direction;
-        }
-        return space;
-    }
-
-    /**
-     * Function to calculate the height of each widget based off of the row number. The middle of the screen is row 0.
-     * Rows going up the screen are positive.
-     * @param rowNum The row number. 0-based.
-     * @param screenHeight The height of the screen.
-     * @param rowHeights Nullable field of row heights.
-     * @return The height of the widget.
-     */
-    public static int getWidgetHeight(int rowNum, int screenHeight, @Nullable int[] rowHeights) {
-        int defaultHeight = 20; // the default.
-        int rowPadding = 5; // the vertical spacing between widgets.
-        return get1DWidgetCoordinate(rowNum, screenHeight, defaultHeight, rowPadding, rowHeights);
-    }
-
-    /**
-     * Function to calculate the width of each widget based off of the column number. The middle of the screen is row 0.
-     * columns going left of the screen are positive.
-     * @param colNum The row number. 0-based.
-     * @param screenWidth The height of the screen.
-     * @param colWidths Nullable field of row heights.
-     * @return The height of the widget.
-     */
-    public static int getWidgetWidth(int colNum, int screenWidth, @Nullable int[] colWidths, int padding) {
-        int defaultWidth = 120; // the default.
-        int colPadding = 10;
-        if (padding > 0)
-            colPadding = padding; // the vertical spacing between widgets.
-        return get1DWidgetCoordinate(colNum, screenWidth, defaultWidth, colPadding, colWidths);
-    }
-
 
     /**
      * Function from Screen. Called before drawing the screen.
@@ -222,66 +136,35 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Override
     protected void init() {
         super.init();
-        int numRows = getNumWidgetRows(this.height);
-        //initialize function widget
-        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
-        this.functionListWidget.calculatePositionAndDimensions();
 
         // Initialize our text field widgets
-        EditBox dialogueField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(0, this.width, null, 0),
-                        getWidgetHeight(0, this.height, null),
-                        120,
-                        20,
-                        TextComponent.EMPTY
-                )
+        EditBox dialogueField = this.addWidget(
+                new EditBox(this.font,0,0,120,20,TextComponent.EMPTY)
         );
         dialogueField.setResponder(this::setNewDialogueName);
         dialogueField.setFilter(this.nameFilter);
         dialogueField.setMaxLength(50);
-        dialogueField.setVisible(false);
         dialogueField.setCanLoseFocus(true);
-        allFields.put(EditType.FILE, dialogueField);
+        this.allNameFields.put(EditType.FILE, dialogueField);
+
+        this.dialogueFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        this.dialogueFrame.addWidget(new TextWidget("Dialogue Name:"));
+        this.dialogueFrame.addWidget(dialogueField);
+        this.dialogueFrame.setVisible(false);
+        this.mainVFrame.insertWidget(this.dialogueFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.FILE, this.dialogueFrame);
 
         // Set up the trigger fields.
-        EditBox triggerField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(0, this.width, null, 0),
-                        getWidgetHeight(2, this.height, null),
-                        120,
-                        20,
-                        TextComponent.EMPTY
-                )
+        EditBox triggerField = this.addWidget(
+                new EditBox(this.font,0,0,120,20,TextComponent.EMPTY)
         );
         triggerField.setResponder(this::setNewTriggerName);
         triggerField.setMaxLength(50);
-        triggerField.setVisible(false);
         triggerField.setCanLoseFocus(true);
-        allFields.put(EditType.TRIGGER, triggerField);
+        allNameFields.put(EditType.TRIGGER, triggerField);
 
-        this.triggerTypeDropdownWidget = this.addRenderableWidget(
-                new EnumDropdownWidget<>(
-                        Trigger.TriggerType.DIALOGUE_TRIGGER,
-                        getWidgetWidth(0, this.width, null, 20),
-                        getWidgetHeight(-2, this.height, null),
-                        120,
-                        3
-                )
-        );
-        this.triggerTypeDropdownWidget.visible = false;
-
-        this.triggerTimerField =  this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(0, this.width, null, 0),
-                        getWidgetHeight(1, this.height, null),
-                        120,
-                        20,
-                        TextComponent.EMPTY
-                )
+        this.triggerTimerField = this.addWidget(
+                new EditBox(this.font, 0, 0,120,20,TextComponent.EMPTY)
         );
         this.triggerTimerField.setFilter(numberFilter);
         this.triggerTimerField.setResponder((String s) -> {
@@ -289,129 +172,158 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.intArgs[4] = Integer.parseInt(s);
         });
         this.triggerTimerField.setMaxLength(10);
-        this.triggerTimerField.setVisible(false);
         this.triggerTimerField.setCanLoseFocus(true);
 
-        this.triggerChildField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(0, this.width, null, 0),
-                        getWidgetHeight(0, this.height, null),
-                        120,
-                        20,
-                        TextComponent.EMPTY
-                )
+        this.triggerChildField = this.addWidget(
+                new EditBox(this.font, 0, 0, 120, 20, TextComponent.EMPTY)
         );
         this.triggerChildField.setResponder(this::setNewTriggerChild);
         this.triggerChildField.setMaxLength(50);
-        this.triggerChildField.setVisible(false);
         this.triggerChildField.setCanLoseFocus(true);
 
+        this.triggerFrame = DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.CENTERED);
+        DirectionalFrame triggerNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        triggerNameFrame.addWidget(new TextWidget("Trigger:"));
+        triggerNameFrame.addWidget(allNameFields.get(EditType.TRIGGER));
+        this.triggerFrame.addWidget(triggerNameFrame);
+        DirectionalFrame triggerTimerFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        triggerTimerFrame.addWidget(new TextWidget("Timer:"));
+        triggerTimerFrame.addWidget(triggerTimerField);
+        triggerTimerFrame.setVisible(false);
+        this.triggerFrame.addWidget(triggerTimerFrame);
+        this.triggerTypeDropdownWidget = this.addWidget(
+            new EnumDropdownWidget<>(Trigger.TriggerType.DIALOGUE_TRIGGER,0,0,120,3, dropdownWidget -> {
+                Trigger.TriggerType triggerType = (Trigger.TriggerType) dropdownWidget.getSelectedOption();
+                switch (triggerType) {
+                    case ACTION_FINISH_TRIGGER, DIALOGUE_TRIGGER -> {
+                        triggerTimerFrame.setVisible(false);
+                        this.triggerFrame.recalculateSize();
+                    }
+                    case TIMER_TRIGGER -> {
+                        triggerTimerFrame.setVisible(true);
+                        this.triggerFrame.recalculateSize();
+                    }
+                }
+            })
+        );
+        DirectionalFrame triggerChildFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        triggerChildFrame.addWidget(new TextWidget("Next:"));
+        triggerChildFrame.addWidget(triggerChildField);
+        this.triggerFrame.addWidget(triggerChildFrame);
+        DirectionalFrame triggerTypeFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        triggerTypeFrame.addWidget(triggerTypeDropdownWidget);
+        this.triggerFrame.addWidget(triggerTypeFrame);
+        this.triggerFrame.addSpacer();
+        this.triggerFrame.setVisible(false);
+        this.mainVFrame.insertWidget(triggerFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.TRIGGER, this.triggerFrame);
+
         // Set up the action fields.
-        EditBox actionField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(0, this.width, null, 0),
-                        getWidgetHeight(0, this.height, null),
-                        120,
-                        20,
-                        TextComponent.EMPTY
-                )
+        EditBox actionField = this.addWidget(
+                new EditBox(this.font,0,0, 120,20,TextComponent.EMPTY)
         );
         actionField.setResponder(this::setNewActionName);
         actionField.setMaxLength(50);
-        actionField.setVisible(false);
         actionField.setCanLoseFocus(true);
-        allFields.put(EditType.ACTION, actionField);
+        allNameFields.put(EditType.ACTION, actionField);
 
         //  Set up the dropdown widgets
-        int[] colWidths = new int[]{80, 100};
-        int indexHeight = (numRows / 2);
-        this.poseDropdownWidget = this.addRenderableWidget(
+        this.poseDropdownWidget = this.addWidget(
+                new EnumDropdownWidget<>(CEditNpc.NPCPose.STANDING,0,0,80)
+        );
+
+        this.actionTypeDropdownWidget = this.addWidget(
                 new EnumDropdownWidget<>(
-                        CEditNpc.NPCPose.STANDING,
-                        getWidgetWidth(-1, this.width, colWidths, 20),
-                        getWidgetHeight(indexHeight, this.height, null),
-                        80
+                        Action.ActionType.STANDSTILL,0,0,100, Action.ActionType.values().length, dropdownWidget -> {
+                            Action.ActionType actionType = (Action.ActionType) dropdownWidget.getSelectedOption();
+                            switch (actionType) {
+                                case FOLLOW_PATH -> {
+                                    actionRadiusFrame.setVisible(false);
+                                    actionTargetAndPathFrame.setVisible(true);
+                                    actionTargetBlockFrame.setVisible(false);
+                                    actionPathFrame.setVisible(true);
+                                    this.actionVFrame.recalculateSize();
+                                }
+                                case WANDER -> {
+                                    actionRadiusFrame.setVisible(true);
+                                    actionTargetAndPathFrame.setVisible(true);
+                                    actionPathFrame.setVisible(false);
+                                    actionTargetBlockFrame.setVisible(true);
+                                    this.actionVFrame.recalculateSize();
+                                }
+                                case INTERACT_WITH, STANDSTILL -> {
+                                    actionRadiusFrame.setVisible(false);
+                                    actionTargetAndPathFrame.setVisible(true);
+                                    actionPathFrame.setVisible(false);
+                                    actionTargetBlockFrame.setVisible(true);
+                                    this.actionVFrame.recalculateSize();
+                                }
+                            }
+
+                        }
                 )
         );
-        this.poseDropdownWidget.visible = false;
 
-        this.actionTypeDropdownWidget = this.addRenderableWidget(
-                new EnumDropdownWidget<>(
-                        Action.ActionType.STANDSTILL,
-                        getWidgetWidth(0, this.width, colWidths, 20),
-                        getWidgetHeight(indexHeight, this.height, null),
-                        100
-                )
-        );
-        this.actionTypeDropdownWidget.visible = false;
-
-        // Set up the block pos fields.
-        int numCols = getNumWidgetCols(this.width, 30);
-        colWidths = new int[numCols];
-        Arrays.fill(colWidths, 32);
-        int indexWidth = (numCols / 2);
-        colWidths[indexWidth] = 34; //Reserve space for the block pos text.
-        indexHeight = (numRows / 2) - 1;
-        indexWidth -= 2;
-        EditBox targetBlockXField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(indexWidth--, this.width, colWidths, 5),
-                        getWidgetHeight(indexHeight, this.height, null),
-                        32,
-                        20,
-                        TextComponent.EMPTY
-                )
+        EditBox targetBlockXField = this.addWidget(
+                new EditBox(this.font,0,0,32,20,TextComponent.EMPTY)
         );
         targetBlockXField.setFilter(numberFilter);
         targetBlockXField.setResponder((String s) -> {
             if (s.isEmpty() || s.equals("-")) s = "0";
+            else if (s.startsWith("~")) {
+                if (s.length() == 1) {
+                    this.intArgs[0] = npcEntity.blockPosition().getX();
+                }
+                else {
+                    this.intArgs[0] = npcEntity.blockPosition().getX() + Integer.parseInt(s.substring(1));
+                }
+                return;
+            }
             this.intArgs[0] = Integer.parseInt(s);
         });
         targetBlockXField.setMaxLength(10);
-        targetBlockXField.setVisible(false);
         targetBlockXField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockXField);
 
-        EditBox targetBlockYField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(indexWidth--, this.width, colWidths, 5),
-                        getWidgetHeight(indexHeight, this.height, null),
-                        32,
-                        20,
-                        TextComponent.EMPTY
-                )
+        EditBox targetBlockYField = this.addWidget(
+                new EditBox(this.font,0,0,32,20,TextComponent.EMPTY)
         );
         targetBlockYField.setFilter(numberFilter);
         targetBlockYField.setResponder((String s) -> {
             if (s.isEmpty() || s.equals("-")) s = "0";
+            else if (s.startsWith("~")) {
+                if (s.length() == 1) {
+                    this.intArgs[1] = npcEntity.blockPosition().getY();
+                }
+                else {
+                    this.intArgs[1] = npcEntity.blockPosition().getY() + Integer.parseInt(s.substring(1));
+                }
+                return;
+            }
             this.intArgs[1] = Integer.parseInt(s);
         });
         targetBlockYField.setMaxLength(10);
-        targetBlockYField.setVisible(false);
         targetBlockYField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockYField);
 
-        EditBox targetBlockZField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(indexWidth, this.width, colWidths, 5),
-                        getWidgetHeight(indexHeight, this.height, null),
-                        32,
-                        20,
-                        TextComponent.EMPTY
-                )
+        EditBox targetBlockZField = this.addWidget(
+                new EditBox(this.font,0,0,32,20,TextComponent.EMPTY)
         );
         targetBlockZField.setFilter(numberFilter);
         targetBlockZField.setResponder((String s) -> {
             if (s.isEmpty() || s.equals("-")) s = "0";
+            else if (s.startsWith("~")) {
+                if (s.length() == 1) {
+                    this.intArgs[2] = npcEntity.blockPosition().getZ();
+                }
+                else {
+                    this.intArgs[2] = npcEntity.blockPosition().getZ() + Integer.parseInt(s.substring(1));
+                }
+                return;
+            }
             this.intArgs[2] = Integer.parseInt(s);
         });
         targetBlockZField.setMaxLength(10);
-        targetBlockZField.setVisible(false);
         targetBlockZField.setCanLoseFocus(true);
         this.actionFields.add(targetBlockZField);
 
@@ -421,19 +333,55 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             actionFields.get(1).setValue(String.valueOf(blockPos.getX()));
             actionFields.get(2).setValue(String.valueOf(blockPos.getX()));
         }
+        Button getPathButton = this.addWidget(new Button(
+                0,0, 50, 20, new TextComponent("Get Path"), btn -> {
+            assert Minecraft.getInstance().player != null;
+            ItemStack behaviorEditorStack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
+            if (this.waitingPath.length == 0 && this.getEditingNode() != null) {
+                CompoundTag pathTag = new CompoundTag();
+                pathTag.putLongArray("Path", this.getEditingNode().getNodeData().getAction().getPath());
+                behaviorEditorStack.setTag(pathTag);
+                return;
+            }
+            CompoundTag pathTag = new CompoundTag();
+            pathTag.putLongArray("Path", this.waitingPath);
+            behaviorEditorStack.setTag(pathTag);
+        }));
+
+        Button setPathButton = this.addWidget(new Button(
+                0,0, 50, 20, new TextComponent("Set Path"), btn -> {
+            assert Minecraft.getInstance().player != null;
+            ItemStack behaviorEditorStack = Minecraft.getInstance().player.getItemInHand(InteractionHand.MAIN_HAND);
+            if (behaviorEditorStack.hasTag()) {
+                CompoundTag pathTag = behaviorEditorStack.getTag();
+                if (pathTag != null && pathTag.contains("Path")) {
+                    this.waitingPath = behaviorEditorStack.getTag().getLongArray("Path");
+                    return;
+                }
+            }
+            this.waitingPath = new long[0];
+        }));
+
+        this.actionVFrame = DirectionalFrame.createVerticalFrame(
+                this.height, DirectionalFrame.Alignment.START_ALIGNED);
+
+        this.actionTargetAndPathFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.EQUALLY_SPACED);
+        this.actionTargetBlockFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
+        this.actionTargetBlockFrame.addWidget(new TextWidget(0, 0, "Target Block:"));
+        this.actionTargetBlockFrame.addWidget(this.actionFields.get(0));
+        this.actionTargetBlockFrame.addWidget(this.actionFields.get(1));
+        this.actionTargetBlockFrame.addWidget(this.actionFields.get(2));
+        this.actionTargetAndPathFrame.addWidget(this.actionTargetBlockFrame);
+        this.actionTargetAndPathFrame.addSpacer();
+        this.actionPathFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
+        this.actionPathFrame.addWidget(setPathButton);
+        this.actionPathFrame.addWidget(getPathButton);
+        this.actionTargetAndPathFrame.addWidget(actionPathFrame);
+        this.actionVFrame.addWidget(this.actionTargetAndPathFrame, 5);
 
         // Set up the radius field.
-
-        indexWidth = (numCols / 2) - 2;
-        EditBox radiusField = this.addRenderableWidget(
-                new EditBox(
-                        this.font,
-                        getWidgetWidth(indexWidth, this.width, colWidths, 5),
-                        getWidgetHeight(indexHeight-1, this.height, null),
-                        30,
-                        20,
-                        TextComponent.EMPTY
-                )
+        EditBox radiusField = this.addWidget(
+                new EditBox(this.font, 0, 0,30,20,TextComponent.EMPTY)
         );
         radiusField.setFilter(numberFilter);
         radiusField.setResponder((String s) -> {
@@ -441,9 +389,26 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             this.intArgs[3] = Integer.parseInt(s);
         });
         radiusField.setMaxLength(10);
-        radiusField.setVisible(false);
         radiusField.setCanLoseFocus(true);
         this.actionFields.add(radiusField);
+
+        this.actionRadiusFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.START_ALIGNED);
+        this.actionRadiusFrame.addWidget(new TextWidget(0,0, "Radius:"));
+        this.actionRadiusFrame.addWidget(this.actionFields.get(3));
+        this.actionRadiusFrame.setVisible(false);
+        this.actionVFrame.addWidget(this.actionRadiusFrame);
+
+        DirectionalFrame nameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        nameFrame.addWidget(new TextWidget("Name:"));
+        nameFrame.addWidget(this.allNameFields.get(EditType.ACTION));
+        this.actionVFrame.addWidget(nameFrame);
+        DirectionalFrame dropdownFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        dropdownFrame.addWidget(this.actionTypeDropdownWidget, 20);
+        dropdownFrame.addWidget(this.poseDropdownWidget, 20);
+        this.actionVFrame.addWidget(dropdownFrame);
+        this.actionVFrame.setVisible(false);
+        this.mainVFrame.insertWidget(this.actionVFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.ACTION, this.actionVFrame);
     }
 
     /**
@@ -498,6 +463,7 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
                         if (this.npcEntity != null) {
                             blockPos = this.npcEntity.blockPosition();
                         }
+
                         if (getSelectedNode() != null && getSelectedNodeIndex() == -2) {
                             newNode = new BehaviorNode(null, this, this.minecraft, Behavior.newBehavior(blockPos));
                             newNode.getNodeData().setName(name);
@@ -557,80 +523,6 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     }
 
     /**
-     * Function from screen.
-     *
-     * @param matrixStack  The Pose Stack.
-     * @param mouseX       The mouse x coordinate.
-     * @param mouseY       The mouse y coordinate.
-     * @param partialTicks float time.
-     */
-    @Override
-    public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
-        if (this.actionFields.size() > 0 && this.actionFields.get(0).isVisible()) {
-            int numCols = getNumWidgetCols(this.width, 30);
-            int[] colWidths = new int[numCols];
-            Arrays.fill(colWidths, 32);
-            colWidths[(numCols / 2) - 1] = 28;
-            int numRows = getNumWidgetRows(this.height);
-            numRows = (numRows / 2);
-            int textHeightOffset = 5; // This lines up the text with the edit boxes a little better.
-            drawString(
-                    matrixStack,
-                    font,
-                    "Block Pos:",
-                    getWidgetWidth((numCols / 2)-1, this.width, colWidths, 0),
-                    getWidgetHeight(numRows - 1, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
-            drawString(
-                    matrixStack,
-                    font,
-                    "Radius:",
-                    getWidgetWidth((numCols / 2)-1, this.width, colWidths, 0),
-                    getWidgetHeight(numRows - 2, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
-            colWidths = new int[]{120, 30};
-            drawString(
-                    matrixStack,
-                    font,
-                    "Name:",
-                    getWidgetWidth(1, this.width, colWidths, 0),
-                    getWidgetHeight(0, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
-        } else if (triggerChildField.isVisible()) {
-            int[] colWidths = {120,22};
-            int textHeightOffset = 5; // This lines up the text with the edit boxes a little better.
-            drawString(
-                    matrixStack,
-                    font,
-                    "Name:",
-                    getWidgetWidth(1, this.width, colWidths, 0),
-                    getWidgetHeight(2, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
-            drawString(
-                    matrixStack,
-                    font,
-                    "Timer:",
-                    getWidgetWidth(1, this.width, colWidths, 0),
-                    getWidgetHeight(1, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
-            drawString(
-                    matrixStack,
-                    font,
-                    "Node:",
-                    getWidgetWidth(1, this.width, colWidths, 0),
-                    getWidgetHeight(0, this.height, null) + textHeightOffset,
-                    0xFFFFFF
-            );
-        }
-    }
-
-    /**
      * Send a Client Request to Edit the Behavior of the npc being edited.
      */
     @Override
@@ -680,20 +572,16 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
     @Override
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         super.setNodeBeingEdited(node, editType);
-        boolean isActionType = editType == EditType.ACTION;
-        this.poseDropdownWidget.visible = isActionType;
-        this.actionTypeDropdownWidget.visible = isActionType;
-        for (EditBox editBox : actionFields) editBox.setVisible(isActionType);
         if (node != null) {
-            this.allFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
+            this.allNameFields.get(EditType.FILE).setValue(((BehaviorNode) node).getDialogueName());
             Trigger trigger = ((BehaviorNode) node).getEditTrigger();
             if (trigger != null) {
-                this.allFields.get(EditType.TRIGGER).setValue(trigger.getName());
+                this.allNameFields.get(EditType.TRIGGER).setValue(trigger.getName());
                 this.triggerChildField.setValue(trigger.getNextBehaviorName());
                 this.triggerTimerField.setValue(String.valueOf(trigger.getTimer()));
                 this.triggerTypeDropdownWidget.selectOption(trigger.getType());
             } else {
-                this.allFields.get(EditType.TRIGGER).setValue("");
+                this.allNameFields.get(EditType.TRIGGER).setValue("");
                 this.triggerChildField.setValue("");
                 this.triggerTimerField.setValue("0");
                 this.triggerTypeDropdownWidget.selectOption(Trigger.TriggerType.DIALOGUE_TRIGGER);
@@ -702,33 +590,31 @@ public class BehaviorBuilderScreen extends TreeBuilderScreen {
             Action action = ((BehaviorNode) node).getNodeData().getAction();
             this.poseDropdownWidget.selectOption(action.getPose());
             this.actionTypeDropdownWidget.selectOption(action.getActionType());
-            this.allFields.get(EditType.ACTION).setValue(action.getName());
+            this.allNameFields.get(EditType.ACTION).setValue(action.getName());
+            this.waitingPath = action.getPath();
             if (action.getName().isEmpty()) this.confirmButton.active = false;
             BlockPos blockPos = action.getTargetBlockPos();
-            actionFields.get(0).setValue(String.valueOf(blockPos.getX()));
-            actionFields.get(1).setValue(String.valueOf(blockPos.getY()));
-            actionFields.get(2).setValue(String.valueOf(blockPos.getZ()));
-            actionFields.get(3).setValue(String.valueOf(action.getRadius()));
+            this.actionFields.get(0).setValue(String.valueOf(blockPos.getX()));
+            this.actionFields.get(1).setValue(String.valueOf(blockPos.getY()));
+            this.actionFields.get(2).setValue(String.valueOf(blockPos.getZ()));
+            this.actionFields.get(3).setValue(String.valueOf(action.getRadius()));
 
         } else {
             this.triggerChildField.setValue("");
             this.triggerTimerField.setValue("0");
-            actionFields.get(0).setValue("0");
-            actionFields.get(1).setValue("0");
-            actionFields.get(2).setValue("0");
-            actionFields.get(3).setValue("0");
+            this.actionTypeDropdownWidget.selectOption(Action.ActionType.STANDSTILL);
+
+            this.actionFields.get(0).setValue("0");
+            this.actionFields.get(1).setValue("0");
+            this.actionFields.get(2).setValue("0");
+            this.actionFields.get(3).setValue("0");
+            this.waitingPath = new long[0];
         }
 
-        boolean isTriggerType = editType == EditType.TRIGGER;
-        this.triggerTypeDropdownWidget.visible = isTriggerType;
-        this.triggerChildField.setVisible(isTriggerType);
-        this.triggerTimerField.setVisible(isTriggerType);
-
-        if (!isActionType && !isTriggerType && editType != EditType.FILE) {
+        if (editType != EditType.ACTION && editType != EditType.TRIGGER && editType != EditType.FILE) {
             this.confirmButton.active = true;
         }
     }
-
 
     public void setSelectedNode(@Nullable BuilderNode node, int selectedNodeIndex) {
         this.selectedNode = (BehaviorNode) node;

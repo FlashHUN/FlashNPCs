@@ -86,9 +86,7 @@ public class QuestEditorScreen extends Screen {
     questEditorScreen.name = quest.getName();
     questEditorScreen.displayName = quest.getDisplayName();
 
-    for (QuestObjective questObjective : quest.getObjectives()) {
-      questEditorScreen.objectives.add(questObjective);
-    }
+    questEditorScreen.objectives.addAll(quest.getObjectives());
 
     questEditorScreen.xpReward = quest.getXpReward();
     questEditorScreen.itemRewards = quest.getItemRewards();
@@ -187,7 +185,7 @@ public class QuestEditorScreen extends Screen {
     this.loadButton = this.addRenderableWidget(new Button(width-105, 30, 100, 20, new TextComponent("Load"), btn -> {
       if (!questToLoad.isEmpty()) {
         PacketDispatcher.sendToServer(new CRequestQuestInfo(questToLoad));
-        Quest quest = ClientQuestUtil.fromName(questToLoad);
+        Quest quest = ClientQuestUtil.loadQuest(questToLoad);
         if (quest != null) {
           QuestEditorScreen questEditorScreen = QuestEditorScreen.fromQuest(quest);
           questEditorScreen.updateObjectiveId();

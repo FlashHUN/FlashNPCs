@@ -2,7 +2,7 @@ package flash.npcmod.client.gui.dialogue;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.client.gui.node.BuilderNode;
+import flash.npcmod.core.node.BuilderNode;
 import flash.npcmod.client.gui.screen.dialogue.DialogueBuilderScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;

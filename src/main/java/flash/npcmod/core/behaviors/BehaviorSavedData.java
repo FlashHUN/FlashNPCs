@@ -1,6 +1,5 @@
 package flash.npcmod.core.behaviors;
 
-import flash.npcmod.client.gui.behavior.Behavior;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;

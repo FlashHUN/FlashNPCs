@@ -4,9 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.client.gui.node.BuilderNode;
-import flash.npcmod.client.gui.node.NodeData;
+import flash.npcmod.Main;
+import flash.npcmod.core.node.BuilderNode;
+import flash.npcmod.core.node.NodeData;
+import flash.npcmod.client.gui.widget.DirectionalFrame;
 import flash.npcmod.client.gui.widget.FunctionListWidget;
+import flash.npcmod.client.gui.widget.TextWidget;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
@@ -46,13 +49,20 @@ abstract public class TreeBuilderScreen extends Screen {
     public final List<BuilderNode> allNodes;
     public List<String> conflictingNodeDataNames;
     protected int selectedNodeIndex;
-    protected FunctionListWidget<BuilderNode, TreeBuilderScreen> functionListWidget;
+    protected FunctionListWidget<BuilderNode> functionListWidget;
     /**
      * The EditBoxes opened for editing.
      */
     protected EditBox functionParamsField;
-    protected HashMap<EditType, EditBox> allFields;
+    protected HashMap<EditType, EditBox> allNameFields;
+    protected HashMap<EditType, DirectionalFrame> allTopLevelFrames;
     protected Button saveButton, confirmButton, cancelButton;
+    /**
+     * The main Vertical Frame that all gui elements are added to. This is initialized
+     * with the `buttonFrame` already added.
+     */
+    protected DirectionalFrame mainVFrame;
+    protected DirectionalFrame buttonFrame, fileNameFrame, nodeNameFrame;
     protected String newName = "", newFunctionParams = "";
 
 
@@ -82,17 +92,16 @@ abstract public class TreeBuilderScreen extends Screen {
         super(TextComponent.EMPTY);
         this.fileName = name;
         conflictingNodeDataNames = new ArrayList<>();
-        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
-        this.functionListWidget.calculatePositionAndDimensions();
 
         // Initialize allNodes.
-        allNodes = new ArrayList<>();
+        this.allNodes = new ArrayList<>();
         loadFromJsonObject();
         if (!allNodes.isEmpty())
             updateNodePositionsFromJson();
 
         // Initialize allFields. Does not need to handle functionParamsField.
-        allFields = new HashMap<>();
+        this.allNameFields = new HashMap<>();
+        this.allTopLevelFrames = new HashMap<>();
     }
 
     /**
@@ -266,36 +275,38 @@ abstract public class TreeBuilderScreen extends Screen {
         matrixStack.popPose();
     }
 
-    /**
-     * Get the background to draw.
-     * @return The background.
-     */
     abstract protected ResourceLocation getBackground();
 
-    /**
-     * Get the editing node.
-     * @return The editing node.
-     */
     abstract protected BuilderNode getEditingNode();
 
-    /**
-     * Get the `entries` value from the current editor JSON.
-     *
-     * @return The JsonArray of entries (position of nodes).
-     */
     abstract protected JsonArray getEntries();
 
     /**
-     * Get the new function parameters.
-     *
-     * @return String of the function params.
+     * Calculate the maximum number of widget rows that can fit in a height.
+     * @param height The max height.
+     * @return The max num of rows.
      */
+    public static int getNumWidgetRows(int height) {
+        // 20 = row height. 10 = row padding.
+        return height / (20 + 10);
+    }
+
+    /**
+     * Calculate the maximum number of widget columns that can fit in a width.
+     * @param indexSize The index size.
+     * @return The max num of rows.
+     */
+    public static int getNumWidgetCols(int width, int indexSize) {
+        // 20 = row height. 10 = row padding.
+        return width / (indexSize + 10);
+    }
+
     public String getNewFunctionParams() {
         return this.newFunctionParams;
     }
 
     /**
-     * The index of the selected option of the selected node.
+     * The index of the selected connection of the selected node.
      *
      * @return The selected index,
      */
@@ -303,17 +314,72 @@ abstract public class TreeBuilderScreen extends Screen {
         return this.selectedNodeIndex;
     }
 
-    /**
-     * Get the selected node.
-     *
-     * @return The selected node.
-     */
     @Nullable
     abstract public BuilderNode getSelectedNode();
 
     /**
-     * Function from Screen. Called before drawing the screen.
+     * Function to calculate the height of each widget based off of the row number. The middle of the screen is row 0.
+     * Rows going up the screen are positive.
+     * @param rowNum The row number. 0-based.
+     * @param screenHeight The height of the screen.
+     * @param rowHeights Nullable field of row heights.
+     * @return The height of the widget.
      */
+    public static int getWidgetHeight(int rowNum, int screenHeight, @Nullable int[] rowHeights) {
+        int defaultHeight = 20; // the default.
+        int rowPadding = 5; // the vertical spacing between widgets.
+        return get1DWidgetCoordinate(rowNum, screenHeight, defaultHeight, rowPadding, rowHeights);
+    }
+
+    /**
+     * Function to calculate the width of each widget based off of the column number. The middle of the screen is row 0.
+     * columns going left of the screen are positive.
+     * @param colNum The row number. 0-based.
+     * @param screenWidth The height of the screen.
+     * @param colWidths Nullable field of row heights.
+     * @return The height of the widget.
+     */
+    public static int getWidgetWidth(int colNum, int screenWidth, @Nullable int[] colWidths, int padding) {
+        int defaultWidth = 120; // the default.
+        int colPadding = 10;
+        if (padding > 0)
+            colPadding = padding; // the vertical spacing between widgets.
+        return get1DWidgetCoordinate(colNum, screenWidth, defaultWidth, colPadding, colWidths);
+    }
+
+    /**
+     * Function to calculate the position of an index in a certain space size given a default index size and padding.
+     * If indexSizes is used, then it will be used to replace defaultIndexSize. Padding is assumed to be constant.
+     * Index 0 is in the center of the space. Negative Indices result in smaller coordinates. Positive, larger.
+     * @param indexNum The index of the position. Essentially the row/col number.
+     * @param size The size of the space.
+     * @param defaultIndexSize The default size taken by an index.
+     * @param padding The size of the padding around an index.
+     * @param indexSizes Int array of actual sizes used. Replaces defaultIndexSize. Contains the sizes starting from
+     *                   index 0 in the desired direction.
+     * @return Return the coordinate of the index.
+     */
+    public static int get1DWidgetCoordinate(int indexNum, int size, int defaultIndexSize, int padding, @Nullable int[] indexSizes) {
+        int space = size / 2 - defaultIndexSize / 2;
+        int direction = indexNum > 0 ? -1 : 1;
+        indexNum = Mth.abs(indexNum);
+        if (indexSizes != null) {
+            // If indexSize of this object is known, use that.
+            if (indexSizes.length > 0) space = size / 2 - indexSizes[0] / 2;
+            int i = 1;
+            for(; i <= indexNum && i < indexSizes.length; i++) {
+                space += (indexSizes[i] + padding) * direction;
+            }
+            // In case the row heights provided is too small.
+            for (; i < indexNum; i++) {
+                space += (defaultIndexSize + padding) * direction;
+            }
+        }else {
+            space += ((defaultIndexSize + padding) * indexNum) * direction;
+        }
+        return space;
+    }
+
     @Override
     protected void init() {
         this.setEditingNode(null);
@@ -332,36 +398,56 @@ abstract public class TreeBuilderScreen extends Screen {
             }
         }));
         this.saveButton.active = conflictingNodeDataNames.size() == 0;
-        this.confirmButton = this.addRenderableWidget(new Button(width / 2 - 60, height / 2 + 15, 50, 20, new TextComponent("Confirm"), btn -> {
+        this.confirmButton = this.addWidget(new Button(width / 2 - 60, height / 2 + 15, 50, 20, new TextComponent("Confirm"), btn -> {
             if (this.getEditingNode() != null) {
                 confirmEdits();
                 this.getEditingNode().calculateDimensions();
             }
             this.setNodeBeingEdited(null, EditType.NONE);
         }));
-        this.confirmButton.visible = false;
-        this.cancelButton = this.addRenderableWidget(new Button(width / 2 + 10, height / 2 + 15, 50, 20, new TextComponent("Cancel"),
-                btn -> this.setNodeBeingEdited(null, EditType.NONE)));
-        this.cancelButton.visible = false;
+        this.cancelButton = this.addWidget(new Button(width / 2 + 10, height / 2 + 15, 50, 20, new TextComponent("Cancel"),
+                btn -> this.setNodeBeingEdited(null, EditType.NONE)
+        ));
+
+        this.mainVFrame = this.addRenderableWidget(
+                DirectionalFrame.createVerticalFrame(this.height, DirectionalFrame.Alignment.CENTERED)
+        );
+
+        this.buttonFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        this.buttonFrame.addWidget(this.confirmButton, 20);
+        this.buttonFrame.addWidget(this.cancelButton, 20);
+        this.buttonFrame.setVisible(false);
+        this.mainVFrame.addSpacer();
+        this.mainVFrame.addWidget(this.buttonFrame);
 
         // Initialize our text field widgets
-        EditBox nameField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
+        this.nodeNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        EditBox nameField = this.addWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         nameField.setResponder(this::setNewName);
         nameField.setFilter(this.nameFilter);
         nameField.setMaxLength(50);
-        nameField.setVisible(false);
         nameField.setCanLoseFocus(true);
-        allFields.put(EditType.NAME, nameField);
+        allNameFields.put(EditType.NAME, nameField);
+        this.nodeNameFrame.addWidget(new TextWidget("Name:"));
+        this.nodeNameFrame.addWidget(nameField);
+        this.nodeNameFrame.setVisible(false);
+        this.allTopLevelFrames.put(EditType.NAME, this.nodeNameFrame);
+        this.mainVFrame.insertWidget(nodeNameFrame, 0, 20);
 
-        EditBox fileNameField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
+        this.fileNameFrame = DirectionalFrame.createHorizontalFrame(this.width, DirectionalFrame.Alignment.CENTERED);
+        EditBox fileNameField = this.addWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
         fileNameField.setResponder(this::setNewFileName);
         fileNameField.setFilter(this.nameFilter);
         fileNameField.setMaxLength(50);
-        fileNameField.setVisible(false);
         fileNameField.setCanLoseFocus(true);
-        allFields.put(EditType.FILENAME, fileNameField);
-
+        allNameFields.put(EditType.FILENAME, fileNameField);
+        this.fileNameFrame.addWidget(new TextWidget("File Name:"));
+        this.fileNameFrame.addWidget(fileNameField);
+        this.fileNameFrame.setVisible(false);
+        this.mainVFrame.insertWidget(fileNameFrame, 0, 20);
+        this.allTopLevelFrames.put(EditType.FILENAME, this.fileNameFrame);
         // Initialize the function list widget.
+        this.functionListWidget = new FunctionListWidget<>(this, Minecraft.getInstance());
         this.functionListWidget.calculatePositionAndDimensions();
         this.functionParamsField = this.addRenderableWidget(new EditBox(this.font, width / 2 - 60, height - 44, 120, 20, TextComponent.EMPTY));
         this.functionParamsField.setResponder(this::setNewFunctionParams);
@@ -372,14 +458,28 @@ abstract public class TreeBuilderScreen extends Screen {
         this.functionListWidget.setVisible(false);
     }
 
+    @Override
+    public boolean keyPressed(int p_96552_, int p_96553_, int p_96554_) {
+        if (p_96552_ == 256 && !shouldCloseOnEsc()) {
+            this.setNodeBeingEdited(null, EditType.NONE);
+            return true;
+        }
+        return super.keyPressed(p_96552_, p_96553_, p_96554_);
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return !isAnyTextFieldVisible();
+    }
+
     /**
      * Iterate through all fields and checks visibility.
      *
      * @return True if any fields are visible.
      */
     protected boolean isAnyTextFieldVisible() {
-        for (EditBox field : allFields.values()) {
-            if (field.isVisible()) return true;
+        if (this.mainVFrame.isAnyVisible()) {
+            return true;
         }
         return functionListWidget.isVisible();
     }
@@ -572,7 +672,7 @@ abstract public class TreeBuilderScreen extends Screen {
     public void setNodeBeingEdited(@Nullable BuilderNode node, EditType editType) {
         boolean isNodeNull = node == null;
         if (!isNodeNull) {
-            this.allFields.get(EditType.NAME).setValue(node.getName());
+            this.allNameFields.get(EditType.NAME).setValue(node.getName());
 
             int i = -1;
             if (!node.getFunction().isEmpty()) {
@@ -594,31 +694,33 @@ abstract public class TreeBuilderScreen extends Screen {
             this.functionParamsField.setValue("");
         }
         boolean check;
-        for (EditType key : allFields.keySet()) {
+        this.fileNameFrame.setVisible(editType == EditType.FILENAME);
+        this.nodeNameFrame.setVisible(editType == EditType.NAME);
+
+        for (EditType key : this.allNameFields.keySet()) {
             check = editType == key;
-            allFields.get(key).setVisible(check);
-            allFields.get(key).setFocus(check);
-            if (isNodeNull) allFields.get(key).setValue("");
+            if (allNameFields.containsKey(key)) {
+                this.allNameFields.get(key).setFocus(check);
+                this.allNameFields.get(key).setVisible(check);
+            }
+            if (allTopLevelFrames.containsKey(key)) {
+                this.allTopLevelFrames.get(key).setVisible(check);
+            }
+            if (isNodeNull) this.allNameFields.get(key).setValue("");
         }
 
         this.functionListWidget.calculatePositionAndDimensions();
         this.functionListWidget.setEditingNode(node);
         this.functionListWidget.setVisible(editType == EditType.FUNCTION);
 
-        this.confirmButton.visible = editType != EditType.NONE;
-        this.cancelButton.visible = editType != EditType.NONE;
+        this.buttonFrame.setVisible(editType != EditType.NONE);
         if (editType == EditType.FUNCTION) {
-            confirmButton.x = this.functionParamsField.x;
-            confirmButton.y = this.functionParamsField.y + 22;
-            cancelButton.x = this.functionParamsField.x + functionParamsField.getWidth() - confirmButton.getWidth();
-            cancelButton.y = this.functionParamsField.y + 22;
-        } else {
-            confirmButton.x = width / 2 - 60;
-            confirmButton.y = height / 2 + 15;
-            cancelButton.x = width / 2 + 10;
-            cancelButton.y = height / 2 + 15;
+            this.confirmButton.x = this.functionParamsField.x;
+            this.confirmButton.y = this.functionParamsField.y + 22;
+            this.cancelButton.x = this.functionParamsField.x + this.functionParamsField.getWidth() - confirmButton.getWidth();
+            this.cancelButton.y = this.functionParamsField.y + 22;
         }
-
+        this.mainVFrame.recalculateSize();
         this.setEditingNode(node);
     }
 
@@ -637,14 +739,13 @@ abstract public class TreeBuilderScreen extends Screen {
     @Override
     public void tick() {
         // Tick Text Field Widgets
-        for (EditBox field : allFields.values()) field.tick();
+        for (EditBox field : allNameFields.values()) field.tick();
         this.functionParamsField.tick();
 
         // Button visibility
         boolean isAnyTextFieldVisible = this.isAnyTextFieldVisible();
         this.saveButton.visible = !isAnyTextFieldVisible;
-        this.confirmButton.visible = isAnyTextFieldVisible;
-        this.cancelButton.visible = isAnyTextFieldVisible;
+        this.buttonFrame.setVisible(isAnyTextFieldVisible);
 
         // Save button should only be active if we have no conflicting dialogue names
         this.saveButton.active = conflictingNodeDataNames.size() == 0;

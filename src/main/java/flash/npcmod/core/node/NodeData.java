@@ -1,8 +1,8 @@
-package flash.npcmod.client.gui.node;
+package flash.npcmod.core.node;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
+import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -15,8 +15,9 @@ import java.util.List;
  * Parent of Behavior and Dialogue. Stores the data of a BuilderNode.
  *
  */
-@OnlyIn(Dist.CLIENT)
 abstract public class NodeData {
+
+    public static final String INIT_NODE_NAME = "init";
 
     protected String name;
     protected String function;
@@ -34,7 +35,7 @@ abstract public class NodeData {
         this.name = name;
         this.function = function;
         this.setChildren(children);
-        this.isInitData = name.equals(ClientDialogueUtil.INIT_DIALOGUE_NAME);
+        this.isInitData = name.equals(INIT_NODE_NAME);
     }
 
     /**

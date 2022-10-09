@@ -2,10 +2,13 @@ package flash.npcmod.core.quests;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Pair;
 import flash.npcmod.Main;
 import flash.npcmod.core.pathing.Path;
 import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -46,11 +49,16 @@ public class QuestObjectiveTypes {
   }
 
   public static class KillObjective extends QuestObjective {
+    private final String entityObjective;
     private final String livingEntityKey;
+    private final CompoundTag livingEntityTag;
 
-    public KillObjective(int id, String name, String livingEntityKey, int amount) {
+    public KillObjective(int id, String name, String entityObjective, int amount) {
       super(id, name, ObjectiveType.Kill, amount);
-      this.livingEntityKey = livingEntityKey;
+      this.entityObjective = entityObjective;
+      Pair<String, CompoundTag> keyAndTagPair = getEntityObjectiveFromString(entityObjective);
+      this.livingEntityKey = keyAndTagPair.getFirst();
+      this.livingEntityTag = keyAndTagPair.getSecond();
     }
 
     @Override
@@ -58,14 +66,22 @@ public class QuestObjectiveTypes {
       return livingEntityKey;
     }
 
+    public String getEntityKey() {
+      return livingEntityKey;
+    }
+
+    public CompoundTag getEntityTag() {
+      return livingEntityTag;
+    }
+
     @Override
     public String primaryToString() {
-      return livingEntityKey;
+      return entityObjective;
     }
 
     @Override
     public KillObjective copy() {
-      KillObjective copy = new KillObjective(getId(), getName(), livingEntityKey, getAmount());
+      KillObjective copy = new KillObjective(getId(), getName(), entityObjective, getAmount());
       copyTo(copy);
       return copy;
     }
@@ -73,12 +89,17 @@ public class QuestObjectiveTypes {
 
   public static class DeliverToEntityObjective extends QuestObjective {
     private final ItemStack itemStack;
+    private final String entityObjective;
     private final String livingEntityKey;
+    private final CompoundTag livingEntityTag;
 
-    public DeliverToEntityObjective(int id, String name, ItemStack itemStack, String livingEntityKey, int amount) {
+    public DeliverToEntityObjective(int id, String name, ItemStack itemStack, String entityObjective, int amount) {
       super(id, name, ObjectiveType.DeliverToEntity, amount);
       this.itemStack = itemStack;
-      this.livingEntityKey = livingEntityKey;
+      this.entityObjective = entityObjective;
+      Pair<String, CompoundTag> keyAndTagPair = getEntityObjectiveFromString(entityObjective);
+      this.livingEntityKey = keyAndTagPair.getFirst();
+      this.livingEntityTag = keyAndTagPair.getSecond();
     }
 
     @Override
@@ -88,7 +109,7 @@ public class QuestObjectiveTypes {
 
     @Override
     public String getSecondaryObjective() {
-      return livingEntityKey;
+      return entityObjective;
     }
 
     @Override
@@ -98,12 +119,20 @@ public class QuestObjectiveTypes {
 
     @Override
     public String secondaryToString() {
+      return entityObjective;
+    }
+
+    public String getEntityKey() {
       return livingEntityKey;
+    }
+
+    public CompoundTag getEntityTag() {
+      return livingEntityTag;
     }
 
     @Override
     public DeliverToEntityObjective copy() {
-      DeliverToEntityObjective copy = new DeliverToEntityObjective(getId(), getName(), itemStack, livingEntityKey, getAmount());
+      DeliverToEntityObjective copy = new DeliverToEntityObjective(getId(), getName(), itemStack, entityObjective, getAmount());
       copyTo(copy);
       return copy;
     }
@@ -256,12 +285,17 @@ public class QuestObjectiveTypes {
 
   public static class UseOnEntityObjective extends QuestObjective {
     private final ItemStack itemStack;
+    private final String entityObjective;
     private final String livingEntityKey;
+    private final CompoundTag livingEntityTag;
 
-    public UseOnEntityObjective(int id, String name, ItemStack itemStack, String livingEntityKey, int amount) {
+    public UseOnEntityObjective(int id, String name, ItemStack itemStack, String entityObjective, int amount) {
       super(id, name, ObjectiveType.UseOnEntity, amount);
       this.itemStack = itemStack;
-      this.livingEntityKey = livingEntityKey;
+      this.entityObjective = entityObjective;
+      Pair<String, CompoundTag> keyAndTagPair = getEntityObjectiveFromString(entityObjective);
+      this.livingEntityKey = keyAndTagPair.getFirst();
+      this.livingEntityTag = keyAndTagPair.getSecond();
     }
 
     @Override
@@ -271,7 +305,15 @@ public class QuestObjectiveTypes {
 
     @Override
     public String getSecondaryObjective() {
+      return entityObjective;
+    }
+
+    public String getEntityKey() {
       return livingEntityKey;
+    }
+
+    public CompoundTag getEntityTag() {
+      return livingEntityTag;
     }
 
     @Override
@@ -281,12 +323,12 @@ public class QuestObjectiveTypes {
 
     @Override
     public String secondaryToString() {
-      return livingEntityKey;
+      return entityObjective;
     }
 
     @Override
     public UseOnEntityObjective copy() {
-      UseOnEntityObjective copy = new UseOnEntityObjective(getId(), getName(), itemStack, livingEntityKey, getAmount());
+      UseOnEntityObjective copy = new UseOnEntityObjective(getId(), getName(), itemStack, entityObjective, getAmount());
       copyTo(copy);
       return copy;
     }
@@ -383,6 +425,32 @@ public class QuestObjectiveTypes {
     }
   }
 
+  public static class CraftItemObjective extends QuestObjective {
+    private final ItemStack itemStack;
+
+    public CraftItemObjective(int id, String name, ItemStack itemStack, int amount) {
+      super(id, name, ObjectiveType.CraftItem, amount);
+      this.itemStack = itemStack;
+    }
+
+    @Override
+    public ItemStack getObjective() {
+      return itemStack;
+    }
+
+    @Override
+    public String primaryToString() {
+      return stackToString(itemStack);
+    }
+
+    @Override
+    public CraftItemObjective copy() {
+      CraftItemObjective copy = new CraftItemObjective(getId(), getName(), itemStack, getAmount());
+      copyTo(copy);
+      return copy;
+    }
+  }
+
   public static String entityToString(LivingEntity livingEntity) {
     return livingEntity.getEncodeId();
   }
@@ -424,6 +492,21 @@ public class QuestObjectiveTypes {
     } catch (CommandSyntaxException e) {
       return Blocks.AIR.defaultBlockState();
     }
+  }
+
+  private static Pair<String, CompoundTag> getEntityObjectiveFromString(String s) {
+    if (s.contains("::")) {
+      String[] obj = s.split("::");
+      CompoundTag tag = new CompoundTag();
+      try {
+        tag = new TagParser(new StringReader(obj[1])).readStruct();
+        if (tag.contains("id"))
+          tag.remove("id");
+      } catch (Exception ignored) {}
+      return new Pair<>(obj[0], tag);
+    }
+
+    return new Pair<>(s, new CompoundTag());
   }
 
 }

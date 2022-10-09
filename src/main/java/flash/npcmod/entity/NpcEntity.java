@@ -5,18 +5,21 @@ import com.google.gson.JsonObject;
 import com.mojang.brigadier.StringReader;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
-import flash.npcmod.client.gui.behavior.Action;
-import flash.npcmod.client.gui.behavior.Behavior;
-import flash.npcmod.client.gui.behavior.Trigger;
+import flash.npcmod.core.behaviors.Action;
+import flash.npcmod.core.behaviors.Behavior;
+import flash.npcmod.core.behaviors.Trigger;
 import flash.npcmod.core.ItemUtil;
 import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.behaviors.BehaviorSavedData;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
+import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.core.trades.TradeOffer;
 import flash.npcmod.core.trades.TradeOffers;
-import flash.npcmod.entity.goals.NPCMoveToBlockGoal;
+import flash.npcmod.entity.goals.NPCFollowPathGoal;
+import flash.npcmod.entity.goals.NPCInteractWithBlockGoal;
 import flash.npcmod.entity.goals.NPCWanderGoal;
+import flash.npcmod.entity.goals.TalkWithPlayerGoal;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.item.BehaviorEditorItem;
 import flash.npcmod.item.NpcEditorItem;
@@ -24,11 +27,14 @@ import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.*;
 import flash.npcmod.network.packets.server.SCompleteQuest;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -44,6 +50,7 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.player.Player;
@@ -59,11 +66,12 @@ import java.util.*;
 
 public class NpcEntity extends PathfinderMob {
 
+    private static final EntityDataAccessor<String> TITLE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> RENDERER = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<CompoundTag> RENDERER_TAG = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final EntityDataAccessor<String> BEHAVIOR_FILE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> CROUCHING = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<CompoundTag> CURRENT_BEHAVIOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final EntityDataAccessor<Behavior> CURRENT_BEHAVIOR = SynchedEntityData.defineId(NpcEntity.class, NpcDataSerializers.BEHAVIOR);
     private static final EntityDataAccessor<String> DIALOGUE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> GOAL_REACHED = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
 
@@ -75,7 +83,6 @@ public class NpcEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> SLIM = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<BlockPos> TARGET_BLOCK = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<Integer> TRIGGER_TIMER = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
-
     private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> IS_TEXTURE_RESOURCE_LOCATION = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
@@ -95,6 +102,7 @@ public class NpcEntity extends PathfinderMob {
     private LivingEntity entityToRenderAs;
     private float scaleX = 1f, scaleY = 1f, scaleZ = 1f;
     private CompoundTag previousRendererTag;
+    private Component titleComponent = TextComponent.EMPTY;
 
     public NpcEntity(EntityType<? extends PathfinderMob> type, Level world) {
         super(type, world);
@@ -116,9 +124,10 @@ public class NpcEntity extends PathfinderMob {
     @Override
     public void addAdditionalSaveData(@NotNull CompoundTag compound) {
         super.addAdditionalSaveData(compound);
+        compound.putString("title", getTitle());
         compound.putString("dialogue", getDialogue());
         compound.putString("behaviorFile", getBehaviorFile());
-        compound.put("currentBehavior", getCurrentBehavior());
+        compound.put("currentBehavior", getCurrentBehavior().toCompoundTag());
         compound.putBoolean("nameVisibility", isCustomNameVisible());
         compound.putInt("radius", getRadius());
         compound.putBoolean("slim", isSlim());
@@ -144,124 +153,69 @@ public class NpcEntity extends PathfinderMob {
     }
 
     /**
-     * Apply the behavior to the npc.
-     * @param behavior The behavior to apply.
-     */
-    private void applyBehavior(Behavior behavior) {
-        this.setDialogue(behavior.dialogueName);
-        Action action = behavior.getAction();
-        CEditNpc.NPCPose pose = action.getPose();
-        switch (pose) {
-            case STANDING -> {
-                setSitting(false);
-                setCrouching(false);
-            }
-            case CROUCHING -> {
-                setCrouching(true);
-                setSitting(false);
-            }
-            case SITTING -> {
-                setSitting(true);
-                setCrouching(false);
-            }
-        }
-        this.setRadius(action.getRadius());
-        this.setTargetBlock(action.getTargetBlockPos());
-        this.setGoalReached(false);
-        for (Trigger trigger : behavior.getTriggers()) {
-            if (trigger.getType() == Trigger.TriggerType.TIMER_TRIGGER) {
-                this.setTriggerTimer(trigger.getTimer());
-            }
-        }
-
-        for (WrappedGoal goal : this.goalSelector.getAvailableGoals()) {
-            if (!(goal.getGoal() instanceof LookAtPlayerGoal))
-                this.goalSelector.removeGoal(goal);
-        }
-        switch (action.getActionType()) {
-            case MOVE_TO_BLOCK -> this.goalSelector.addGoal(1, new NPCMoveToBlockGoal(this, 1.0D));
-            case WANDER -> this.goalSelector.addGoal(0, new NPCWanderGoal(this, 300));
-            //case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
-            case STANDSTILL -> {
-                if (!action.getTargetBlockPos().equals(BlockPos.ZERO)) {
-                    BlockPos pos = action.getTargetBlockPos();
-                    this.setOrigin(pos);
-                    this.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-                }
-            }
-        }
-
-        this.setCurrentBehavior(behavior.toCompoundTag());
-    }
-
-    /**
-     * Check if this entity can ride an entity or check if it can ride
-     * @param entity I'm not sure yet.
-     * @return False because this entity can't ride/ be ridden.
+     * Read additional save data.
+     * @param compound The compound tag.
      */
     @Override
-    protected boolean canRide(@NotNull Entity entity) {
-        return false; // TODO default riding mobs like horses in the future?
+    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+        super.readAdditionalSaveData(compound);
+        if (compound.contains("behaviorFile")) setBehaviorFile(compound.getString("behaviorFile"));
+        setCrouching(compound.getBoolean("crouching"));
+        if (compound.contains("currentBehavior")) setCurrentBehavior(
+                Behavior.fromCompoundTag(compound.getCompound("currentBehavior")));
+        setCustomNameVisible(compound.getBoolean("nameVisibility"));
+        setTitle(compound.getString("title"));
+        setDialogue(compound.getString("dialogue"));
+        setOrigin(NbtUtils.readBlockPos(compound.getCompound("origin")));
+        setRadius(compound.getInt("radius"));
+        setSitting(compound.getBoolean("sitting"));
+        setSlim(compound.getBoolean("slim"));
+        setTargetBlock(NbtUtils.readBlockPos(compound.getCompound("targetBlock")));
+        setTextColor(compound.getInt("textColor"));
+        setTexture(compound.getString("texture"));
+        if (compound.contains("is_texture_resource_loc"))
+            setIsTextureResourceLocation(compound.getBoolean("is_texture_resource_loc"));
+        setRenderer(compound.getString("renderer"));
+        if (compound.contains("rendererTag"))
+            setRendererTag((CompoundTag) compound.get("rendererTag"));
+        setScale(compound.getFloat("scaleX"), compound.getFloat("scaleY"), compound.getFloat("scaleZ"));
+
+        if (compound.contains("Offers", 10)) {
+            this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
+        }
     }
 
     /**
-     * Cannot be leashed.
-     * @param player Player id
-     * @return False.
+     * Convert this npc to JSON.
+     * @return JsonObject.
      */
-    public boolean canBeLeashed(@NotNull Player player) {
-        return false;
-    }
+    public JsonObject toJson() {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("name", getName().getString());
+        jsonObject.addProperty("nameVisibility", isCustomNameVisible());
+        jsonObject.addProperty("dialogue", getDialogue());
+        jsonObject.addProperty("title", getTitle());
 
-    /**
-     * Define synced data. Must be done for all EntityDataAccessor variables.
-     */
-    @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(BEHAVIOR_FILE, "");
-        this.entityData.define(CROUCHING, false);
-        this.entityData.define(CURRENT_BEHAVIOR,new CompoundTag());
-        this.entityData.define(DIALOGUE, "");
-        this.entityData.define(GOAL_REACHED, false);
-        this.entityData.define(ORIGIN, BlockPos.ZERO);
-        this.entityData.define(RADIUS, 0);
-        this.entityData.define(TARGET_BLOCK, BlockPos.ZERO);
-        this.entityData.define(TRIGGER_TIMER, 0);
-        this.entityData.define(TEXTCOLOR, 0xFFFFFF);
-        this.entityData.define(TEXTURE, "");
-        this.entityData.define(IS_TEXTURE_RESOURCE_LOCATION, false);
-        this.entityData.define(SLIM, false);
-        this.entityData.define(SITTING, false);
-        this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
-        this.entityData.define(RENDERER_TAG, new CompoundTag());
-        this.entityData.define(SCALE, getDefaultScale());
-    }
+        jsonObject.add("currentBehavior", getCurrentBehavior().toJSON());
+        jsonObject.addProperty("targetBlock", getTargetBlock().asLong());
+        jsonObject.addProperty("texture", getTexture());
+        jsonObject.addProperty("is_texture_resource_loc", isTextureResourceLocation());
+        jsonObject.addProperty("textColor", getTextColor());
+        jsonObject.addProperty("slim", isSlim());
+        jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");
+        jsonObject.addProperty("trades", getOffers().write().getAsString());
+        jsonObject.addProperty("renderer", getRenderer());
+        if (getRendererTag() != null)
+            jsonObject.addProperty("rendererTag", getRendererTag().getAsString());
+        JsonObject scale = new JsonObject();
+        scale.addProperty("x", scaleX);
+        scale.addProperty("y", scaleY);
+        scale.addProperty("z", scaleZ);
+        jsonObject.add("scale", scale);
 
-    private CompoundTag getDefaultScale() {
-        CompoundTag tag = new CompoundTag();
-        tag.putFloat("x", 1f);
-        tag.putFloat("y", 1f);
-        tag.putFloat("z", 1f);
-        return tag;
-    }
+        jsonObject.add("inventory", inventoryToJson());
 
-    /**
-     * Add final spawn data.
-     * @param worldIn The dimension.
-     * @param difficultyIn The difficulty modifier.
-     * @param reason The spawn type.
-     * @param spawnDataIn The Spawn Group data.
-     * @param dataTag Extra Compound data.
-     * @return The SpawnGroupData.
-     */
-    @Nullable
-    @Override
-    public SpawnGroupData finalizeSpawn(
-            @NotNull ServerLevelAccessor worldIn, @NotNull DifficultyInstance difficultyIn, @NotNull MobSpawnType reason,
-            @Nullable SpawnGroupData spawnDataIn, @Nullable CompoundTag dataTag) {
-        this.setTextColor(0xFFFFFF);
-        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+        return jsonObject;
     }
 
     /**
@@ -274,11 +228,12 @@ public class NpcEntity extends PathfinderMob {
         NpcEntity npcEntity = EntityInit.NPC_ENTITY.get().create(level);
         assert npcEntity != null;
         if (jsonObject.has("currentBehavior"))
-            npcEntity.setCurrentBehavior(
-                    Behavior.fromJSONObject(jsonObject.getAsJsonObject("currentBehavior")).toCompoundTag());
+            npcEntity.setCurrentBehavior(Behavior.fromJSONObject(jsonObject.getAsJsonObject("currentBehavior")));
         npcEntity.setCustomNameVisible(jsonObject.get("nameVisibility").getAsBoolean());
         npcEntity.setDialogue(jsonObject.get("dialogue").getAsString());
         npcEntity.setCustomName(new TextComponent(jsonObject.get("name").getAsString()));
+        if (jsonObject.has("title"))
+            npcEntity.setTitle(jsonObject.get("title").getAsString());
         if (jsonObject.has("radius"))
             npcEntity.setRadius(jsonObject.get("radius").getAsInt());
         npcEntity.setSlim(jsonObject.get("slim").getAsBoolean());
@@ -319,6 +274,128 @@ public class NpcEntity extends PathfinderMob {
     }
 
     /**
+     * Apply the behavior to the npc.
+     * @param behavior The behavior to apply.
+     */
+    private void applyBehavior(Behavior behavior) {
+        this.setDialogue(behavior.dialogueName);
+        Action action = behavior.getAction();
+        CEditNpc.NPCPose pose = action.getPose();
+        switch (pose) {
+            case STANDING -> {
+                setSitting(false);
+                setCrouching(false);
+            }
+            case CROUCHING -> {
+                setCrouching(true);
+                setSitting(false);
+            }
+            case SITTING -> {
+                setSitting(true);
+                setCrouching(false);
+            }
+        }
+        this.setRadius(action.getRadius());
+        this.setTargetBlock(action.getTargetBlockPos());
+        this.setGoalReached(false);
+        for (Trigger trigger : behavior.getTriggers()) {
+            if (trigger.getType() == Trigger.TriggerType.TIMER_TRIGGER) {
+                this.setTriggerTimer(trigger.getTimer());
+            }
+        }
+
+        for (WrappedGoal goal : this.goalSelector.getAvailableGoals()) {
+            if (!(goal.getGoal() instanceof LookAtPlayerGoal))
+                this.goalSelector.removeGoal(goal);
+        }
+        switch (action.getActionType()) {
+            case FOLLOW_PATH -> this.goalSelector.addGoal(1, new NPCFollowPathGoal(this, 1.2D));
+            case WANDER -> this.goalSelector.addGoal(0, new NPCWanderGoal(this, 300));
+            case INTERACT_WITH -> this.goalSelector.addGoal(2, new NPCInteractWithBlockGoal(this, 1.00));
+            case STANDSTILL -> {
+                if (!action.getTargetBlockPos().equals(BlockPos.ZERO)) {
+                    BlockPos pos = action.getTargetBlockPos();
+                    this.setOrigin(pos);
+                    this.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                }
+            }
+        }
+
+        this.setCurrentBehavior(behavior);
+    }
+
+    /**
+     * Check if this entity can ride an entity or check if it can ride
+     * @param entity I'm not sure yet.
+     * @return False because this entity can't ride/ be ridden.
+     */
+    @Override
+    protected boolean canRide(@NotNull Entity entity) {
+        return false; // TODO default riding mobs like horses in the future?
+    }
+
+    /**
+     * Cannot be leashed.
+     * @param player Player id
+     * @return False.
+     */
+    public boolean canBeLeashed(@NotNull Player player) {
+        return false;
+    }
+
+    /**
+     * Define synced data. Must be done for all EntityDataAccessor variables.
+     */
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(BEHAVIOR_FILE, "");
+        this.entityData.define(CROUCHING, false);
+        this.entityData.define(CURRENT_BEHAVIOR, new Behavior());
+        this.entityData.define(DIALOGUE, "");
+        this.entityData.define(GOAL_REACHED, false);
+        this.entityData.define(ORIGIN, BlockPos.ZERO);
+        this.entityData.define(RADIUS, 0);
+        this.entityData.define(TARGET_BLOCK, BlockPos.ZERO);
+        this.entityData.define(TRIGGER_TIMER, 0);
+        this.entityData.define(TEXTCOLOR, 0xFFFFFF);
+        this.entityData.define(TEXTURE, "");
+        this.entityData.define(IS_TEXTURE_RESOURCE_LOCATION, false);
+        this.entityData.define(SLIM, false);
+        this.entityData.define(SITTING, false);
+        this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
+        this.entityData.define(RENDERER_TAG, new CompoundTag());
+        this.entityData.define(SCALE, getDefaultScale());
+        this.entityData.define(TITLE, "");
+    }
+
+    private CompoundTag getDefaultScale() {
+        CompoundTag tag = new CompoundTag();
+        tag.putFloat("x", 1f);
+        tag.putFloat("y", 1f);
+        tag.putFloat("z", 1f);
+        return tag;
+    }
+
+    /**
+     * Add final spawn data.
+     * @param worldIn The dimension.
+     * @param difficultyIn The difficulty modifier.
+     * @param reason The spawn type.
+     * @param spawnDataIn The Spawn Group data.
+     * @param dataTag Extra Compound data.
+     * @return The SpawnGroupData.
+     */
+    @Nullable
+    @Override
+    public SpawnGroupData finalizeSpawn(
+            @NotNull ServerLevelAccessor worldIn, @NotNull DifficultyInstance difficultyIn, @NotNull MobSpawnType reason,
+            @Nullable SpawnGroupData spawnDataIn, @Nullable CompoundTag dataTag) {
+        this.setTextColor(0xFFFFFF);
+        return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
+    }
+
+    /**
      * The file this npc is using for its behaviors.
      * @return The file name.
      */
@@ -326,35 +403,32 @@ public class NpcEntity extends PathfinderMob {
         return this.entityData.get(BEHAVIOR_FILE);
     }
 
-    /**
-     * The current behavior stored as a compound tag.
-     * @return The compound tag.
-     */
-    public CompoundTag getCurrentBehavior() {
+    public Behavior getCurrentBehavior() {
         return this.entityData.get(CURRENT_BEHAVIOR);
     }
 
-    /**
-     * Get the death sound.
-     * @return SoundEvent.
-     */
     protected SoundEvent getDeathSound() {
         return SoundEvents.PLAYER_DEATH;
     }
 
-    /**
-     * The dialogue file of this npc.
-     * @return The dialogue file name.
-     */
+    public String getTitle() {
+        return this.entityData.get(TITLE);
+    }
+
+    public Component getTitleComponent() {
+        if (!getTitle().isEmpty() && this.titleComponent == TextComponent.EMPTY)
+            this.titleComponent = new TextComponent(getTitle()).withStyle(ChatFormatting.ITALIC);
+        return this.titleComponent;
+    }
+
+    public boolean isTitleVisible() {
+        return !this.getTitle().isEmpty() && !this.getTitle().isBlank();
+    }
+
     public String getDialogue() {
         return this.entityData.get(DIALOGUE);
     }
 
-    /**
-     * Get the correct bounding dimensions of this npc.
-     * @param pose The NPC's pose.
-     * @return The EntityDimensions.
-     */
     @Override
     public @NotNull EntityDimensions getDimensions(@NotNull Pose pose) {
         float horizontalScale = Math.max(scaleX, scaleZ);
@@ -434,7 +508,13 @@ public class NpcEntity extends PathfinderMob {
     @Override
     protected float getStandingEyeHeight(@NotNull Pose poseIn, @NotNull EntityDimensions sizeIn) {
         if (entityToRenderAs == null) {
-            return getDimensions(poseIn).height * 0.85F;
+            // Player#getStandingEyeHeight
+            return switch (poseIn) {
+                case SWIMMING, FALL_FLYING -> 0.4f;
+                case SPIN_ATTACK -> 1.1F;
+                case CROUCHING -> 1.27F;
+                default -> 1.62F;
+            };
         }
         return entityToRenderAs.getEyeHeightAccess(poseIn, sizeIn);
     }
@@ -523,7 +603,10 @@ public class NpcEntity extends PathfinderMob {
                 List<QuestInstance> markedForCompletion = new ArrayList<>();
 
                 for (QuestInstance questInstance : questCapability.getAcceptedQuests()) {
-                    if (questInstance.getPickedUpFrom().equals(this.getUUID()) && questInstance.getQuest().canComplete()) {
+                    if ((questInstance.getTurnInType() == QuestInstance.TurnInType.QuestGiver ||
+                            questInstance.getTurnInType() == QuestInstance.TurnInType.NpcByUuid) &&
+                            questInstance.getPickedUpFrom().equals(this.getUUID()) &&
+                            questInstance.getQuest().canComplete()) {
                         markedForCompletion.add(questInstance);
                     }
                 }
@@ -614,11 +697,11 @@ public class NpcEntity extends PathfinderMob {
      * @return True if npc still moving.
      */
     public boolean isNotMovingToBlock() {
-        if (isGoalReached() || getCurrentBehavior().isEmpty()) return true;
-        Behavior behavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        if (isGoalReached() || getCurrentBehavior().isInvalid()) return true;
+        Behavior behavior = getCurrentBehavior();
         Action action = behavior.getAction();
         switch (action.getActionType()) {
-            case MOVE_TO_BLOCK -> {//, INTERACT_WITH -> {
+            case FOLLOW_PATH -> {
                 return false;
             }
             case WANDER -> {
@@ -670,37 +753,6 @@ public class NpcEntity extends PathfinderMob {
     }
 
     /**
-     * Read additional save data.
-     * @param compound The compound tag.
-     */
-    @Override
-    public void readAdditionalSaveData(@NotNull CompoundTag compound) {
-        super.readAdditionalSaveData(compound);
-        if (compound.contains("behaviorFile")) setBehaviorFile(compound.getString("behaviorFile"));
-        setCrouching(compound.getBoolean("crouching"));
-        if (compound.contains("currentBehavior")) setCurrentBehavior(compound.getCompound("currentBehavior"));
-        setCustomNameVisible(compound.getBoolean("nameVisibility"));
-        setDialogue(compound.getString("dialogue"));
-        setOrigin(NbtUtils.readBlockPos(compound.getCompound("origin")));
-        setRadius(compound.getInt("radius"));
-        setSitting(compound.getBoolean("sitting"));
-        setSlim(compound.getBoolean("slim"));
-        setTargetBlock(NbtUtils.readBlockPos(compound.getCompound("targetBlock")));
-        setTextColor(compound.getInt("textColor"));
-        setTexture(compound.getString("texture"));
-        if (compound.contains("is_texture_resource_loc"))
-            setIsTextureResourceLocation(compound.getBoolean("is_texture_resource_loc"));
-        setRenderer(compound.getString("renderer"));
-        if (compound.contains("rendererTag"))
-            setRendererTag((CompoundTag) compound.get("rendererTag"));
-        setScale(compound.getFloat("scaleX"), compound.getFloat("scaleY"), compound.getFloat("scaleZ"));
-
-        if (compound.contains("Offers", 10)) {
-            this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
-        }
-    }
-
-    /**
      * Detect if the behavior has changed and refresh the goals.
      */
     public void refreshGoals() {
@@ -710,7 +762,7 @@ public class NpcEntity extends PathfinderMob {
 
         Behavior[] behaviors = BehaviorSavedData.getBehaviorSavedData(Objects.requireNonNull(getServer()), this.getBehaviorFile())
                 .getBehaviorSavedData();
-        if(getCurrentBehavior().isEmpty()) {
+        if(getCurrentBehavior().isInvalid()) {
             for (Behavior behavior : behaviors) {
                 if (behavior.isInitData()) {
                     this.applyBehavior(behavior);
@@ -719,7 +771,7 @@ public class NpcEntity extends PathfinderMob {
             }
             return;
         }
-        Behavior currentBehavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        Behavior currentBehavior = getCurrentBehavior();
 
         // look for changes of the loaded behaviors.
         for (Behavior behavior : behaviors) {
@@ -736,7 +788,8 @@ public class NpcEntity extends PathfinderMob {
     @Override
     protected void registerGoals() {
         super.registerGoals();
-        //this.goalSelector.addGoal(1, new TalkWithPlayerGoal(this));
+        this.goalSelector.addGoal(2, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(1, new TalkWithPlayerGoal(this));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
     }
 
@@ -762,7 +815,8 @@ public class NpcEntity extends PathfinderMob {
             savedData.setBehaviors(behaviors);
             savedData.setDirty();
         }
-        setCurrentBehavior(new CompoundTag());
+        setCurrentBehavior(new Behavior());
+        refreshGoals();
     }
 
     /**
@@ -790,7 +844,7 @@ public class NpcEntity extends PathfinderMob {
      * Set the current behavior.
      * @param s The behavior tag.
      */
-    public void setCurrentBehavior(CompoundTag s) {
+    public void setCurrentBehavior(Behavior s) {
         this.entityData.set(CURRENT_BEHAVIOR, s);
     }
 
@@ -802,6 +856,11 @@ public class NpcEntity extends PathfinderMob {
         return Mob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.2D);
+    }
+
+    public void setTitle(String s) {
+        this.entityData.set(TITLE, s);
+        this.titleComponent = new TextComponent(s).withStyle(ChatFormatting.ITALIC);
     }
 
     /**
@@ -1013,6 +1072,8 @@ public class NpcEntity extends PathfinderMob {
                 }
                 triggerTickCounter++;
                 if (triggerTickCounter > 20) {
+                    //long time = this.level.getDayTime() % 24000L;
+
                     int countDown = getTriggerTimer();
                     if (countDown > 0) {
                         this.setTriggerTimer(--countDown);
@@ -1040,44 +1101,12 @@ public class NpcEntity extends PathfinderMob {
     }
 
     /**
-     * Convert this npc to JSON.
-     * @return JsonObject.
-     */
-    public JsonObject toJson() {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("name", getName().getString());
-        jsonObject.addProperty("nameVisibility", isCustomNameVisible());
-        jsonObject.addProperty("dialogue", getDialogue());
-
-        jsonObject.add("currentBehavior", Behavior.fromCompoundTag(getCurrentBehavior()).toJSON());
-        jsonObject.addProperty("targetBlock", getTargetBlock().asLong());
-        jsonObject.addProperty("texture", getTexture());
-        jsonObject.addProperty("is_texture_resource_loc", isTextureResourceLocation());
-        jsonObject.addProperty("textColor", getTextColor());
-        jsonObject.addProperty("slim", isSlim());
-        jsonObject.addProperty("pose", isSitting() ? "sitting" : isCrouching() ? "crouching" : "standing");
-        jsonObject.addProperty("trades", getOffers().write().getAsString());
-        jsonObject.addProperty("renderer", getRenderer());
-        if (getRendererTag() != null)
-            jsonObject.addProperty("rendererTag", getRendererTag().getAsString());
-        JsonObject scale = new JsonObject();
-        scale.addProperty("x", scaleX);
-        scale.addProperty("y", scaleY);
-        scale.addProperty("z", scaleZ);
-        jsonObject.add("scale", scale);
-
-        jsonObject.add("inventory", inventoryToJson());
-
-        return jsonObject;
-    }
-
-    /**
      * Trigger the behavior.
      *
      * @param triggerName The name of the trigger.
      */
     public void trigger(String triggerName) {
-        Behavior behavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        Behavior behavior = getCurrentBehavior();
         String nextBehaviorName = null;
         for (Trigger trigger : behavior.getTriggers()) {
             if (trigger.getName().equals(triggerName)) {
@@ -1103,7 +1132,7 @@ public class NpcEntity extends PathfinderMob {
      * @param triggerType The type of the trigger.
      */
     public void trigger(Trigger.TriggerType triggerType) {
-        Behavior behavior = Behavior.fromCompoundTag(getCurrentBehavior());
+        Behavior behavior = getCurrentBehavior();
         String nextBehaviorName = null;
         for (Trigger trigger : behavior.getTriggers()) {
             if (trigger.getType() == triggerType) {

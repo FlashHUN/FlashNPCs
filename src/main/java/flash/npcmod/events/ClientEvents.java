@@ -28,6 +28,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Position;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -48,6 +49,7 @@ import net.minecraftforge.client.event.RenderNameplateEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Arrays;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
@@ -148,10 +150,20 @@ public class ClientEvents {
               }
             }
           } else if (stack.getItem() instanceof BehaviorEditorItem) {
-            if (minecraft.player.isDiscrete()) {
-              HitResult rayTraceResult = minecraft.hitResult;
-              if (rayTraceResult.getType().equals(HitResult.Type.MISS)) {
+            HitResult rayTraceResult = minecraft.hitResult;
+            if (rayTraceResult.getType().equals(HitResult.Type.MISS)) {
+              if (minecraft.player.isDiscrete()) {
                 stack.setTag(null);
+              } else if (stack.hasTag()) {
+                CompoundTag stackTag = stack.getTag();
+                if (stackTag != null && stackTag.contains("Path")) {
+                  long[] oldPath = stackTag.getLongArray("Path");
+                  if (oldPath.length == 1) {
+                    stack.setTag(null);
+                  } else {
+                    stackTag.putLongArray("Path", Arrays.copyOf(oldPath, oldPath.length - 1));
+                  }
+                }
               }
             }
           }
@@ -180,12 +192,13 @@ public class ClientEvents {
       for (int i = 0; i < blockLongs.length; i++) blockPositions[i] = BlockPos.of(blockLongs[i]);
 
       // Set up variables for drawing the path lines.
-      float speed = 20;
+      float speed = 10;
       float percentage = 0;
+      float holdTimeMod = 2.5f; // Determines how long the path ray will remain.
       float percPerSegment = -1;
       if (blockPositions.length > 1) {
         int numEdges = blockPositions.length - 1;
-        percentage = (event.getRenderTick() % (numEdges * speed)) / (numEdges * speed);
+        percentage = (event.getRenderTick() % (numEdges * speed * holdTimeMod)) / (numEdges * speed);
         percPerSegment = (1.0f / numEdges);
       }
       BlockPos prevBlockPos = null;
@@ -293,9 +306,7 @@ public class ClientEvents {
   @SubscribeEvent
   public void renderQuestIconAboveNpc(RenderNameplateEvent event) {
     if (minecraft.player == null || !minecraft.player.isAlive()) return;
-    if (!(event.getEntity() instanceof NpcEntity)) return;
-
-    NpcEntity npcEntity = (NpcEntity) event.getEntity();
+    if (!(event.getEntity() instanceof NpcEntity npcEntity)) return;
 
     IQuestCapability capability = QuestCapabilityProvider.getCapability(minecraft.player);
 
@@ -326,7 +337,7 @@ public class ClientEvents {
 
     float size = 12f;
     float xOffset = -size/2;
-    float yOffset = -4f - size - Mth.sin(((float) npcEntity.tickCount + partialTicks) / 10.0F);
+    float yOffset = -4f - size - Mth.sin(((float) npcEntity.tickCount + partialTicks) / 10.0F) - (npcEntity.isTitleVisible() ? 10 : 0);
 
     VertexConsumer builder = bufferIn.getBuffer(RenderType.text(icon));
     int alpha = 32;
