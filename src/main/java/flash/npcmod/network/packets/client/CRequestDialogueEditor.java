@@ -1,6 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import com.google.gson.JsonObject;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.core.functions.FunctionUtil;
@@ -46,7 +47,7 @@ public class CRequestDialogueEditor {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
 
-      if (sender.hasPermissions(4)) {
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.EDIT_DIALOGUE)) {
         // Send function names to player
         List<String> functionNames = new ArrayList<>();
         for (AbstractFunction function : FunctionUtil.FUNCTIONS) {

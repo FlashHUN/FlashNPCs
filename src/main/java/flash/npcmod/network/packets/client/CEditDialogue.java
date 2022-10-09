@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.dialogues.CommonDialogueUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -30,7 +31,7 @@ public class CEditDialogue {
 
   public static void handle(CEditDialogue msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
-      if (ctx.get().getSender().hasPermissions(4)) {
+      if (PermissionHelper.hasPermission(ctx.get().getSender(), PermissionHelper.EDIT_DIALOGUE)) {
         CommonDialogueUtil.buildDialogue(msg.name, msg.dialogue);
         CommonDialogueUtil.buildDialogueEditor(msg.name, msg.dialogueEditor);
       }

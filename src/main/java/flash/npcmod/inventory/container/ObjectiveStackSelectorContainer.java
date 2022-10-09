@@ -2,6 +2,7 @@ package flash.npcmod.inventory.container;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestObjective;
 import flash.npcmod.init.ContainerInit;
@@ -62,7 +63,7 @@ public class ObjectiveStackSelectorContainer extends AbstractContainerMenu {
 
   @Override
   public boolean stillValid(Player playerIn) {
-    return playerIn.hasPermissions(4);
+    return PermissionHelper.hasPermission(playerIn, PermissionHelper.EDIT_QUEST);
   }
 
   @Nullable

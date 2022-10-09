@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
 import net.minecraft.ChatFormatting;
@@ -37,7 +38,7 @@ public class CBuildQuest {
   public static void handle(CBuildQuest msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      if (sender.hasPermissions(4)) {
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.EDIT_QUEST)) {
         CommonQuestUtil.buildQuest(msg.name, msg.jsonText);
 
         Quest quest = CommonQuestUtil.loadQuestFile(msg.name);

@@ -106,7 +106,7 @@ public class ClientEvents {
     if (minecraft.player != null && minecraft.player.isAlive()) {
       if (event.isUseItem()) {
         ItemStack stack = minecraft.player.getItemInHand(event.getHand());
-        if (minecraft.player.hasPermissions(4) && minecraft.player.isCreative()) {
+        if (minecraft.player.isCreative()) {
           if (stack.getItem() instanceof NpcEditorItem) {
             HitResult rayTraceResult = minecraft.hitResult;
             if (rayTraceResult.getType().equals(HitResult.Type.MISS)) {

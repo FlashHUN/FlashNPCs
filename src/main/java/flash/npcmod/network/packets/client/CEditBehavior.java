@@ -2,6 +2,7 @@ package flash.npcmod.network.packets.client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.behaviors.Behavior;
 import flash.npcmod.core.behaviors.BehaviorSavedData;
 import flash.npcmod.core.behaviors.CommonBehaviorUtil;
@@ -44,8 +45,8 @@ public class CEditBehavior {
   public static void handle(CEditBehavior msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      if (sender.hasPermissions(4)) {
-        BehaviorSavedData savedData = BehaviorSavedData.getBehaviorSavedData(ctx.get().getSender().getServer(), msg.name);
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.EDIT_BEHAVIOR)) {
+        BehaviorSavedData savedData = BehaviorSavedData.getBehaviorSavedData(sender.getServer(), msg.name);
         savedData.setBehaviors(Behavior.multipleFromJSONObject(new Gson().fromJson(msg.behaviorJson, JsonObject.class)));
         savedData.setDirty();
         // refresh the current npc ai.

@@ -1,6 +1,7 @@
 package flash.npcmod.network.packets.client;
 
 import com.google.gson.JsonObject;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.behaviors.CommonBehaviorUtil;
 import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.core.functions.FunctionUtil;
@@ -44,7 +45,7 @@ public class CRequestBehaviorEditor {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
 
-      if (sender.hasPermissions(4)) {
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.EDIT_BEHAVIOR)) {
         // Send function names to player
         List<String> functionNames = new ArrayList<>();
         for (AbstractFunction function : FunctionUtil.FUNCTIONS) {

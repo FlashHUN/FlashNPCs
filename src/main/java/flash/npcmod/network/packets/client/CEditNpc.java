@@ -1,5 +1,6 @@
 package flash.npcmod.network.packets.client;
 
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.entity.NpcEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -133,7 +134,7 @@ public class CEditNpc {
   public static void handle(CEditNpc msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      if (sender.hasPermissions(4)) {
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.EDIT_NPC)) {
         Entity entity = sender.level.getEntity(msg.entityid);
         if (entity instanceof NpcEntity npcEntity) {
           npcEntity.setCustomNameVisible(msg.isNameVisible);

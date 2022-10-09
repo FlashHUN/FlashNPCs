@@ -2,6 +2,7 @@ package flash.npcmod.network.packets.client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.saves.NpcSaveUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
@@ -69,7 +70,7 @@ public class CHandleSavedNpc {
   public static void handle(CHandleSavedNpc msg, Supplier<NetworkEvent.Context> ctx) {
     ctx.get().enqueueWork(() -> {
       ServerPlayer sender = ctx.get().getSender();
-      if (sender.hasPermissions(4) && sender.isCreative()) {
+      if (PermissionHelper.hasPermission(sender, PermissionHelper.SAVE_NPC) && sender.isCreative()) {
         switch (msg.type) {
           case PLACE -> {
             NpcEntity npcEntity = NpcEntity.fromJson(sender.level, msg.npcJson);

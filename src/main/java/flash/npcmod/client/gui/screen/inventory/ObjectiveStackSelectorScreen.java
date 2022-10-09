@@ -27,7 +27,6 @@ public class ObjectiveStackSelectorScreen extends AbstractContainerScreen<Object
 
   @Override
   protected void init() {
-    if (!minecraft.player.hasPermissions(4)) onClose();
     super.init();
   }
 

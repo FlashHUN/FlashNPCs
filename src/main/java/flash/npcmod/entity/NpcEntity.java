@@ -9,6 +9,7 @@ import flash.npcmod.core.behaviors.Action;
 import flash.npcmod.core.behaviors.Behavior;
 import flash.npcmod.core.behaviors.Trigger;
 import flash.npcmod.core.ItemUtil;
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.core.behaviors.BehaviorSavedData;
 import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.core.quests.Quest;
@@ -37,6 +38,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -619,7 +621,7 @@ public class NpcEntity extends PathfinderMob {
                 if (markedForCompletion.isEmpty()) {
                     // Test for behavior editing.
                     String behavior = getBehaviorFile();
-                    if (!behavior.isEmpty() && player.getItemInHand(hand).getItem() instanceof BehaviorEditorItem) {
+                    if (!behavior.isEmpty() && player.getItemInHand(hand).getItem() instanceof BehaviorEditorItem && PermissionHelper.hasPermission(player, PermissionHelper.EDIT_BEHAVIOR)) {
                         if (player.level.isClientSide) {
                             PacketDispatcher.sendToServer(new CRequestBehavior(behavior));
                             PacketDispatcher.sendToServer(new CRequestBehaviorEditor(behavior, this.getId()));
@@ -637,7 +639,7 @@ public class NpcEntity extends PathfinderMob {
                             }
                         } else if (!(player.getItemInHand(hand).getItem() instanceof NpcSaveToolItem)) {
                             // Otherwise if they're opped, in creative mode, and sneaking, send them the dialogue editor and open the screen for it
-                            if (player.hasPermissions(4) && player.isCreative() && player.isShiftKeyDown()) {
+                            if (PermissionHelper.hasPermission(player, PermissionHelper.EDIT_NPC) && player.isCreative() && player.isShiftKeyDown()) {
                                 if (player.level.isClientSide) {
                                     PacketDispatcher.sendToServer(new CRequestDialogue(dialogueName, this.getId()));
                                     PacketDispatcher.sendToServer(new CRequestDialogueEditor(dialogueName, this.getId()));
@@ -647,7 +649,7 @@ public class NpcEntity extends PathfinderMob {
                     } else {
                         // If the NPC has trades, they don't have any dialogue, and we don't have the requirements to edit the npc in any way,
                         // open the trades gui for this npc
-                        if (!((player.getItemInHand(hand).getItem() instanceof NpcEditorItem || player.getItemInHand(hand).getItem() instanceof NpcSaveToolItem) && player.hasPermissions(4) && player.isCreative())) {
+                        if (!((player.getItemInHand(hand).getItem() instanceof NpcEditorItem || player.getItemInHand(hand).getItem() instanceof NpcSaveToolItem))) {
                             if (player.level.isClientSide) {
                                 PacketDispatcher.sendToServer(new CRequestTrades(this.getId()));
                             }
@@ -1050,7 +1052,7 @@ public class NpcEntity extends PathfinderMob {
     @Override
     public boolean skipAttackInteraction(@NotNull Entity entityIn) {
         if (entityIn instanceof Player player) {
-            if (player.hasPermissions(4) && player.isCreative() && player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof NpcEditorItem) {
+            if (PermissionHelper.hasPermission(player, PermissionHelper.CREATE_NPC) && player.isCreative() && player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof NpcEditorItem) {
                 this.kill();
             }
         }

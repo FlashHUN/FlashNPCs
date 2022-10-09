@@ -1,5 +1,6 @@
 package flash.npcmod.inventory.container;
 
+import flash.npcmod.core.PermissionHelper;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.init.ContainerInit;
 import net.minecraft.world.SimpleContainer;
@@ -53,7 +54,7 @@ public class NpcTradeEditorContainer extends AbstractContainerMenu {
 
   @Override
   public boolean stillValid(Player playerIn) {
-    return playerIn.hasPermissions(4);
+    return PermissionHelper.hasPermission(playerIn, PermissionHelper.EDIT_NPC);
   }
 
   public ItemStack quickMoveStack(Player playerIn, int index) {
