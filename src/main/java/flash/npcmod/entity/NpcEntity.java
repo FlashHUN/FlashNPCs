@@ -621,7 +621,7 @@ public class NpcEntity extends PathfinderMob {
                 if (markedForCompletion.isEmpty()) {
                     // Test for behavior editing.
                     String behavior = getBehaviorFile();
-                    if (!behavior.isEmpty() && player.getItemInHand(hand).getItem() instanceof BehaviorEditorItem && PermissionHelper.hasPermission(player, PermissionHelper.EDIT_BEHAVIOR)) {
+                    if (!behavior.isEmpty() && player.getItemInHand(hand).getItem() instanceof BehaviorEditorItem) {
                         if (player.level.isClientSide) {
                             PacketDispatcher.sendToServer(new CRequestBehavior(behavior));
                             PacketDispatcher.sendToServer(new CRequestBehaviorEditor(behavior, this.getId()));
@@ -639,7 +639,7 @@ public class NpcEntity extends PathfinderMob {
                             }
                         } else if (!(player.getItemInHand(hand).getItem() instanceof NpcSaveToolItem)) {
                             // Otherwise if they're opped, in creative mode, and sneaking, send them the dialogue editor and open the screen for it
-                            if (PermissionHelper.hasPermission(player, PermissionHelper.EDIT_NPC) && player.isCreative() && player.isShiftKeyDown()) {
+                            if (player.isCreative() && player.isShiftKeyDown()) {
                                 if (player.level.isClientSide) {
                                     PacketDispatcher.sendToServer(new CRequestDialogue(dialogueName, this.getId()));
                                     PacketDispatcher.sendToServer(new CRequestDialogueEditor(dialogueName, this.getId()));

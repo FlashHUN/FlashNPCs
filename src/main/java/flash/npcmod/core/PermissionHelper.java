@@ -19,12 +19,10 @@ public class PermissionHelper {
     public static final PermissionNode<Boolean> SAVE_NPC = booleanNode("save_npc");
 
     public static boolean hasPermission(Player player, PermissionNode<Boolean> node) {
-        if (player.level.isClientSide) {
-            return player.hasPermissions(4);
+        if (player instanceof ServerPlayer serverPlayer) {
+            return player.hasPermissions(4) || PermissionAPI.getPermission(serverPlayer, node);
         }
-        else {
-            return player.hasPermissions(4) || PermissionAPI.getPermission((ServerPlayer) player, node);
-        }
+        return true;
     }
 
     private static PermissionNode<Boolean> booleanNode(String name) {
