@@ -5,8 +5,6 @@ import com.google.gson.JsonObject;
 import flash.npcmod.core.node.NodeData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +13,6 @@ import java.util.stream.Collectors;
 
 import static flash.npcmod.core.behaviors.CommonBehaviorUtil.INVALID_BEHAVIOR;
 
-@OnlyIn(Dist.CLIENT)
 public class Behavior extends NodeData {
     public String dialogueName;
     private Action action;
