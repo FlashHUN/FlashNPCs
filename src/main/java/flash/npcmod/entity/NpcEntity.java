@@ -86,7 +86,9 @@ public class NpcEntity extends PathfinderMob {
     private static final EntityDataAccessor<Integer> TEXTCOLOR = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> IS_TEXTURE_RESOURCE_LOCATION = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<CompoundTag> SCALE = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    private static final EntityDataAccessor<Float> SCALE_X = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> SCALE_Y = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> SCALE_Z = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.FLOAT);
     private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_DIMENSIONS).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
 
     public static final int MAX_OFFERS = 12;
@@ -100,7 +102,6 @@ public class NpcEntity extends PathfinderMob {
     @Nullable
     private TradeOffers tradeOffers;
     private LivingEntity entityToRenderAs;
-    private float scaleX = 1f, scaleY = 1f, scaleZ = 1f;
     private CompoundTag previousRendererTag;
     private Component titleComponent = TextComponent.EMPTY;
 
@@ -208,9 +209,9 @@ public class NpcEntity extends PathfinderMob {
         if (getRendererTag() != null)
             jsonObject.addProperty("rendererTag", getRendererTag().getAsString());
         JsonObject scale = new JsonObject();
-        scale.addProperty("x", scaleX);
-        scale.addProperty("y", scaleY);
-        scale.addProperty("z", scaleZ);
+        scale.addProperty("x", getScaleX());
+        scale.addProperty("y", getScaleY());
+        scale.addProperty("z", getScaleZ());
         jsonObject.add("scale", scale);
 
         jsonObject.add("inventory", inventoryToJson());
@@ -365,16 +366,10 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.define(SITTING, false);
         this.entityData.define(RENDERER, this.getType().getRegistryName().toString());
         this.entityData.define(RENDERER_TAG, new CompoundTag());
-        this.entityData.define(SCALE, getDefaultScale());
+        this.entityData.define(SCALE_X, 1f);
+        this.entityData.define(SCALE_Y, 1f);
+        this.entityData.define(SCALE_Z, 1f);
         this.entityData.define(TITLE, "");
-    }
-
-    private CompoundTag getDefaultScale() {
-        CompoundTag tag = new CompoundTag();
-        tag.putFloat("x", 1f);
-        tag.putFloat("y", 1f);
-        tag.putFloat("z", 1f);
-        return tag;
     }
 
     /**
@@ -431,11 +426,11 @@ public class NpcEntity extends PathfinderMob {
 
     @Override
     public @NotNull EntityDimensions getDimensions(@NotNull Pose pose) {
-        float horizontalScale = Math.max(scaleX, scaleZ);
+        float horizontalScale = Math.max(getScaleX(), getScaleZ());
         if (entityToRenderAs == null) {
-            return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS).scale(horizontalScale, scaleY);
+            return POSES.getOrDefault(pose, Player.STANDING_DIMENSIONS).scale(horizontalScale, getScaleY());
         }
-        return entityToRenderAs.getDimensions(pose).scale(horizontalScale, scaleY);
+        return entityToRenderAs.getDimensions(pose).scale(horizontalScale, getScaleY());
     }
 
     /**
@@ -469,20 +464,16 @@ public class NpcEntity extends PathfinderMob {
         return this.tradeOffers;
     }
 
-    public CompoundTag getScaleTag() {
-        return this.entityData.get(SCALE);
-    }
-
     public float getScaleX() {
-        return scaleX;
+        return this.entityData.get(SCALE_X);
     }
 
     public float getScaleY() {
-        return scaleY;
+        return this.entityData.get(SCALE_Y);
     }
 
     public float getScaleZ() {
-        return scaleZ;
+        return this.entityData.get(SCALE_Z);
     }
 
     /**
@@ -969,14 +960,9 @@ public class NpcEntity extends PathfinderMob {
         if (x < 0.1f || y < 0.1f || z < 0.1f ||
             x > 15 || y > 15 || z > 15) return;
 
-        CompoundTag tag = getScaleTag();
-        tag.putFloat("x", x);
-        tag.putFloat("y", y);
-        tag.putFloat("z", z);
-        this.entityData.set(SCALE, tag);
-        scaleX = x;
-        scaleY = y;
-        scaleZ = z;
+        this.entityData.set(SCALE_X, x);
+        this.entityData.set(SCALE_Y, y);
+        this.entityData.set(SCALE_Z, z);
 
         refreshDimensions();
     }
