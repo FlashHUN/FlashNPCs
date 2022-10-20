@@ -443,7 +443,7 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
       if (net.minecraftforge.client.ForgeHooksClient.isNameplateInRenderDistance(entityIn, d0)) {
         boolean flag = !entityIn.isDiscrete();
         boolean isTitleVisible = entityIn.isTitleVisible();
-        float f = entityIn.getBbHeight() + 0.5F;
+        float f = entityIn.getBbHeight() + (entityIn.isSitting() ? 1.0F : 0.5F);
         int i = isTitleVisible ? -10 : 0;
         matrixStackIn.pushPose();
         matrixStackIn.translate(0.0D, (double)f, 0.0D);
