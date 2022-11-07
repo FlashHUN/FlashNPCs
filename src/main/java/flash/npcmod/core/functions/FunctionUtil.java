@@ -22,6 +22,7 @@ public class FunctionUtil {
   private static final CloseDialogueFunction CLOSE_DIALOGUE = new CloseDialogueFunction();
   private static final MoveOnAcceptedQuestFunction MOVE_ON_ACCEPTED_QUEST = new MoveOnAcceptedQuestFunction();
   private static final MoveOnCompleteQuestFunction MOVE_ON_COMPLETE_QUEST = new MoveOnCompleteQuestFunction();
+  private static final MoveOnDataFunction MOVE_ON_DATA_FUNCTION = new MoveOnDataFunction();
   private static final MoveOnScoreboardFunction MOVE_ON_SCOREBOARD = new MoveOnScoreboardFunction();
   private static final MoveOnTagFunction MOVE_ON_TAG = new MoveOnTagFunction();
   private static final MoveOnTeamFunction MOVE_ON_TEAM = new MoveOnTeamFunction();
@@ -35,6 +36,7 @@ public class FunctionUtil {
     FUNCTIONS.add(CLOSE_DIALOGUE);
     FUNCTIONS.add(MOVE_ON_ACCEPTED_QUEST);
     FUNCTIONS.add(MOVE_ON_COMPLETE_QUEST);
+    FUNCTIONS.add(MOVE_ON_DATA_FUNCTION);
     FUNCTIONS.add(MOVE_ON_SCOREBOARD);
     FUNCTIONS.add(MOVE_ON_TAG);
     FUNCTIONS.add(MOVE_ON_TEAM);
