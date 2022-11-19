@@ -17,6 +17,7 @@ public class FunctionUtil {
   private static boolean DEBUG_MODE = false;
 
   public static final List<AbstractFunction> FUNCTIONS = new ArrayList<>();
+  private static List<AbstractFunction> DEFAULT_FUNCTIONS;
 
   private static final AcceptQuestFunction ACCEPT_QUEST = new AcceptQuestFunction();
   private static final CloseDialogueFunction CLOSE_DIALOGUE = new CloseDialogueFunction();
@@ -44,6 +45,11 @@ public class FunctionUtil {
     FUNCTIONS.add(OPEN_TRADES);
     FUNCTIONS.add(PLAY_SOUND);
     FUNCTIONS.add(RANDOM_OPTION);
+    DEFAULT_FUNCTIONS = List.copyOf(FUNCTIONS);
+  }
+
+  public static List<AbstractFunction> getDefaultFunctions() {
+    return DEFAULT_FUNCTIONS;
   }
 
   public static void toggleDebugMode() {
@@ -133,6 +139,19 @@ public class FunctionUtil {
     }
     catch (IOException e) {
       e.printStackTrace();
+    }
+    return false;
+  }
+
+  public static boolean deleteFunction(String name) {
+    try {
+      File file = FileUtil.getFunctionFileForWriting("functions", name);
+      if (file != null) {
+        FUNCTIONS.removeIf(function -> function.getName().equals(name));
+        return file.delete();
+      }
+    } catch (Exception e) {
+      Main.LOGGER.warn("Error deleting function " + name);
     }
     return false;
   }

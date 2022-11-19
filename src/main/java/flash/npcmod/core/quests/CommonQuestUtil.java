@@ -75,6 +75,19 @@ public class CommonQuestUtil {
     }
   }
 
+  public static boolean deleteQuest(String name) {
+    try {
+      File file = FileUtil.getJsonFileForWriting("quests", name);
+      if (file != null) {
+        removeQuest(name);
+        return file.delete();
+      }
+    } catch (Exception e) {
+      Main.LOGGER.warn("Error deleting quest " + name);
+    }
+    return false;
+  }
+
   @Nullable
   public static Quest fromName(String name) {
     for (Quest quest : QUESTS) {

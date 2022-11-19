@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
+import flash.npcmod.commands.argument.QuestArgument;
 import flash.npcmod.core.quests.CommonQuestUtil;
 import flash.npcmod.core.quests.Quest;
 import flash.npcmod.core.quests.QuestInstance;
@@ -42,29 +43,44 @@ public class QuestsCommand extends Command {
         .executes(context -> list(context.getSource())));
 
     builder.then(literal("edit")
-        .then(argument("quest", StringArgumentType.string())
-            .executes(context -> edit(context.getSource(), StringArgumentType.getString(context, "quest")))));
+        .then(argument("quest", QuestArgument.quest())
+            .executes(context -> edit(context.getSource(), QuestArgument.getName(context, "quest")))));
 
     builder.then(literal("completeObjective")
         .then(argument("player", EntityArgument.player())
-        .then(argument("quest", StringArgumentType.string())
+        .then(argument("quest", QuestArgument.quest())
         .then(argument("objective", StringArgumentType.greedyString())
-            .executes(context -> completeObjective(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest"), StringArgumentType.getString(context, "objective")))))));
+            .executes(context -> completeObjective(context.getSource(), EntityArgument.getPlayer(context, "player"), QuestArgument.getName(context, "quest"), StringArgumentType.getString(context, "objective")))))));
   
     builder.then(literal("completeQuest")
             .then(argument("player", EntityArgument.player())
-                    .then(argument("quest", StringArgumentType.string())
+                    .then(argument("quest", QuestArgument.quest())
                             .then(argument("completeAllObjectives", BoolArgumentType.bool())
-                                    .executes(context -> completeQuest(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest"), BoolArgumentType.getBool(context, "completeAllObjetives")))))));
+                                    .executes(context -> completeQuest(context.getSource(), EntityArgument.getPlayer(context, "player"), QuestArgument.getName(context, "quest"), BoolArgumentType.getBool(context, "completeAllObjetives")))))));
+
+    builder.then(literal("delete").then(argument("quest", QuestArgument.quest())
+            .executes(context -> deleteQuest(context.getSource(), QuestArgument.getName(context, "quest")))));
+
 
     builder.then(literal("reload").executes(context -> reloadAllQuests(context.getSource())));
 
     builder.then(literal("reset")
         .then(argument("player", EntityArgument.player())
-        .then(literal("quest").then(argument("quest", StringArgumentType.string())
-                .executes(context -> reset(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "quest")))))
+        .then(literal("quest").then(argument("quest", QuestArgument.quest())
+                .executes(context -> reset(context.getSource(), EntityArgument.getPlayer(context, "player"), QuestArgument.getName(context, "quest")))))
         .then(literal("all")
                 .executes(context -> resetAll(context.getSource(), EntityArgument.getPlayer(context, "player"))))));
+  }
+
+  private int deleteQuest(CommandSourceStack source, String quest) {
+    if (CommonQuestUtil.fromName(quest) == null)
+      source.sendFailure(new TextComponent("Quest doesn't exist..."));
+
+    if (CommonQuestUtil.deleteQuest(quest))
+      source.sendSuccess(new TextComponent("Successfully deleted quest: " + quest).withStyle(ChatFormatting.GREEN), false);
+    else
+      source.sendFailure(new TextComponent("Couldn't delete quest..."));
+    return 0;
   }
 
   @Override

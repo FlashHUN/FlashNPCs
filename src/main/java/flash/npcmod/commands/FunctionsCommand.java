@@ -1,7 +1,8 @@
 package flash.npcmod.commands;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import flash.npcmod.commands.argument.NpcFunctionArgument;
+import flash.npcmod.core.functions.AbstractFunction;
 import flash.npcmod.core.functions.Function;
 import flash.npcmod.core.functions.FunctionUtil;
 import flash.npcmod.entity.NpcEntity;
@@ -31,15 +32,31 @@ public class FunctionsCommand extends Command {
 
   @Override
   public void build(LiteralArgumentBuilder<CommandSourceStack> builder) {
+    builder.then(literal("delete")
+        .then(argument("function", NpcFunctionArgument.function())
+                .executes(context -> delete(context.getSource(), NpcFunctionArgument.getName(context, "function")))));
+
     builder.then(literal("list").executes(context -> list(context.getSource())));
 
     builder.then(literal("run")
-        .then(argument("function", StringArgumentType.string())
-        .executes(context -> runAs(context.getSource(), context.getSource().getPlayerOrException(), StringArgumentType.getString(context, "function")))));
+        .then(argument("function", NpcFunctionArgument.functionWithDefaults())
+                .executes(context -> runAs(context.getSource(), context.getSource().getPlayerOrException(), NpcFunctionArgument.getName(context, "function")))));
 
     builder.then(literal("runAs")
-        .then(argument("player", EntityArgument.player()).then(argument("function", StringArgumentType.string())
-        .executes(context -> runAs(context.getSource(), EntityArgument.getPlayer(context, "player"), StringArgumentType.getString(context, "function"))))));
+        .then(argument("player", EntityArgument.player())
+        .then(argument("function", NpcFunctionArgument.functionWithDefaults())
+                .executes(context -> runAs(context.getSource(), EntityArgument.getPlayer(context, "player"), NpcFunctionArgument.getName(context, "function"))))));
+  }
+
+  private int delete(CommandSourceStack source, String function) {
+    if (!FunctionUtil.FUNCTIONS.stream().map(AbstractFunction::getName).toList().contains(function)) {
+      source.sendFailure(new TextComponent("Function doesn't exist..."));
+    }
+    if (FunctionUtil.deleteFunction(function))
+      source.sendSuccess(new TextComponent("Successfully deleted function: " + function).withStyle(ChatFormatting.GREEN), false);
+    else
+      source.sendFailure(new TextComponent("Couldn't delete function..."));
+    return 0;
   }
 
   @Override

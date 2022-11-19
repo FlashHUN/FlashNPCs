@@ -1,13 +1,16 @@
 package flash.npcmod;
 
 import flash.npcmod.capability.quests.IQuestCapability;
-import flash.npcmod.config.ConfigHolder;
+import flash.npcmod.commands.argument.NpcFunctionArgument;
+import flash.npcmod.commands.argument.QuestArgument;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.events.QuestEvents;
 import flash.npcmod.init.CommandInit;
 import flash.npcmod.init.EntityInit;
 import flash.npcmod.init.ItemInit;
 import flash.npcmod.network.PacketDispatcher;
+import net.minecraft.commands.synchronization.ArgumentTypes;
+import net.minecraft.commands.synchronization.EmptyArgumentSerializer;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
@@ -17,9 +20,7 @@ import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
@@ -65,6 +66,9 @@ public class Main {
   private void setup(final FMLCommonSetupEvent event) {
     // Register packets
     PacketDispatcher.registerMessages();
+
+    ArgumentTypes.register("quest", QuestArgument.class, new EmptyArgumentSerializer<>(QuestArgument::quest));
+    ArgumentTypes.register("npcfunction", NpcFunctionArgument.class, new EmptyArgumentSerializer<>(NpcFunctionArgument::function));
   }
 
   public void registerEntityAttributes(EntityAttributeCreationEvent event) {
