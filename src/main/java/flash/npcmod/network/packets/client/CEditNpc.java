@@ -69,6 +69,7 @@ public class CEditNpc {
     this.resetAI = resetAI;
     this.renderer = renderer;
     this.rendererTag = rendererTag;
+    this.rendererTag.putString("id", renderer);
     this.scaleX = scaleX;
     this.scaleY = scaleY;
     this.scaleZ = scaleZ;
@@ -146,8 +147,7 @@ public class CEditNpc {
           npcEntity.setDialogue(msg.dialogue);
           npcEntity.setBehaviorFile(msg.behavior);
           npcEntity.setTextColor(msg.textColor);
-          npcEntity.setRenderer(msg.renderer);
-          npcEntity.setRendererTag(msg.rendererTag);
+          npcEntity.setRenderedEntityFromTag(msg.rendererTag);
           npcEntity.setItemSlot(EquipmentSlot.MAINHAND, msg.items[0]);
           npcEntity.setItemSlot(EquipmentSlot.OFFHAND, msg.items[1]);
           npcEntity.setItemSlot(EquipmentSlot.HEAD, msg.items[2]);
