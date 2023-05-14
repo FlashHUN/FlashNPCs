@@ -2,6 +2,7 @@ package flash.npcmod.core.saves;
 
 import com.google.gson.JsonObject;
 import flash.npcmod.Main;
+import flash.npcmod.config.ConfigHolder;
 import flash.npcmod.core.FileUtil;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -13,7 +14,7 @@ import java.util.List;
 
 public class NpcSaveUtil {
 
-  public static final byte MAX_SAVED_NPCS = 20;
+  public static final int MAX_SAVED_NPCS = ConfigHolder.COMMON.getMaxSavedNpcs();
 
   public enum BuildResult {
     SUCCESS,

@@ -1,20 +1,11 @@
 package flash.npcmod.config;
 
 import com.google.gson.*;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import flash.npcmod.Main;
-import net.minecraft.commands.arguments.item.ItemArgument;
-import net.minecraft.commands.arguments.item.ItemInput;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.TagParser;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nullable;
 import java.io.*;
@@ -89,8 +80,10 @@ public class ConfigHolder {
             "/ban", "/ban-ip", "/deop", "/forceload", "/op", "/pardon", "/pardon-ip", "/save-off",
             "/setidletimeout", "/setworldspawn", "/stop", "/whitelist", "/"+Main.MODID
     );
+    private static final int DEFAULT_MAX_SAVED_NPCS = 20;
 
     private static final String INVALID_COMMANDS_KEY = "invalid_commands";
+    private static final String MAX_SAVED_NPCS_KEY = "max_saved_npcs";
 
     public Common() {
       super(ConfigType.COMMON);
@@ -99,14 +92,15 @@ public class ConfigHolder {
     @Override
     public void reloadConfig() {
       super.reloadConfig();
-      JsonArray invalidCommands = getConfig().getAsJsonObject().getAsJsonArray(INVALID_COMMANDS_KEY);
+      var config = getConfig().getAsJsonObject();
+      JsonArray invalidCommands = config.getAsJsonArray(INVALID_COMMANDS_KEY);
       for (int i = 0; i < invalidCommands.size(); i++) {
         String command = invalidCommands.get(i).getAsString();
         if (!command.startsWith("/")) {
           invalidCommands.set(i, new JsonPrimitive("/".concat(command)));
         }
       }
-      getConfig().getAsJsonObject().add(INVALID_COMMANDS_KEY, invalidCommands);
+      config.add(INVALID_COMMANDS_KEY, invalidCommands);
     }
 
     @Override
@@ -121,8 +115,11 @@ public class ConfigHolder {
           JsonElement jsonElement = prevalidateConfig(text);
           if (jsonElement == null) return false;
           JsonObject config = jsonElement.getAsJsonObject();
-          if (!config.has(INVALID_COMMANDS_KEY) || !config.get(INVALID_COMMANDS_KEY).isJsonArray()) return false;
-          return true;
+          return config.has(INVALID_COMMANDS_KEY)
+                  && config.get(INVALID_COMMANDS_KEY).isJsonArray()
+                  && config.has(MAX_SAVED_NPCS_KEY)
+                  && config.get(MAX_SAVED_NPCS_KEY).isJsonPrimitive()
+                  && config.getAsJsonPrimitive(MAX_SAVED_NPCS_KEY).isNumber();
         } catch(Exception e) {
           return false;
         }
@@ -136,6 +133,7 @@ public class ConfigHolder {
       JsonArray defaultInvalidCommands = new JsonArray();
       DEFAULT_INVALID_COMMANDS.forEach(defaultInvalidCommands::add);
       config.add(INVALID_COMMANDS_KEY, defaultInvalidCommands);
+      config.addProperty(MAX_SAVED_NPCS_KEY, DEFAULT_MAX_SAVED_NPCS);
 
       return config;
     }
@@ -151,6 +149,10 @@ public class ConfigHolder {
       }
 
       return false;
+    }
+
+    public int getMaxSavedNpcs() {
+      return getConfig().getAsJsonObject().getAsJsonPrimitive(MAX_SAVED_NPCS_KEY).getAsInt();
     }
   }
 
