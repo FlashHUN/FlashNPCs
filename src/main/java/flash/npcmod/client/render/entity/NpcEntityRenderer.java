@@ -143,32 +143,18 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
   @Override
   public ResourceLocation getTextureLocation(NpcEntity entity) {
     try {
-      if (entity.getTexture().isEmpty() || entity.getTexture().isBlank()) {
-        return getDefaultTexture(entity);
-      }
-      if (entity.isTextureResourceLocation()) {
-        return ResourceLocation.tryParse(entity.getTexture());
-      }
-      else {
-        if (shouldRenderAsPlayer(entity)) {
+      if (shouldRenderAsPlayer(entity)) {
+        if (entity.isTextureResourceLocation()) {
+          ResourceLocation texture = ResourceLocation.tryParse(entity.getTexture());
+          return texture == null ? DefaultPlayerSkin.getDefaultSkin() : texture;
+        } else {
           return SkinUtil.loadSkin(entity.getTexture(), DefaultPlayerSkin.getDefaultSkin(), true);
         }
-        else {
-          LivingEntity entityToRenderAs = entity.getRenderedEntity();
-          return SkinUtil.loadSkin(entity.getTexture(), this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs), false);
-        }
       }
+      return DefaultPlayerSkin.getDefaultSkin();
     } catch (Exception ignored) {
-      return getDefaultTexture(entity);
-    }
-  }
-
-  private ResourceLocation getDefaultTexture(NpcEntity entity) {
-    if (shouldRenderAsPlayer(entity)) {
       return DefaultPlayerSkin.getDefaultSkin();
     }
-    LivingEntity entityToRenderAs = entity.getRenderedEntity();
-    return this.entityRenderDispatcher.getRenderer(entityToRenderAs).getTextureLocation(entityToRenderAs);
   }
 
   private void setModelProperties(NpcEntity npcEntity) {
