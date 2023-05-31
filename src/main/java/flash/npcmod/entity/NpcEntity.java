@@ -88,8 +88,8 @@ public class NpcEntity extends PathfinderMob {
     private static final EntityDataAccessor<Float> SCALE_X = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SCALE_Y = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> SCALE_Z = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> COLLISION = SynchedEntityData.defineId(NpcEntity.class, EntityDataSerializers.BOOLEAN);
     private static final Map<Pose, EntityDimensions> POSES = ImmutableMap.<Pose, EntityDimensions>builder().put(Pose.STANDING, Player.STANDING_DIMENSIONS).put(Pose.SLEEPING, SLEEPING_DIMENSIONS).put(Pose.FALL_FLYING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SWIMMING, EntityDimensions.scalable(0.6F, 0.6F)).put(Pose.SPIN_ATTACK, SITTING_DIMENSIONS).put(Pose.CROUCHING, EntityDimensions.scalable(0.6F, 1.5F)).put(Pose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
-
     public static final int MAX_OFFERS = 12;
     private static final int MAX_TELEPORT_COUNTER = 20 * 15; // 20 ticks (1 second) * amount of seconds
     @Nullable
@@ -139,6 +139,7 @@ public class NpcEntity extends PathfinderMob {
         compound.putFloat("scaleX", getScaleX());
         compound.putFloat("scaleY", getScaleY());
         compound.putFloat("scaleZ", getScaleZ());
+        compound.putBoolean("collision", hasCollision());
 
         TradeOffers tradeOffers = this.getOffers();
         if (!tradeOffers.isEmpty()) {
@@ -167,6 +168,7 @@ public class NpcEntity extends PathfinderMob {
             setIsTextureResourceLocation(compound.getBoolean("is_texture_resource_loc"));
         setRenderedEntityFromTag((CompoundTag) compound.get("renderer"));
         setScale(compound.getFloat("scaleX"), compound.getFloat("scaleY"), compound.getFloat("scaleZ"));
+        setCollision(compound.getBoolean("collision"));
 
         if (compound.contains("Offers", 10)) {
             this.tradeOffers = new TradeOffers(compound.getCompound("Offers"));
@@ -194,6 +196,7 @@ public class NpcEntity extends PathfinderMob {
         scale.addProperty("y", getScaleY());
         scale.addProperty("z", getScaleZ());
         jsonObject.add("scale", scale);
+        jsonObject.addProperty("collision", hasCollision());
 
         jsonObject.add("inventory", inventoryToJson());
 
@@ -229,6 +232,9 @@ public class NpcEntity extends PathfinderMob {
         if (jsonObject.has("scale")) {
             JsonObject scale = jsonObject.get("scale").getAsJsonObject();
             npcEntity.setScale(scale.get("x").getAsFloat(), scale.get("y").getAsFloat(), scale.get("z").getAsFloat());
+        }
+        if (jsonObject.has("collision")) {
+            npcEntity.setCollision(jsonObject.get("collision").getAsBoolean());
         }
         npcEntity.tradeOffers = TradeOffers.read(jsonObject.get("trades").getAsString());
         try {
@@ -325,6 +331,7 @@ public class NpcEntity extends PathfinderMob {
         this.entityData.define(SCALE_Y, 1f);
         this.entityData.define(SCALE_Z, 1f);
         this.entityData.define(TITLE, "");
+        this.entityData.define(COLLISION, true);
     }
 
     @Nullable
@@ -786,6 +793,28 @@ public class NpcEntity extends PathfinderMob {
                 this.applyBehavior(nextBehavior);
                 return;
             }
+        }
+    }
+
+    public boolean hasCollision() {
+        return this.entityData.get(COLLISION);
+    }
+
+    public void setCollision(boolean collision) {
+        this.entityData.set(COLLISION, collision);
+    }
+
+    @Override
+    public boolean isPushable()
+    {
+        return hasCollision();
+    }
+
+    @Override
+    protected void pushEntities()
+    {
+        if (hasCollision()) {
+            super.pushEntities();
         }
     }
 

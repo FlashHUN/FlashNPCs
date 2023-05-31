@@ -27,31 +27,32 @@ public class CEditNpc {
   String renderer;
   CompoundTag rendererTag;
   float scaleX, scaleY, scaleZ;
+  boolean collision;
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, String renderer,
-                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
+                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ, boolean collision) {
     this(entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
-            rendererTag, scaleX, scaleY, scaleZ);
+            rendererTag, scaleX, scaleY, scaleZ, collision);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, EntityType<?> renderer,
-                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
+                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ, boolean collision) {
     this(entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, false, renderer,
-            rendererTag, scaleX, scaleY, scaleZ);
+            rendererTag, scaleX, scaleY, scaleZ, collision);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI,
-                  EntityType<?> renderer, CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
+                  EntityType<?> renderer, CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ, boolean collision) {
     this(entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items, pose, resetAI, EntityType.getKey(renderer).toString(),
-            rendererTag, scaleX, scaleY, scaleZ);
+            rendererTag, scaleX, scaleY, scaleZ, collision);
   }
 
   public CEditNpc(int entityid, boolean isNameVisible, String name, String title, String texture, boolean isTextureResourceLocation, boolean isSlim,
                   String dialogue, String behavior, int textColor, ItemStack[] items, NPCPose pose, boolean resetAI, String renderer,
-                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ) {
+                  CompoundTag rendererTag, float scaleX, float scaleY, float scaleZ, boolean collision) {
     this.entityid = entityid;
     this.isNameVisible = isNameVisible;
     this.name = name;
@@ -73,6 +74,7 @@ public class CEditNpc {
     this.scaleX = scaleX;
     this.scaleY = scaleY;
     this.scaleZ = scaleZ;
+    this.collision = collision;
   }
 
   public static void encode(CEditNpc msg, FriendlyByteBuf buf) {
@@ -93,6 +95,7 @@ public class CEditNpc {
     buf.writeFloat(msg.scaleX);
     buf.writeFloat(msg.scaleY);
     buf.writeFloat(msg.scaleZ);
+    buf.writeBoolean(msg.collision);
     if (msg.items != null) {
       for (int i = 0; i < 6; i++) {
         buf.writeItem(msg.items[i]);
@@ -122,13 +125,14 @@ public class CEditNpc {
     float scaleX = buf.readFloat();
     float scaleY = buf.readFloat();
     float scaleZ = buf.readFloat();
+    boolean collision = buf.readBoolean();
     List<ItemStack> items = new ArrayList<>();
     for (int i = 0; i < 6; i++) {
       items.add(buf.readItem());
     }
     return new CEditNpc(
             entityid, isNameVisible, name, title, texture, isTextureResourceLocation, isSlim, dialogue, behavior, textColor, items.toArray(new ItemStack[0]),
-            pose, resetAI, renderer, rendererTag, scaleX, scaleY, scaleZ
+            pose, resetAI, renderer, rendererTag, scaleX, scaleY, scaleZ, collision
     );
   }
 
@@ -157,6 +161,7 @@ public class CEditNpc {
           npcEntity.setRenderedEntityItems();
           if (msg.scaleX >= 0.1f && msg.scaleY >= 0.1f && msg.scaleZ >= 0.1f)
             npcEntity.setScale(msg.scaleX, msg.scaleY, msg.scaleZ);
+          npcEntity.setCollision(msg.collision);
 
           switch (msg.pose) {
             case CROUCHING -> { npcEntity.setCrouching(true); npcEntity.setSitting(false); }
