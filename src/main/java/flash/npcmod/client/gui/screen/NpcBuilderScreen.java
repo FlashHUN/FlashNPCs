@@ -296,9 +296,10 @@ public class NpcBuilderScreen extends Screen {
     this.poseDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(currentData.pose, minX + 210, 5, 80));
     this.poseDropdown.active = currentData.renderedType == EntityInit.NPC_ENTITY.get();
 
-    this.collisionCheckbox = this.addRenderableWidget(new Checkbox(minX + 130 + font.width("Collision: "), 80, 20, 20, TextComponent.EMPTY, currentData.collision, false));
-
     this.rendererDropdown = this.addRenderableWidget(new EntityDropdownWidget(currentData.renderedType, minX + 125, 105, 165, 8, true));
+
+    this.collisionCheckbox = this.addRenderableWidget(new Checkbox(minX + 130 + font.width("Collision: "), 120, 20, 20, TextComponent.EMPTY, currentData.collision, false));
+    this.collisionCheckbox.visible = this.collisionCheckbox.active = !this.rendererDropdown.isShowingOptions();
 
     this.rendererTagField = this.addRenderableWidget(new EditBox(font, minX + 125, 80, 165, 20, TextComponent.EMPTY));
     this.rendererTagField.setResponder(this::setRendererTag);
@@ -449,7 +450,8 @@ public class NpcBuilderScreen extends Screen {
     npcEntity.setScale(currentData.scaleX, currentData.scaleY, currentData.scaleZ);
   }
 
-  private void setRendererTag(String s) {
+  private void setRendererTag(String s)
+  {
     if (s.isEmpty()) {
       currentData.rendererTag = originalRendererTagCopy;
     } else {
@@ -480,6 +482,7 @@ public class NpcBuilderScreen extends Screen {
       }
     }
     currentData.collision = collisionCheckbox.selected();
+    this.collisionCheckbox.visible = this.collisionCheckbox.active = !this.rendererDropdown.isShowingOptions();
 
     currentData.renderedType = this.rendererDropdown.getSelectedType();
     if (!npcEntity.getRenderedEntityType().equals(currentData.renderedType)) {
@@ -524,7 +527,7 @@ public class NpcBuilderScreen extends Screen {
     drawString(matrixStack, font, "Slim? ", minX + 130, 30 + center, this.slimCheckBox.active ? 0xFFFFFF : 0x7D7D7D);
     drawString(matrixStack, font, "ResourceLocation? ", minX + 155 + font.width("Slim? "), 30 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Scale: ", minX + 130, 55 + center, 0xFFFFFF);
-    drawString(matrixStack, font, "Collision: ", minX + 130, 80 + center, 0xFFFFFF);
+    drawString(matrixStack, font, "Collision: ", minX + 130, 120 + center, 0xFFFFFF);
 
     drawString(matrixStack, font, "Dialogue: ", 5, 80 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Behavior: ", 5, 105 + center, 0xFFFFFF);

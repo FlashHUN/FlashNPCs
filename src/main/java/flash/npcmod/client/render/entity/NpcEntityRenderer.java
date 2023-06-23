@@ -91,6 +91,12 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
       currentRenderer.render(currentRenderedEntity, entityYaw, partialTicks, matrixStackIn, bufferIn, packedLightIn);
       matrixStackIn.popPose();
     }
+    net.minecraftforge.client.event.RenderNameplateEvent renderNameplateEvent = new net.minecraftforge.client.event.RenderNameplateEvent(entityIn, entityIn.getDisplayName(), this, matrixStackIn, bufferIn, packedLightIn, partialTicks);
+    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(renderNameplateEvent);
+    if (renderNameplateEvent.getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY && (renderNameplateEvent.getResult() == net.minecraftforge.eventbus.api.Event.Result.ALLOW || this.shouldShowName(entityIn))) {
+      this.renderNameTag(entityIn, renderNameplateEvent.getContent(), matrixStackIn, bufferIn, packedLightIn);
+    }
+    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.RenderLivingEvent.Post<>(entityIn, this, partialTicks, matrixStackIn, bufferIn, packedLightIn));
   }
 
   private void copyRotationsAndAnim(NpcEntity npcEntity) {
@@ -321,12 +327,6 @@ public class NpcEntityRenderer extends LivingEntityRenderer<NpcEntity, PlayerMod
     }
 
     matrixStackIn.popPose();
-    net.minecraftforge.client.event.RenderNameplateEvent renderNameplateEvent = new net.minecraftforge.client.event.RenderNameplateEvent(entityIn, entityIn.getDisplayName(), this, matrixStackIn, bufferIn, packedLightIn, partialTicks);
-    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(renderNameplateEvent);
-    if (renderNameplateEvent.getResult() != net.minecraftforge.eventbus.api.Event.Result.DENY && (renderNameplateEvent.getResult() == net.minecraftforge.eventbus.api.Event.Result.ALLOW || this.shouldShowName(entityIn))) {
-      this.renderNameTag(entityIn, renderNameplateEvent.getContent(), matrixStackIn, bufferIn, packedLightIn);
-    }
-    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.RenderLivingEvent.Post<>(entityIn, this, partialTicks, matrixStackIn, bufferIn, packedLightIn));
   }
 
   @Override

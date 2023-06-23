@@ -887,6 +887,7 @@ public class NpcEntity extends PathfinderMob {
                 || tag.getString("id").equals(TYPE_STRING)) {
             this.renderedEntity = null;
             this.prevRenderedEntityTag = null;
+            this.entityData.set(RENDERER_TAG, new CompoundTag());
             refreshDimensions();
             return;
         }
