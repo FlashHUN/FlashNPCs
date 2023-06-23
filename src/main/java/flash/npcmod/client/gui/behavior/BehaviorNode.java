@@ -417,7 +417,7 @@ public class BehaviorNode extends BuilderNode {
     }
 
     public Trigger getEditTrigger() {
-        if (this.editTriggerIndex == -1) return null;
+        if (this.editTriggerIndex <= nodeData.getTriggers().length) return null;
         return nodeData.getTriggers()[this.editTriggerIndex];
     }
 
