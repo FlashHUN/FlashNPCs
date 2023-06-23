@@ -112,7 +112,7 @@ public class NpcBuilderScreen extends Screen {
   private final NpcData currentData;
   private final CompoundTag originalRendererTagCopy;
 
-  public EditBox redField, greenField, blueField, scaleXField, scaleYField, scaleZField, rendererTagField;
+  public EditBox redField, greenField, blueField, scaleXField, scaleYField, scaleZField, rendererTagField, textureField;
   private Checkbox slimCheckBox, nameVisibleCheckbox, isResourceLocationCheckbox, collisionCheckbox;
   private CustomCheckbox scaleLinkCheckbox;
   private ColorSliderWidget redSlider, greenSlider, blueSlider;
@@ -196,7 +196,7 @@ public class NpcBuilderScreen extends Screen {
     titleField.setMaxLength(200);
     titleField.setValue(currentData.title);
 
-    EditBox textureField = this.addRenderableWidget(new EditBox(font, minX, 55, 120, 20, TextComponent.EMPTY));
+    textureField = this.addRenderableWidget(new EditBox(font, minX, 55, 120, 20, TextComponent.EMPTY));
     textureField.setResponder(this::setTexture);
     textureField.setFilter(textFilter);
     textureField.setMaxLength(200);
@@ -487,7 +487,9 @@ public class NpcBuilderScreen extends Screen {
     currentData.renderedType = this.rendererDropdown.getSelectedType();
     if (!npcEntity.getRenderedEntityType().equals(currentData.renderedType)) {
       var tag = currentData.rendererTag.copy();
-      tag.putString("id", EntityType.getKey(currentData.renderedType).toString());
+      var key = EntityType.getKey(currentData.renderedType).toString();
+      isResourceLocationCheckbox.visible = isResourceLocationCheckbox.active = textureField.visible = textureField.active = key.equals(NpcEntity.TYPE_STRING);
+      tag.putString("id", key);
       npcEntity.setRenderedEntityFromTag(tag);
     }
 
@@ -523,9 +525,9 @@ public class NpcBuilderScreen extends Screen {
     drawString(matrixStack, font, "Name: ", 5, 5 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Visible? ", minX + 130, 5 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Title: ", 5, 30 + center, 0xFFFFFF);
-    drawString(matrixStack, font, "Texture: ", 5, 55 + center, 0xFFFFFF);
+    if (textureField.visible) drawString(matrixStack, font, "Texture: ", 5, 55 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Slim? ", minX + 130, 30 + center, this.slimCheckBox.active ? 0xFFFFFF : 0x7D7D7D);
-    drawString(matrixStack, font, "ResourceLocation? ", minX + 155 + font.width("Slim? "), 30 + center, 0xFFFFFF);
+    if (isResourceLocationCheckbox.visible) drawString(matrixStack, font, "ResourceLocation? ", minX + 155 + font.width("Slim? "), 30 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Scale: ", minX + 130, 55 + center, 0xFFFFFF);
     drawString(matrixStack, font, "Collision: ", minX + 130, 120 + center, 0xFFFFFF);
 
