@@ -25,7 +25,7 @@ import java.util.ArrayList;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueBuilderScreen extends TreeBuilderScreen {
-    private String newText = "", newResponse = "", newTrigger = "";
+    private String newText = "", newResponse = "";
     @Nullable
     protected DialogueNode editingNode, selectedNode;
 
@@ -43,7 +43,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
         assert this.editingNode != null;
         this.editingNode.getNodeData().setText(this.newText);
         this.editingNode.getNodeData().setResponse(this.newResponse);
-        this.editingNode.getNodeData().setTrigger(this.newTrigger);
     }
 
     /**
@@ -131,13 +130,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
         responseField.setVisible(false);
         responseField.setCanLoseFocus(true);
         this.allNameFields.put(EditType.RESPONSE, responseField);
-
-        EditBox triggerField = this.addRenderableWidget(new EditBox(this.font, this.width / 2 - 60, this.height / 2 - 10, 120, 20, TextComponent.EMPTY));
-        triggerField.setResponder(this::setNewTrigger);
-        triggerField.setMaxLength(500);
-        triggerField.setVisible(false);
-        triggerField.setCanLoseFocus(true);
-        this.allNameFields.put(EditType.ACTION, triggerField);
     }
 
     /**
@@ -263,14 +255,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
     }
 
     /**
-     * Set a new trigger.
-     * @param s The new trigger.
-     */
-    private void setNewTrigger(String s) {
-        this.newTrigger = s;
-    }
-
-    /**
      * Set the selected node and the selected option index of it.
      *
      * @param node              The node to select.
@@ -293,7 +277,6 @@ public class DialogueBuilderScreen extends TreeBuilderScreen {
         if (node != null) {
             this.allNameFields.get(EditType.TEXT).setValue(((DialogueNode) node).getText());
             this.allNameFields.get(EditType.RESPONSE).setValue(((DialogueNode) node).getResponse());
-            this.allNameFields.get(EditType.ACTION).setValue(((DialogueNode) node).getTrigger());
         }
     }
 

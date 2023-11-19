@@ -232,6 +232,8 @@ public abstract class QuestObjective {
       questObjective = new QuestObjectiveTypes.UseObjective(id, name, itemStack, amount);
     else if (type.equals(ObjectiveType.CraftItem))
       questObjective = new QuestObjectiveTypes.CraftItemObjective(id, name, itemStack, amount);
+    else if (type.equals(ObjectiveType.SmeltItem))
+      questObjective = new QuestObjectiveTypes.SmeltItemObjective(id, name, itemStack, amount);
 
     if (questObjective != this) {
       questObjective.setQuest(this.getQuest());
@@ -256,7 +258,8 @@ public abstract class QuestObjective {
     UseOnBlock,
     Use,
     Scoreboard,
-    CraftItem;
+    CraftItem,
+    SmeltItem;
 
     ObjectiveType() {}
 
@@ -326,6 +329,7 @@ public abstract class QuestObjective {
       case Scoreboard ->
               new QuestObjectiveTypes.ScoreboardObjective(id, objectiveName, primaryObjective, objectiveAmount);
       case CraftItem -> new QuestObjectiveTypes.CraftItemObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
+      case SmeltItem -> new QuestObjectiveTypes.SmeltItemObjective(id, objectiveName, stackFromString(primaryObjective), objectiveAmount);
     };
 
     if (jsonObject.has("isHidden"))

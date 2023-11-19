@@ -8,20 +8,16 @@ import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import flash.npcmod.entity.NpcEntity;
 import flash.npcmod.network.PacketDispatcher;
 import flash.npcmod.network.packets.client.CCallFunction;
-import flash.npcmod.network.packets.client.CCallTrigger;
 import flash.npcmod.network.packets.client.CRequestQuestCapabilitySync;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @OnlyIn(Dist.CLIENT)
 public class DialogueScreen extends Screen {
@@ -107,10 +103,6 @@ public class DialogueScreen extends Screen {
           ClientDialogueUtil.loadDialogueOption(name);
           if (!ClientDialogueUtil.getCurrentResponse().isEmpty()) {
             addDisplayedNPCText(ClientDialogueUtil.getCurrentResponse());
-          }
-          if (!ClientDialogueUtil.getCurrentTrigger().isEmpty()) {
-            Main.LOGGER.info("Sending Call trigger");
-            PacketDispatcher.sendToServer(new CCallTrigger(ClientDialogueUtil.getCurrentTrigger(), this.npcEntity.getId()));
           }
           this.dialogueDisplayWidget.clampScroll(0);
           if (!ClientDialogueUtil.getCurrentFunction().isEmpty()) {

@@ -451,6 +451,32 @@ public class QuestObjectiveTypes {
     }
   }
 
+  public static class SmeltItemObjective extends QuestObjective {
+    private final ItemStack itemStack;
+
+    public SmeltItemObjective(int id, String name, ItemStack itemStack, int amount) {
+      super(id, name, ObjectiveType.SmeltItem, amount);
+      this.itemStack = itemStack;
+    }
+
+    @Override
+    public ItemStack getObjective() {
+      return itemStack;
+    }
+
+    @Override
+    public String primaryToString() {
+      return stackToString(itemStack);
+    }
+
+    @Override
+    public SmeltItemObjective copy() {
+      SmeltItemObjective copy = new SmeltItemObjective(getId(), getName(), itemStack, getAmount());
+      copyTo(copy);
+      return copy;
+    }
+  }
+
   public static String entityToString(LivingEntity livingEntity) {
     return livingEntity.getEncodeId();
   }

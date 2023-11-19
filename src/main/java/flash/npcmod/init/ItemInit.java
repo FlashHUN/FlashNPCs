@@ -1,7 +1,6 @@
 package flash.npcmod.init;
 
 import flash.npcmod.Main;
-import flash.npcmod.item.BehaviorEditorItem;
 import flash.npcmod.item.NpcEditorItem;
 import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.item.QuestEditorItem;
@@ -16,10 +15,6 @@ public class ItemInit {
 
   public static final RegistryObject<Item> NPC_EDITOR = ITEMS.register("npc_editor",
           NpcEditorItem::new
-  );
-
-  public static final RegistryObject<Item> BEHAVIOR_EDITOR = ITEMS.register("behavior_editor",
-          BehaviorEditorItem::new
   );
 
   public static final RegistryObject<Item> QUEST_EDITOR = ITEMS.register("quest_editor",

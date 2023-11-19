@@ -4,13 +4,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import flash.npcmod.Main;
 import flash.npcmod.core.node.BuilderNode;
 import flash.npcmod.core.node.NodeData;
 import flash.npcmod.client.gui.widget.DirectionalFrame;
 import flash.npcmod.client.gui.widget.FunctionListWidget;
 import flash.npcmod.client.gui.widget.TextWidget;
-import flash.npcmod.core.client.behaviors.ClientBehaviorUtil;
 import flash.npcmod.core.client.dialogues.ClientDialogueUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -76,9 +74,7 @@ abstract public class TreeBuilderScreen extends Screen {
         FILE,
         TEXT,
         RESPONSE,
-        ACTION,
-        FUNCTION,
-        TRIGGER
+        FUNCTION
 
     }
 
@@ -163,9 +159,9 @@ abstract public class TreeBuilderScreen extends Screen {
      * Confirm Edits and push their changes to the NodeData.
      */
     protected void confirmEdits() {
-        if (!this.newName.equals(ClientBehaviorUtil.INIT_BEHAVIOR_NAME) && !this.newName.isEmpty()) {
+        if (!this.newName.equals(NodeData.INIT_NODE_NAME) && !this.newName.isEmpty()) {
             assert this.getEditingNode() != null;
-            if (!this.getEditingNode().getName().equals(ClientBehaviorUtil.INIT_BEHAVIOR_NAME))
+            if (!this.getEditingNode().getName().equals(NodeData.INIT_NODE_NAME))
                 this.getEditingNode().getNodeData().setName(this.newName);
         }
         if (functionListWidget.isVisible()) {
@@ -649,7 +645,7 @@ abstract public class TreeBuilderScreen extends Screen {
      * @param s The new name.
      */
     protected void setNewName(String s) {
-        if (!s.isEmpty() && !s.equals(ClientBehaviorUtil.INIT_BEHAVIOR_NAME)) {
+        if (!s.isEmpty() && !s.equals(NodeData.INIT_NODE_NAME)) {
             this.newName = s;
         }
     }

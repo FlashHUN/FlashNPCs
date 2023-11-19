@@ -42,7 +42,6 @@ public class ClientDialogueUtil {
   private static String currentText = "";
   private static String currentResponse = "";
   private static String currentFunction = "";
-  private static String currentTrigger = "";
   private static JsonArray currentChildren = new JsonArray();
 
   public static void loadDialogue(String name) {
@@ -127,7 +126,6 @@ public class ClientDialogueUtil {
     currentText = "";
     currentResponse = "";
     currentFunction = "";
-    currentTrigger = "";
     currentChildren = new JsonArray();
   }
 
@@ -142,11 +140,6 @@ public class ClientDialogueUtil {
       currentFunction = object.get("function").getAsString();
     } else {
       currentFunction = "";
-    }
-    if (object.has("trigger")) {
-      currentTrigger = object.get("trigger").getAsString();
-    } else {
-      currentTrigger = "";
     }
     if (object.has("children")) {
       currentChildren = object.getAsJsonArray("children");
@@ -186,10 +179,6 @@ public class ClientDialogueUtil {
 
   public static String getCurrentFunction() {
     return currentFunction;
-  }
-
-  public static String getCurrentTrigger() {
-    return currentTrigger;
   }
 
   public static String[] getDialogueOptionNamesFromChildren() {

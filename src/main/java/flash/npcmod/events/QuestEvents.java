@@ -298,6 +298,28 @@ public class QuestEvents {
     }
   }
 
+  @SubscribeEvent
+  public void itemSmelted(PlayerEvent.ItemSmeltedEvent event) {
+    Player player = event.getPlayer();
+    if (player.isAlive() && !player.level.isClientSide) {
+      ItemStack itemStack = event.getSmelting();
+      IQuestCapability capability = QuestCapabilityProvider.getCapability(player);
+      ArrayList<QuestInstance> acceptedQuests = capability.getAcceptedQuests();
+      for (QuestInstance questInstance : acceptedQuests) {
+        List<QuestObjective> objectives = questInstance.getQuest().getObjectives();
+        for (QuestObjective objective : objectives) {
+          if (!objective.isHidden()) {
+            if (objective.getType().equals(QuestObjective.ObjectiveType.SmeltItem)) {
+              if (matches(objective.getObjective(), itemStack)) {
+                objective.progress(itemStack.getCount());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   private static boolean isPlayerInArea(Player player, BlockPos[] area) {
     BlockPos corner1 = area[0];
     BlockPos corner2 = area[1];

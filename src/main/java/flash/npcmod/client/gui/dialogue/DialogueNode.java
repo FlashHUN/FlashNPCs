@@ -67,10 +67,6 @@ public class DialogueNode extends BuilderNode {
         this.extraFieldsHeight[1] = isStart() ? -1 : defaultTextHeight * numOfResponseLines;
         actualHeight += this.extraFieldsHeight[1] + 1;
 
-        // Setting trigger bar height
-        this.extraFieldsHeight[2] = defaultTextHeight;
-        actualHeight += this.extraFieldsHeight[2] + 1;
-
     }
 
 
@@ -108,11 +104,6 @@ public class DialogueNode extends BuilderNode {
                     return;
                 }
                 minY += extraFieldsHeight[1] + 1;
-                if (mouseY >= minY && mouseY <= minY + extraFieldsHeight[2]) {
-                    clickedOnTriggerBar();
-                    return;
-                }
-                minY += extraFieldsHeight[2] + 1;
                 if (mouseY >= minY
                         && mouseY <= minY + functionBarHeight) {
                     clickedOnFunctionBar();
@@ -199,13 +190,6 @@ public class DialogueNode extends BuilderNode {
     }
 
     /**
-     * Set the Trigger Field as being edited.
-     */
-    public void clickedOnTriggerBar() {
-        builderScreen.setNodeBeingEdited(this, DialogueBuilderScreen.EditType.ACTION);
-    }
-
-    /**
      * Draw the extra rectangles.
      * @param matrixStack The PoseStack.
      * @param minY The minimal y point.
@@ -225,10 +209,6 @@ public class DialogueNode extends BuilderNode {
             fill(matrixStack, 1, minY, width - 1, minY + 1, black);
         }
 
-        // Bar for triggers
-        minY += 1 + extraFieldsHeight[2];
-        fill(matrixStack, 1, minY, width - 1, minY + 1, black);
-
         return minY;
     }
 
@@ -243,7 +223,6 @@ public class DialogueNode extends BuilderNode {
         // Draw File
         String text = getText();
         String response = getResponse();
-        String trigger = getTrigger();
 
         drawMultilineText(matrixStack, text.isEmpty() ? "Text" : text, minY, text.isEmpty());
         minY += extraFieldsHeight[0] + 1;
@@ -252,9 +231,6 @@ public class DialogueNode extends BuilderNode {
             drawMultilineText(matrixStack, response.isEmpty() ? "Response" : response, minY, response.isEmpty());
         }
         minY += extraFieldsHeight[1] + 1;
-
-        drawSingleLineText(matrixStack, trigger.isEmpty() ? "Trigger" : trigger, minY, trigger.isEmpty());
-        minY += extraFieldsHeight[2] + 1;
 
         return minY;
     }
@@ -404,14 +380,6 @@ public class DialogueNode extends BuilderNode {
      */
     public String getText() {
         return nodeData.getText();
-    }
-
-    /**
-     * Get the trigger.
-     * @return The trigger.
-     */
-    public String getTrigger() {
-        return nodeData.getTrigger();
     }
 
     /**

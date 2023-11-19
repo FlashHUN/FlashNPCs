@@ -43,7 +43,6 @@ public class NpcBuilderScreen extends Screen {
     private String name;
     private String title;
     private String dialogue;
-    private String behavior;
     private int textColor;
     private String texture;
     private boolean isSlim, isNameVisible, isTextureResourceLocation;
@@ -65,7 +64,6 @@ public class NpcBuilderScreen extends Screen {
       data.isTextureResourceLocation = npcEntity.isTextureResourceLocation();
       data.isSlim = npcEntity.isSlim();
       data.dialogue = npcEntity.getDialogue();
-      data.behavior = npcEntity.getBehaviorFile();
       data.textColor = npcEntity.getTextColor();
       data.items = new ItemStack[]{npcEntity.getMainHandItem(), npcEntity.getOffhandItem(),
               npcEntity.getItemBySlot(EquipmentSlot.HEAD), npcEntity.getItemBySlot(EquipmentSlot.CHEST),
@@ -93,7 +91,6 @@ public class NpcBuilderScreen extends Screen {
       npcEntity.setIsTextureResourceLocation(isTextureResourceLocation);
       npcEntity.setSlim(isSlim);
       npcEntity.setDialogue(dialogue);
-      npcEntity.setBehaviorFile(behavior);
       npcEntity.setTextColor(textColor);
       npcEntity.setItemSlot(EquipmentSlot.MAINHAND, items[0]);
       npcEntity.setItemSlot(EquipmentSlot.OFFHAND, items[1]);
@@ -208,12 +205,6 @@ public class NpcBuilderScreen extends Screen {
     dialogueField.setMaxLength(200);
     dialogueField.setValue(currentData.dialogue);
 
-    EditBox behaviorField = this.addRenderableWidget(new EditBox(font, minX, 105, 120, 20, TextComponent.EMPTY));
-    behaviorField.setResponder(this::setBehavior);
-    behaviorField.setFilter(textFilter);
-    behaviorField.setMaxLength(200);
-    behaviorField.setValue(currentData.behavior);
-
     this.slimCheckBox = this.addRenderableWidget(new Checkbox(minX + 130 + font.width("Slim? "), 30, 20, 20, TextComponent.EMPTY, currentData.isSlim));
     this.slimCheckBox.active = currentData.renderedType == EntityInit.NPC_ENTITY.get();
 
@@ -265,7 +256,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 20, 60, 20, new TextComponent("Confirm"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.title, currentData.texture, currentData.isTextureResourceLocation, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderedType, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ, currentData.collision));
+                      currentData.textColor, currentData.items, currentData.pose, currentData.renderedType, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ, currentData.collision));
       isConfirmClose = true;
       minecraft.setScreen(null);
     }));
@@ -274,7 +265,7 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 40, 60, 20, new TextComponent("Inventory"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.title, currentData.texture, currentData.isTextureResourceLocation, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderedType, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ, currentData.collision));
+                      currentData.textColor, currentData.items, currentData.pose, currentData.renderedType, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ, currentData.collision));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.NPCINVENTORY));
     }));
 
@@ -282,15 +273,8 @@ public class NpcBuilderScreen extends Screen {
     this.addRenderableWidget(new Button(width - 60, height - 60, 60, 20, new TextComponent("Trades"), btn -> {
       PacketDispatcher.sendToServer(
               new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.title, currentData.texture, currentData.isTextureResourceLocation, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, currentData.renderedType, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ, currentData.collision));
+                      currentData.textColor, currentData.items, currentData.pose, currentData.renderedType, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ, currentData.collision));
       PacketDispatcher.sendToServer(new CRequestContainer(this.npcEntity.getId(), CRequestContainer.ContainerType.TRADE_EDITOR));
-    }));
-
-    // Reset Behavior Button
-    this.addRenderableWidget(new Button(width - 60, height - 80, 60, 20, new TextComponent("Reset AI"), btn -> {
-      PacketDispatcher.sendToServer(
-              new CEditNpc(this.npcEntity.getId(), currentData.isNameVisible, currentData.name, currentData.title, currentData.texture, currentData.isTextureResourceLocation, currentData.isSlim, currentData.dialogue,
-                      currentData.behavior, currentData.textColor, currentData.items, currentData.pose, true, currentData.renderedType, currentData.rendererTag, currentData.scaleX, currentData.scaleY, currentData.scaleZ, currentData.collision));
     }));
 
     this.poseDropdown = this.addRenderableWidget(new EnumDropdownWidget<>(currentData.pose, minX + 210, 5, 80));
@@ -326,10 +310,6 @@ public class NpcBuilderScreen extends Screen {
 
   private void setDialogue(String s) {
     currentData.dialogue = s;
-  }
-
-  private void setBehavior(String s) {
-    currentData.behavior = s;
   }
 
   public int getR() {
@@ -532,7 +512,6 @@ public class NpcBuilderScreen extends Screen {
     drawString(matrixStack, font, "Collision: ", minX + 130, 120 + center, 0xFFFFFF);
 
     drawString(matrixStack, font, "Dialogue: ", 5, 80 + center, 0xFFFFFF);
-    drawString(matrixStack, font, "Behavior: ", 5, 105 + center, 0xFFFFFF);
 
     drawString(matrixStack, font, "Text Color: ", 5, 130 + (100 - font.lineHeight) / 2, 0xFFFFFF);
 

@@ -2,14 +2,12 @@ package flash.npcmod.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Vector4f;
 import flash.npcmod.Main;
 import flash.npcmod.capability.quests.IQuestCapability;
 import flash.npcmod.capability.quests.QuestCapabilityProvider;
 import flash.npcmod.client.gui.screen.quests.QuestLogScreen;
 import flash.npcmod.core.quests.QuestInstance;
 import flash.npcmod.entity.NpcEntity;
-import flash.npcmod.item.BehaviorEditorItem;
 import flash.npcmod.item.NpcEditorItem;
 import flash.npcmod.item.NpcSaveToolItem;
 import flash.npcmod.item.QuestEditorItem;
@@ -18,38 +16,27 @@ import flash.npcmod.network.packets.client.CHandleNpcEditorRightClick;
 import flash.npcmod.network.packets.client.CHandleNpcSaveToolRightClick;
 import flash.npcmod.network.packets.client.CRequestQuestEditor;
 import flash.npcmod.network.packets.client.CTrackQuest;
-import net.minecraft.client.Camera;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Position;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.RenderNameplateEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.Arrays;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
@@ -149,158 +136,10 @@ public class ClientEvents {
                 PacketDispatcher.sendToServer(new CHandleNpcSaveToolRightClick(pos));
               }
             }
-          } else if (stack.getItem() instanceof BehaviorEditorItem) {
-            HitResult rayTraceResult = minecraft.hitResult;
-            if (rayTraceResult.getType().equals(HitResult.Type.MISS)) {
-              if (minecraft.player.isDiscrete()) {
-                stack.setTag(null);
-              } else if (stack.hasTag()) {
-                CompoundTag stackTag = stack.getTag();
-                if (stackTag != null && stackTag.contains("Path")) {
-                  long[] oldPath = stackTag.getLongArray("Path");
-                  if (oldPath.length == 1) {
-                    stack.setTag(null);
-                  } else {
-                    stackTag.putLongArray("Path", Arrays.copyOf(oldPath, oldPath.length - 1));
-                  }
-                }
-              }
-            }
           }
         }
       }
     }
-  }
-
-  /**
-   * Render the blocks selected by a behavior editor item.
-   * @param event
-   */
-  @SubscribeEvent
-  public void renderHighlightedBlocks(RenderLevelStageEvent event) {
-    if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-      Player player = Minecraft.getInstance().player;
-      if (player == null) return;
-      ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
-      if (!(heldItem.getItem() instanceof BehaviorEditorItem) || !heldItem.hasTag()) {
-        return;
-      }
-
-      // Get the block positions to highlight.
-      long[] blockLongs = heldItem.getTag().getLongArray("Path");
-      BlockPos[] blockPositions = new BlockPos[blockLongs.length];
-      for (int i = 0; i < blockLongs.length; i++) blockPositions[i] = BlockPos.of(blockLongs[i]);
-
-      // Set up variables for drawing the path lines.
-      float speed = 10;
-      float percentage = 0;
-      float holdTimeMod = 2.5f; // Determines how long the path ray will remain.
-      float percPerSegment = -1;
-      if (blockPositions.length > 1) {
-        int numEdges = blockPositions.length - 1;
-        percentage = (event.getRenderTick() % (numEdges * speed * holdTimeMod)) / (numEdges * speed);
-        percPerSegment = (1.0f / numEdges);
-      }
-      BlockPos prevBlockPos = null;
-
-      // Set up the drawing objects.
-      PoseStack poseStack = event.getPoseStack();
-      poseStack.pushPose();
-      MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-      VertexConsumer vertexconsumer = buffers.getBuffer(RenderType.lines());
-      Vector4f color = new Vector4f(227F / 255, 28F / 255, 121F / 255, 0.8F);
-
-      for (BlockPos blockPos : blockPositions) {
-        BlockState blockstate = player.level.getBlockState(blockPos);
-        // figure out the percentage of the segment to draw.
-        float segmentPercentage;
-        if (prevBlockPos == null) {
-          segmentPercentage = 0;
-        }else if (percPerSegment > percentage) {
-          segmentPercentage = percentage / percPerSegment;
-          percentage = 0;
-        } else {
-          percentage -= percPerSegment;
-          segmentPercentage = 1;
-        }
-        // Draw the block highlight.
-        if (!blockstate.isAir()) {
-          renderHitOutline(
-                  event.getPoseStack(), vertexconsumer, player.level, event.getCamera(), blockPos, blockstate, color);
-        }
-        // Draw the animated path segment.
-        if (prevBlockPos != null && segmentPercentage > 0) {
-          Vec3 pos1 = new Vec3(0, 0, 0);
-          Vec3 pos2 = new Vec3(blockPos.getX() - prevBlockPos.getX(), blockPos.getY() - prevBlockPos.getY(), blockPos.getZ() - prevBlockPos.getZ());
-          pos2 = pos2.multiply(segmentPercentage, segmentPercentage, segmentPercentage);
-          renderLine(poseStack, pos1, pos2, vertexconsumer, prevBlockPos.above(), event.getCamera().getPosition(), color);
-        }
-        prevBlockPos = blockPos;
-
-      }
-
-      buffers.endBatch();
-      poseStack.popPose();
-    }
-  }
-
-  private void renderHitOutline(PoseStack poseStack, VertexConsumer vertexConsumer, Level level, Camera camera, BlockPos blockPos, BlockState blockState, Vector4f color) {
-    Position pos = camera.getPosition();
-    renderShape(poseStack, vertexConsumer, blockState.getShape(level, blockPos, CollisionContext.of(camera.getEntity())),
-            (double)blockPos.getX() - pos.x(), (double)blockPos.getY() - pos.y(), (double)blockPos.getZ() - pos.z(), color);
-  }
-
-  /**
-   * Render the shape using the vertex consumer. Projects the voxel shape onto the camera's screen.
-   * @param poseStack The poseStack.
-   * @param vertexConsumer The renderer of the shape.
-   * @param voxelShape The shape.
-   * @param x The x offset from the camera.
-   * @param y The x offset from the camera.
-   * @param z The x offset from the camera.
-   * @param color The color
-   */
-  private static void renderShape(PoseStack poseStack, VertexConsumer vertexConsumer, VoxelShape voxelShape, double x, double y, double z, Vector4f color) {
-    PoseStack.Pose pose = poseStack.last();
-    // Create the vertex consumer shape by creating every edge.
-    voxelShape.forAllEdges((x1, y1, z1, x2, y2, z2) -> {
-      float f = (float)(x2 - x1);
-      float f1 = (float)(y2 - y1);
-      float f2 = (float)(z2 - z1);
-      float f3 = Mth.sqrt(f * f + f1 * f1 + f2 * f2);
-      f /= f3;
-      f1 /= f3;
-      f2 /= f3;
-      vertexConsumer.vertex(pose.pose(), (float)(x1 + x), (float)(y1 + y), (float)(z1 + z))
-              .color(color.x(), color.y(), color.z(), color.w()).normal(pose.normal(), f, f1, f2).endVertex();
-      vertexConsumer.vertex(pose.pose(), (float)(x2 + x), (float)(y2 + y), (float)(z2 + z))
-              .color(color.x(), color.y(), color.z(), color.w()).normal(pose.normal(), f, f1, f2).endVertex();
-    });
-  }
-
-  /**
-   * Render a line. Going to clean this up later.
-   * @param poseStack
-   * @param pos1
-   * @param pos2
-   * @param vertexConsumer
-   * @param blockPos
-   * @param camPos
-   * @param color
-   */
-  private static void renderLine(PoseStack poseStack, Vec3 pos1, Vec3 pos2, VertexConsumer vertexConsumer, BlockPos blockPos, Vec3 camPos, Vector4f color) {
-    PoseStack.Pose pose = poseStack.last();
-    float f = (float)(pos2.x - pos1.x);
-    float f1 = (float)(pos2.y - pos1.y);
-    float f2 = (float)(pos2.z - pos1.z);
-    float f3 = Mth.sqrt(f * f + f1 * f1 + f2 * f2);
-    f /= f3;
-    f1 /= f3;
-    f2 /= f3;
-    vertexConsumer.vertex(pose.pose(), (float)(pos1.x + (blockPos.getX() - camPos.x + 0.5)), (float)(pos1.y + (blockPos.getY() + 0.5 - camPos.y)), (float)(pos1.z + (blockPos.getZ() - camPos.z + 0.5)))
-            .color(color.x(), color.y(), color.z(), color.w()).normal(pose.normal(), f, f1, f2).endVertex();
-    vertexConsumer.vertex(pose.pose(), (float)(pos2.x + (blockPos.getX() - camPos.x + 0.5)), (float)(pos2.y + (blockPos.getY() + 0.5 - camPos.y)), (float)(pos2.z + (blockPos.getZ() - camPos.z + 0.5)))
-            .color(color.x(), color.y(), color.z(), color.w()).normal(pose.normal(), f, f1, f2).endVertex();
   }
 
   @SubscribeEvent

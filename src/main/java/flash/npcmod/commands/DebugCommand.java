@@ -31,18 +31,18 @@ public class DebugCommand extends Command {
 
   @Override
   public void build(LiteralArgumentBuilder<CommandSourceStack> builder) {
-    builder.then(literal("player")
-            .then(argument("player", EntityArgument.player())
-            .then(literal("capability")
-                    .then(literal("quests")
-                            .then(literal("tracked").executes(context -> tracked(context.getSource(), EntityArgument.getPlayer(context, "player"))))
-                            .then(literal("accepted").executes(context -> accepted(context.getSource(), EntityArgument.getPlayer(context, "player"))))
-                            .then(literal("completed").executes(context -> completed(context.getSource(), EntityArgument.getPlayer(context, "player"))))
-                    )
-            ))
-    );
+//    builder.then(literal("player")
+//            .then(argument("player", EntityArgument.player())
+//            .then(literal("capability")
+//                    .then(literal("quests")
+//                            .then(literal("tracked").executes(context -> tracked(context.getSource(), EntityArgument.getPlayer(context, "player"))))
+//                            .then(literal("accepted").executes(context -> accepted(context.getSource(), EntityArgument.getPlayer(context, "player"))))
+//                            .then(literal("completed").executes(context -> completed(context.getSource(), EntityArgument.getPlayer(context, "player"))))
+//                    )
+//            ))
+//    );
 
-    builder.then(literal("functions").executes(context -> toggleFunctionDebugMode(context.getSource())));
+    builder/*.then(literal("functions")*/.executes(context -> toggleFunctionDebugMode(context.getSource()))/*)*/;
   }
 
   @Override

@@ -77,7 +77,7 @@ public class CHandleNpcEditorRightClick {
           PacketDispatcher.sendTo(new SOpenScreen(SOpenScreen.EScreens.EDITNPC, "", msg.entityid), sender);
         }
       }
-      else if (msg.handleType == HandleType.BLOCK.ordinal() && PermissionHelper.hasPermission(sender, PermissionHelper.CREATE_NPC)) {
+      else if (msg.handleType == HandleType.BLOCK.ordinal() && PermissionHelper.hasPermission(sender, PermissionHelper.EDIT_NPC)) {
         // If we right-click on a block, create a new NPC and start editing it
         NpcEntity newNpc = EntityInit.NPC_ENTITY.get().create(sender.level);
         BlockPos pos = msg.pos;

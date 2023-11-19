@@ -367,7 +367,8 @@ public class QuestObjectiveBuilderScreen extends Screen {
         || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnEntity)
         || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.UseOnBlock)
         || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.Use)
-        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.CraftItem);
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.CraftItem)
+        || typeDropdown.getSelectedOption().equals(QuestObjective.ObjectiveType.SmeltItem);
     itemFromInventoryButton.active = !typeDropdown.isShowingOptions();
 
 
@@ -435,7 +436,7 @@ public class QuestObjectiveBuilderScreen extends Screen {
 
   private boolean canCreateObjective() {
     return switch (typeDropdown.getSelectedOption()) {
-      case Gather, Use, CraftItem -> itemStackObjective != null && !itemStackObjective.isEmpty() && amount > 0;
+      case Gather, Use, CraftItem, SmeltItem -> itemStackObjective != null && !itemStackObjective.isEmpty() && amount > 0;
       case Kill -> entityObjective != null && amount > 0;
       case DeliverToEntity, UseOnEntity ->
               itemStackObjective != null && !itemStackObjective.isEmpty() && entityObjective != null && amount > 0;
@@ -499,6 +500,9 @@ public class QuestObjectiveBuilderScreen extends Screen {
         break;
       case CraftItem:
         questObjective = new QuestObjectiveTypes.CraftItemObjective(id, name, itemStackObjective, amount);
+        break;
+      case SmeltItem:
+        questObjective = new QuestObjectiveTypes.SmeltItemObjective(id, name, itemStackObjective, amount);
         break;
     }
     if (questObjective != null) {

@@ -10,20 +10,17 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class Dialogue extends NodeData {
     private String text;
     private String response;
-    private String trigger;
 
     public Dialogue(String name) {
         super(name, "", new Dialogue[0]);
         this.text = "";
         this.response = "";
-        this.trigger = "";
     }
 
-    public Dialogue(String name, String text, String response, String function, String trigger, Dialogue[] children) {
+    public Dialogue(String name, String text, String response, String function, Dialogue[] children) {
         super(name, function, children);
         this.text = text;
         this.response = response;
-        this.trigger = trigger;
     }
 
     /**
@@ -63,9 +60,8 @@ public class Dialogue extends NodeData {
         String text = object.get("text").getAsString();
         String response = object.has("response") ? object.get("response").getAsString() : "";
         String function = object.has("function") ? object.get("function").getAsString() : "";
-        String trigger = object.has("trigger") ? object.get("trigger").getAsString() : "";
 
-        return new Dialogue(name, text, response, function, trigger, children);
+        return new Dialogue(name, text, response, function, children);
     }
 
     /**
@@ -97,15 +93,6 @@ public class Dialogue extends NodeData {
      */
     public String getResponse() {
         return response;
-    }
-
-    /**
-     * Get the trigger of the Dialogue.
-     *
-     * @return The trigger.
-     */
-    public String getTrigger() {
-        return trigger;
     }
 
     /**
@@ -144,7 +131,7 @@ public class Dialogue extends NodeData {
      * @return The new dialogue.
      */
     public static Dialogue newDialogue() {
-        return new Dialogue("newDialogueNode", "New Node", "", "", "", new Dialogue[0]);
+        return new Dialogue("newDialogueNode", "New Node", "", "", new Dialogue[0]);
     }
 
     /**
@@ -166,15 +153,6 @@ public class Dialogue extends NodeData {
     }
 
     /**
-     * Set the trigger of the dialogue.
-     *
-     * @param trigger The trigger.
-     */
-    public void setTrigger(String trigger) {
-        this.trigger = trigger;
-    }
-
-    /**
      * Build a Json object of the NodeData.
      *
      * @return The json version of that nodeData
@@ -182,7 +160,6 @@ public class Dialogue extends NodeData {
     public JsonObject toJSON() {
         JsonObject dialogueObject = super.toJSON();
 
-        dialogueObject.addProperty("trigger", trigger);
         dialogueObject.addProperty("text", text);
         dialogueObject.addProperty("response", response);
         return dialogueObject;
